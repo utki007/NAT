@@ -6,6 +6,24 @@ class events(commands.Cog):
     
     def __init__(self, bot):
         self.bot = bot
+        self.bot.tree.on_error = self.on_app_command_error
+    
+    async def on_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
+        if isinstance(error, app_commands.CommandOnCooldown):
+            m, s = divmod(error.retry_after, 60)
+            h, m = divmod(m, 60)
+            if int(h) == 0 and int(m) == 0:
+                await interaction.response.send_message(f"The command is under a cooldown of **{int(s)} seconds** to prevent abuse!", ephemeral=True)
+            elif int(h) == 0 and int(m) != 0:
+                await interaction.response.send_message(
+                    f"The command is under a cooldown of **{int(m)} minutes and {int(s)} seconds** to prevent abuse!", ephemeral=True,
+                )
+            else:
+                await interaction.response.send_message(
+                    f"The command is under a cooldown of **{int(h)} hours, {int(m)} minutes and {int(s)} seconds** to prevent abuse!", ephemeral=True,
+                )
+        else:
+            await interaction.response.send_message(f"An error has occured: {error}", ephemeral=True)
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -37,7 +55,6 @@ class events(commands.Cog):
             
         elif isinstance(error, commands.CommandNotFound):
             return
-
         else:
             #raise error
             embed = discord.Embed(color=0xE74C3C, 
