@@ -1,29 +1,57 @@
-import json
+from email.mime import application
 import discord
 from discord.ext import commands
+import json
 import os
 import time as t
 
+class MyBot(commands.Bot):
 
-bot = commands.Bot(
-    command_prefix=["nat "],
-    case_insensitive=True,
-    intents=discord.Intents.all(),
-    help_command=None
-)
+	def __init__(self):
+		
+		super().__init__(
+			command_prefix=["nat "],
+			case_insensitive=True,
+			owner_ids=[488614633670967307, 301657045248114690],
+			intents=discord.Intents.all(),
+			application_id=951019275844460565
+		)
+
+	async def setup_hook(self):
+		for file in os.listdir('./cogs'):
+			if file.endswith('.py') and not file.startswith("_"):
+				await bot.load_extension(f'cogs.{file[:-3]}')
+	
+	async def on_ready(self):		
+		print(f"{bot.user} has connected to Discord!")
+		await bot.change_presence(
+			status=discord.Status.idle, 
+			activity=discord.Activity(
+				type=discord.ActivityType.playing, 
+				name="Starting up ..."
+			)
+		)
+		 
+		for guild in list(bot.guilds):
+			await bot.tree.sync(guild=discord.Object(guild.id))
+		await bot.tree.sync()
+
+		await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.watching, name="Upgrading ..."))
+
+
+
+bot = MyBot()
 
 @bot.event
-async def on_ready():
-    print(f"{bot.user} has connected to Discord!")
-    await bot.change_presence(activity=discord.Game(name="upgrading ..."))
+async def on_message(message):
+	
+	# return if message is from bot
+	if message.author.bot:
+		return
 
-@bot.command()
-async def ping(ctx):
-	await ctx.send("pong! {0:.2f}ms".format(bot.latency * 1000))
-
-# loading data from json file
-# setting up from tokens.py
+# loading enviroment variables
 if os.path.exists(os.getcwd()+"./properties/tokens.json"):
+	# loading from tokens.py
 	with open("./properties/tokens.json") as f:
 		configData = json.load(f)
 	bot.botToken = configData["token"]
