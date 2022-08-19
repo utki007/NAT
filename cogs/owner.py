@@ -11,12 +11,13 @@ class owner(commands.Cog):
     async def on_ready(self):
         print(f"{self.__class__.__name__} Cog has been loaded\n-----")
     
-    @app_commands.command(name="pingpro", description="Ping pong! 🏓")
+    @app_commands.command(name="get-logs", description="Get the logs of bot")
     @app_commands.checks.has_permissions(administrator=True)
-    async def ping(self, interaction:  discord.Interaction):
-        await interaction.response.send_message(
-            f"Pong! 🏓 **`{round(self.bot.latency * 1000)}ms`**",
-        )
+    async def get_logs(self, interaction: discord.Interaction):
+        if interaction.user.id not in self.bot.owner_ids:
+            await interaction.response.send_message("You do not have permission to use this command.")
+            return
+        await interaction.response.send_message(file=discord.File("./bot.log", filename="discord.log"))
         
 async def setup(bot):
     await bot.add_cog(
