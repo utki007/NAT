@@ -1,9 +1,21 @@
 import discord
 import json
 import os
-import time as t
 from discord.ext import commands
+import logging
+import logging.handlers
 
+logger = logging.getLogger('discord')
+handler = logging.handlers.RotatingFileHandler(
+    filename='bot.log',
+    encoding='utf-8',
+    maxBytes=32 * 1024 * 1024,  # 32 MiB
+    backupCount=5,  # Rotate through 5 files
+)
+dt_fmt = '%Y-%m-%d %H:%M:%S'
+formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 class MyBot(commands.Bot):
 	def __init__(self):
 		
@@ -35,8 +47,6 @@ class MyBot(commands.Bot):
 		await bot.tree.sync()
 
 		await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.watching, name="Upgrading ..."))
-
-
 
 bot = MyBot()
 
