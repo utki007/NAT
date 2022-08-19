@@ -2,3 +2,4 @@ properties/tokens.json
 *.pyc
 .venv
 discord.log
+bot.log
