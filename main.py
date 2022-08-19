@@ -1,13 +1,10 @@
-from email.mime import application
 import discord
-from discord.ext import commands
 import json
 import os
 import time as t
-import asyncio
+from discord.ext import commands
 
 class MyBot(commands.Bot):
-
 	def __init__(self):
 		
 		super().__init__(
@@ -15,7 +12,7 @@ class MyBot(commands.Bot):
 			case_insensitive=True,
 			owner_ids=[488614633670967307, 301657045248114690],
 			intents=discord.Intents.all(),
-			application_id=951019275844460565
+			application_id=951019275844460565,
 		)
 
 	async def setup_hook(self):
@@ -23,10 +20,7 @@ class MyBot(commands.Bot):
 			if file.endswith('.py') and not file.startswith("_"):
 				await bot.load_extension(f'cogs.{file[:-3]}')
 	
-	async def close(self):
-		await super().close()
-
-	async def on_ready(self):
+	async def on_ready(self):		
 		print(f"{bot.user} has connected to Discord!")
 		await bot.change_presence(
 			status=discord.Status.idle, 
@@ -38,7 +32,6 @@ class MyBot(commands.Bot):
 		 
 		for guild in list(bot.guilds):
 			await bot.tree.sync(guild=discord.Object(guild.id))
-			await asyncio.sleep(1)
 		await bot.tree.sync()
 
 		await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.watching, name="Upgrading ..."))
@@ -61,7 +54,6 @@ if os.path.exists(os.getcwd()+"./properties/tokens.json"):
 		configData = json.load(f)
 	bot.botToken = configData["token"]
 	bot.connection_url = configData["mongo"]
-	bot.connection_url2 = configData["mongoBanDB"]
 	bot.amari = configData["amari"]
 else:
 	# for heroku
