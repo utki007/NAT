@@ -118,5 +118,8 @@ class Example(commands.Cog):
         await interaction.response.send_message(f"Thread created {thread.mention}")
 
 async def setup(bot):
-    await bot.add_cog(Example(bot))
+    await bot.add_cog(
+        Example(bot),
+        guilds = [discord.Object(999551299286732871)]
+    )
 
