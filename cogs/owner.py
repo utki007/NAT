@@ -1,6 +1,12 @@
 import discord
+import contextlib
+import io
+from traceback import format_exception
+import textwrap
+from utils.paginator import Contex_Paginator
 from discord import app_commands
 from discord.ext import commands
+from utils.functions import clean_code
 
 class owner(commands.Cog):
     
@@ -18,6 +24,46 @@ class owner(commands.Cog):
             await interaction.response.send_message("You do not have permission to use this command.")
             return
         await interaction.response.send_message(file=discord.File("./bot.log", filename="discord.log"))
+    
+    @commands.command(name="eval", description="Evaluate code")
+    async def _eval(self, ctx, *,code):
+        if ctx.author.id not in self.bot.owner_ids:
+            raise commands.CheckFailure(ctx.message)
+
+        code = clean_code(code)
+        local_variables = {
+            "discord": discord,
+            "commands": commands,
+            "bot": self.bot,
+            "ctx": ctx,
+            "channel": ctx.channel,
+            "author": ctx.author,
+            "guild": ctx.guild,
+            "message": ctx.message
+        }
+
+        stdout = io.StringIO()
+
+        try:
+            with contextlib.redirect_stdout(stdout):
+
+                exec(
+                    f"async def func():\n{textwrap.indent(code, '    ')}", local_variables,
+                )
+                obj = await local_variables["func"]()
+
+                result = f"{stdout.getvalue()}\n-- {obj}\n"
+                
+        except Exception as e:
+            result = "".join(format_exception(e,e,e.__traceback__))
+        page = []
+        for i in range(0, len(result), 2000):
+            page.append(discord.Embed(description=f'```py\n{result[i:i + 2000]}\n```', color=ctx.author.color))
+        
+        await Contex_Paginator(ctx, page).start(embeded=True, quick_navigation=False)
+
+
+
         
 async def setup(bot):
     await bot.add_cog(
