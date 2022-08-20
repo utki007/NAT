@@ -3,3 +3,4 @@ properties/tokens.json
 .venv
 discord.log
 bot.log
+__pycache__
