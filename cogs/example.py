@@ -1,7 +1,7 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
-
+from utils.paginator import Paginator
 class Button(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -116,6 +116,16 @@ class Example(commands.Cog):
         thread = await message.create_thread(name="Thread")
         await thread.send("Hello World")
         await interaction.response.send_message(f"Thread created {thread.mention}")
+    
+    @app_commands.command(name="page", description="Send a page with message")
+    async def page(self, interaction: discord.Interaction):
+        emed = discord.Embed(title="Page", description="This is a page", color=discord.Color.blue())
+        embed2 = discord.Embed(title="Page2", description="This is a page", color=discord.Color.blue())
+        embed3 = discord.Embed(title="Page3", description="This is a page", color=discord.Color.blue())
+        embed4 = discord.Embed(title="Page4", description="This is a page", color=discord.Color.blue())
+        pages = [emed, embed2, embed3, embed4]
+        await Paginator(interaction, pages).start(embeded=True, quick_navigation=True) #set quick_navitation to Flase if len(pages) > 24 or you want to remove dromdown
+
 
 async def setup(bot):
     await bot.add_cog(
