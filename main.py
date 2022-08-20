@@ -4,6 +4,8 @@ import os
 from discord.ext import commands
 import logging
 import logging.handlers
+import motor.motor_asyncio
+from utils.db import Document
 
 logger = logging.getLogger('discord')
 handler = logging.handlers.RotatingFileHandler(
@@ -28,6 +30,11 @@ class MyBot(commands.Bot):
 		)
 
 	async def setup_hook(self):
+
+		bot.mongo = motor.motor_asyncio.AsyncIOMotorClient(str(bot.connection_url))
+		bot.db = bot.mongo["NAT"]
+		bot.timer = Document(bot.db, "timer")
+
 		for file in os.listdir('./cogs'):
 			if file.endswith('.py') and not file.startswith("_"):
 				await bot.load_extension(f'cogs.{file[:-3]}')
