@@ -34,6 +34,7 @@ class MyBot(commands.Bot):
 		bot.mongo = motor.motor_asyncio.AsyncIOMotorClient(str(bot.connection_url))
 		bot.db = bot.mongo["NAT"]
 		bot.timer = Document(bot.db, "timer")
+		bot.oath = Document(bot.db, "oath")
 
 		for file in os.listdir('./cogs'):
 			if file.endswith('.py') and not file.startswith("_"):
@@ -53,7 +54,7 @@ class MyBot(commands.Bot):
 			await bot.tree.sync(guild=discord.Object(guild.id))
 		await bot.tree.sync()
 
-		await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.watching, name="Upgrading ..."))
+		await bot.change_presence(status=discord.Status.online, activity=discord.Activity(type=discord.ActivityType.watching, name="Ready"))
 
 bot = MyBot()
 
@@ -63,6 +64,7 @@ async def on_message(message):
 	# return if message is from bot
 	if message.author.bot:
 		return
+	await bot.process_commands(message)
 
 # loading enviroment variables
 if os.path.exists(os.getcwd()+"./properties/tokens.json"):
