@@ -31,20 +31,16 @@ class serverUtils(commands.Cog):
 		start = t.time()
 		query = await convert_to_numeral(query)
 		output = await calculate(query)
-		output = await millify(output)
-		end = time.time()
+		end = t.time()
 
 		calc_embed = discord.Embed(
 			color=0x9e3bff,
-			title=f"**Calculated:** `{round(float(output),2):,}`",
-			description=f"**Calculated in:** {round((end - start) * 1000, 3)} ms",
-			timestamp=datetime.datetime.utcnow()
+			title=f"**Value:** `{output:,}`"
 		)
-		url = f"https://fakeimg.pl/150x40/9e3bff/000000/?retina=1&text={round(float(output),2):,}&font=lobster&font_size=28"
+		url = f"https://fakeimg.pl/150x40/9e3bff/000000/?retina=1&text={'%20'.join((await millify(output)).split(' '))}&font=lobster&font_size=28"
 		calc_embed.set_image(url=url)
-		calc_embed.set_footer(
-			text=f"{interaction.guild.name}",icon_url=interaction.guild.icon_url)
-		# calc_embed.set_author(name=f"Solving for {interaction.user.name} ...", icon_url=interaction.user.display_icon)
+		calc_embed.set_footer(text=f"{interaction.guild.name} • Calculated in: {round((end - start) * 1000, 2)} ms",icon_url=interaction.guild.icon)
+		calc_embed.set_author(name=f"{interaction.user.display_name}'s calculation ...", icon_url=interaction.user.avatar)
 
 		await interaction.edit_original_response(
 			embed=calc_embed
