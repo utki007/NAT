@@ -1,5 +1,6 @@
 import time
 import discord
+import math
 from TagScriptEngine import Interpreter, adapter, block
 from discord.ext import commands,tasks
 
@@ -35,3 +36,12 @@ async def calculate(query):
 
     output_string = output.body.replace("{m:", "").replace("}", "")
     return int(float(output_string))
+
+async def millify(n):
+    n = float(n)
+    millnames = ['',' Thousand',' Million',' Billion',' Trillion']
+    millidx = max(0,min(len(millnames)-1,
+                        int(math.floor(0 if n == 0 else math.log10(abs(n))/3))))
+
+    # return '{:.1f}{}'.format(n / 10**(3 * millidx), millnames[millidx])
+    return f'{round(n / 10**(3 * millidx),1):,}{millnames[millidx]}'
