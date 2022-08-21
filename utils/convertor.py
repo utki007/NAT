@@ -39,7 +39,7 @@ async def calculate(query):
 
 async def millify(n):
     n = float(n)
-    millnames = ['',' Thousand',' Million',' Billion',' Trillion']
+    millnames = ['',' K',' Mil',' Bil']
     millidx = max(0,min(len(millnames)-1,
                         int(math.floor(0 if n == 0 else math.log10(abs(n))/3))))
 
