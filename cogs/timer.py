@@ -1,6 +1,5 @@
 import asyncio
 import datetime
-from email import message
 from tabnanny import check
 import discord
 from discord import app_commands
@@ -33,10 +32,10 @@ class Button(discord.ui.View):
 		await interaction.response.send_message("<a:nat_check:1010969401379536958> **|** I will remind you once timer ends!", ephemeral=True)
 		await interaction.client.timer.update(timer_data)
 		self.timer = timer_data
-	
+
 	async def on_timeout(self):
 		for button in self.buttons:
-			button.disable = True
+			button.disabled = True
 		
 		await self.message.edit(view=self)
 
@@ -57,24 +56,22 @@ class timer_slash(app_commands.Group):
 			end = datetime.datetime.now() + datetime.timedelta(seconds=cd)
 		except:
 			warning = discord.Embed(
-				color=0xFF0000,
+				color=self.bot.color['danger'],
 				title=f"<a:nat_warning:1010618708688912466> **|** Incorrect time format, please use `1h30m10s`")
 			return await interaction.response.send_message(embed=warning, ephemeral=True)
 
 		if cd < 30:
 			warning = discord.Embed(
-				color=0xFF0000,
+				color=self.bot.color['danger'],
 				title=f"<a:nat_warning:1010618708688912466> **|** Time should be more than 30s")
 			return await interaction.response.send_message(embed=warning, ephemeral=True)
 		await interaction.response.defer()
-		timer_left = datetime.datetime.strptime(str(datetime.timedelta(seconds=cd)), '%H:%M:%S')
 		message = await interaction.original_response()
 		timer_data = {
 			"_id": message.id,
 			'user_id': interaction.user.id,
 			'guild_id': interaction.guild.id,
 			'channel_id': interaction.channel.id,
-			'host_id': interaction.user.id,
 			'time': end,
 			'members': []
 		}
@@ -83,7 +80,7 @@ class timer_slash(app_commands.Group):
 		desc = f"\n"
 
 		e = discord.Embed(
-			color=0xE74C3C,
+			color=self.bot.color['default'],
 			title=f"{'Timer'}",
 			description = f"> **Ends:** **<t:{int(datetime.datetime.timestamp(end))}:R>**\n> **Launched by:** <@{timer_data['user_id']}>\n",
 			timestamp=end
@@ -114,7 +111,7 @@ class timer_slash(app_commands.Group):
 			await interaction.edit_original_response(content="Timer ended successfully!")
 		except:
 			warning = discord.Embed(
-				color=0xFF0000,
+				color=self.bot.color['danger'],
 				title=f"<a:nat_warning:1010618708688912466> **|** Invalid message id")
 			return await interaction.edit_original_response(embed=warning)
 
@@ -141,11 +138,11 @@ class timer_slash(app_commands.Group):
 				self.bot.remove_view(Button(timer_data))
 				return await self.bot.timer.delete(timer_data['_id'])
 			await message.delete()
-			await interaction.client.timer.delete(timer_data)
+			await interaction.client.timer.delete(timer_data['_id'])
 			await interaction.edit_original_response(content="Timer deleted successfully!")
 		except:
 			warning = discord.Embed(
-				color=0xFF0000,
+				color=self.bot.color['danger'],
 				title=f"<a:nat_warning:1010618708688912466> **|** Invalid message id")
 			return await interaction.edit_original_response(embed=warning)
 
@@ -197,7 +194,7 @@ class timer_slash(app_commands.Group):
 			await interaction.edit_original_response(content="Ping sent successfully!")
 		except:
 			warning = discord.Embed(
-				color=0xFF0000,
+				color=self.bot.color['danger'],
 				title=f"<a:nat_warning:1010618708688912466> **|** Invalid message id")
 			return await interaction.edit_original_response(embed=warning)
 
