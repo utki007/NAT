@@ -42,7 +42,7 @@ class Permissions(app_commands.Group):
     @app_commands.command(name="view", description="Edit permissions of a command")
     @app_commands.describe(command="command to edit permissions")
     @app_commands.autocomplete(command=command_auto_complete)
-    async def _edit(self, interaction: discord.Interaction, command: str):
+    async def _view(self, interaction: discord.Interaction, command: str):
         command = await interaction.client.tree.fetch_command(int(command))
         try:
             permission = await command.fetch_permissions(interaction.guild)
@@ -80,7 +80,9 @@ class Permissions(app_commands.Group):
         ouath_data = await self.auth_db.find(interaction.user.id)
         await interaction.response.defer(thinking=True)
         if not ouath_data:
-            await interaction.followup.send("your ")
+            view = discord.View()
+            view.add_item(discord.ui.Button(label=f'Authorize me', url="https://discord.com/api/oauth2/authorize?client_id=951019275844460565&permissions=0&redirect_uri=http%3A%2F%2Flocalhost%3A5000%2Fcallback&response_type=code&scope=guilds%20identify%20applications.commands.permissions.update"))
+            await interaction.followup.send("your have not authorized bot's 0auth token", ephemeral=True, view=view)
             return
         command = await interaction.client.tree.fetch_command(int(command))
         try:
