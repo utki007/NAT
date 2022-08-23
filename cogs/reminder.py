@@ -150,9 +150,9 @@ class reminder_slash(app_commands.Group):
 			pages.append(embed)
 		custom_button = [
 			# discord.ui.Button(label="<<", style=discord.ButtonStyle.gray),
-			discord.ui.Button(label="<", style=discord.ButtonStyle.gray),
-			discord.ui.Button(label="◼", style=discord.ButtonStyle.gray),
-			discord.ui.Button(label=">", style=discord.ButtonStyle.gray),
+			discord.ui.Button(label="Previous", style=discord.ButtonStyle.gray),
+			discord.ui.Button(label="Stop", style=discord.ButtonStyle.gray),
+			discord.ui.Button(label="Next", style=discord.ButtonStyle.gray),
 			# discord.ui.Button(label=">>", style=discord.ButtonStyle.gray)
 		]
 		await Paginator(interaction, pages, custom_button).start(embeded=True, quick_navigation=False) #set quick_navitation to Flase if len(pages) > 24 or you want to remove dromdown

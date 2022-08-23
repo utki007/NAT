@@ -70,6 +70,9 @@ class owner(commands.Cog):
 			# discord.ui.Button(label=">>", style=discord.ButtonStyle.gray)
 		]
         await Contex_Paginator(ctx, page, custom_button).start(embeded=True, quick_navigation=False)
+
+
+
         
 async def setup(bot):
     await bot.add_cog(
