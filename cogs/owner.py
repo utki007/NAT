@@ -60,7 +60,14 @@ class owner(commands.Cog):
         for i in range(0, len(result), 2000):
             page.append(discord.Embed(description=f'```py\n{result[i:i + 2000]}\n```', color=ctx.author.color))
         
-        await Contex_Paginator(ctx, page).start(embeded=True, quick_navigation=False)
+        custom_button = [
+			# discord.ui.Button(label="<<", style=discord.ButtonStyle.gray),
+			discord.ui.Button(label="<", style=discord.ButtonStyle.blurple),
+			discord.ui.Button(label="◼", style=discord.ButtonStyle.blurple),
+			discord.ui.Button(label=">", style=discord.ButtonStyle.blurple),
+			# discord.ui.Button(label=">>", style=discord.ButtonStyle.gray)
+		]
+        await Contex_Paginator(ctx, page, custom_button).start(embeded=True, quick_navigation=False)
 
 
 
