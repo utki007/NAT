@@ -59,6 +59,8 @@ class _view(View):
 	async def update_children(self, interaction: Interaction):
 		self.next.disabled = (self.current_page + 1 == len(self.pages))
 		self.previous.disabled = (self.current_page <= 0)
+		self.last.disabled=self.next.disabled
+		self.first.disabled=self.previous.disabled
 
 		kwargs = {'content': self.pages[self.current_page]} if not (self.embeded) else {'embed': self.pages[self.current_page]}
 		kwargs['view'] = self
@@ -126,20 +128,6 @@ class Paginator:
 
 		view = _view(self.interaction.user, self.pages, embeded)
 
-		view.previous.disabled = True if (view.current_page <= 0) else False
-		view.next.disabled = True if (view.current_page + 1 >= len(self.pages)) else False
-
-		if (quick_navigation):
-			options = []
-			for index, page in enumerate(self.pages):
-				options.append(SelectOption(label=f"Page {index+1}", value=index))
-
-			view.add_item(_select(options))
-
-		# if (len(self.custom_children) > 0):
-		# 	for child in self.custom_children:
-		# 		view.add_item(child)
-
 		if (len(self.custom_children) == 5):
 			for index,button in enumerate(view.children):
 				button.style = self.custom_children[index].style
@@ -167,6 +155,18 @@ class Paginator:
 				button.emoji = self.custom_children[index].emoji
 				button.row = self.custom_children[index].row
 				button.disabled = self.custom_children[index].disabled
+
+		view.previous.disabled = True if (view.current_page <= 0) else False
+		view.next.disabled = True if (view.current_page + 1 >= len(self.pages)) else False
+		view.last.disabled=view.next.disabled
+		view.first.disabled=view.previous.disabled
+
+		if (quick_navigation):
+			options = []
+			for index, page in enumerate(self.pages):
+				options.append(SelectOption(label=f"Page {index+1}", value=index))
+
+			view.add_item(_select(options))
 
 		kwargs = {'content': self.pages[view.current_page]} if not (embeded) else {'embed': self.pages[view.current_page]}
 		kwargs['view'] = view
@@ -202,8 +202,38 @@ class Contex_Paginator:
 
 		view = _view(self.interaction.author, self.pages, embeded)
 
+		if (len(self.custom_children) == 5):
+			for index,button in enumerate(view.children):
+				button.style = self.custom_children[index].style
+				button.url = self.custom_children[index].url
+				button.label = self.custom_children[index].label
+				button.emoji = self.custom_children[index].emoji
+				button.row = self.custom_children[index].row
+				button.disabled = self.custom_children[index].disabled
+		elif (len(self.custom_children) == 4):
+			view.remove_item(view.quit)
+			for index,button in enumerate(view.children):
+				button.style = self.custom_children[index].style
+				button.url = self.custom_children[index].url
+				button.label = self.custom_children[index].label
+				button.emoji = self.custom_children[index].emoji
+				button.row = self.custom_children[index].row
+				button.disabled = self.custom_children[index].disabled
+		elif (len(self.custom_children) == 3):
+			view.remove_item(view.first)
+			view.remove_item(view.last)
+			for index,button in enumerate(view.children):
+				button.style = self.custom_children[index].style
+				button.url = self.custom_children[index].url
+				button.label = self.custom_children[index].label
+				button.emoji = self.custom_children[index].emoji
+				button.row = self.custom_children[index].row
+				button.disabled = self.custom_children[index].disabled
+
 		view.previous.disabled = True if (view.current_page <= 0) else False
 		view.next.disabled = True if (view.current_page + 1 >= len(self.pages)) else False
+		view.last.disabled=view.next.disabled
+		view.first.disabled=view.previous.disabled
 
 		if (quick_navigation):
 			options = []
@@ -211,10 +241,6 @@ class Contex_Paginator:
 				options.append(SelectOption(label=f"Page {index+1}", value=index))
 
 			view.add_item(_select(options))
-
-		if (len(self.custom_children) > 0):
-			for child in self.custom_children:
-				view.add_item(child)
 
 		kwargs = {'content': self.pages[view.current_page]} if not (embeded) else {'embed': self.pages[view.current_page]}
 		kwargs['view'] = view
