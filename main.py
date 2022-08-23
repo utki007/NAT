@@ -6,6 +6,7 @@ import logging
 import logging.handlers
 import motor.motor_asyncio
 from utils.db import Document
+from ast import literal_eval
 
 logger = logging.getLogger('discord')
 handler = logging.handlers.RotatingFileHandler(
@@ -35,6 +36,7 @@ class MyBot(commands.Bot):
 		bot.db = bot.mongo["NAT"]
 		bot.timer = Document(bot.db, "timer")
 		bot.oath = Document(bot.db, "oath")
+		bot.doc_remider = Document(bot.db, "reminders")
 
 		for file in os.listdir('./cogs'):
 			if file.endswith('.py') and not file.startswith("_"):
@@ -54,7 +56,7 @@ class MyBot(commands.Bot):
 			await bot.tree.sync(guild=discord.Object(guild.id))
 		await bot.tree.sync()
 
-		await bot.change_presence(status=discord.Status.online, activity=discord.Activity(type=discord.ActivityType.watching, name="Ready"))
+		await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.listening, name="tgk devs"))
 
 bot = MyBot()
 
@@ -69,8 +71,8 @@ async def on_message(message):
 # loading enviroment variables
 if os.path.exists(os.getcwd()+"./properties/tokens.json"):
 	# loading from tokens.py
-	with open("./properties/tokens.json") as f:
-		configData = json.load(f)
+	with open("./properties/tokens.json") as file_data:
+		configData = json.load(file_data)
 	bot.botToken = configData["token"]
 	bot.connection_url = configData["mongo"]
 	bot.amari = configData["amari"]
@@ -80,5 +82,12 @@ else:
 	bot.connection_url = os.environ['MongoConnectionUrl']
 	bot.connection_url2 = os.environ["mongoBanDB"]
 	bot.amari = os.environ["amari"]
+
+# fetching assets
+if os.path.exists(os.getcwd()+"./assets/colors.json"):
+	with open("./assets/colors.json") as file_data:
+		bot.color = json.load(file_data)
+		for color in bot.color:
+			bot.color[color] = discord.Color(literal_eval(bot.color[color]))
 
 bot.run(bot.botToken)
