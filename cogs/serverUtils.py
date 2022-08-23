@@ -23,7 +23,7 @@ class serverUtils(commands.Cog):
 			content=f"Pong! **`{round(self.bot.latency * 1000)}ms`**",
 		)
 
-	@app_commands.command(name="calculate", description="Do math! 🧮")
+	@app_commands.command(name="calculate", description="Do math! 🧮", extras={'example': '/calculate query: 2m+40k'})
 	@app_commands.checks.cooldown(1, 10, key=lambda i: (i.guild_id, i.user.id))
 	@app_commands.describe(query = "5 MIl -> 5e6 or 5m", hidden = "Nobody knows how you calculated so accurately 🥂")
 	async def calculate(self, interaction:  discord.Interaction, query: str , hidden: bool = False):
