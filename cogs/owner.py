@@ -7,21 +7,23 @@ from utils.paginator import Contex_Paginator
 from discord import app_commands
 from discord.ext import commands
 from utils.functions import clean_code
+from utils.checks import App_commands_Checks
+from utils.db import Document
 
 class owner(commands.Cog):
-    
     def __init__(self, bot):
         self.bot = bot
 
     @commands.Cog.listener()
     async def on_ready(self):
         print(f"{self.__class__.__name__} Cog has been loaded\n-----")
-    
+
     @app_commands.command(name="get-logs", description="Get the logs of bot")
-    @app_commands.checks.has_permissions(administrator=True)
+    @App_commands_Checks.is_owner()
+    @app_commands.guilds(999551299286732871)
     async def get_logs(self, interaction: discord.Interaction):
         if interaction.user.id not in self.bot.owner_ids:
-            await interaction.response.send_message("You do not have permission to use this command.")
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
             return
         await interaction.response.send_message(file=discord.File("./bot.log", filename="discord.log"))
     
@@ -68,9 +70,6 @@ class owner(commands.Cog):
 			# discord.ui.Button(label=">>", style=discord.ButtonStyle.gray)
 		]
         await Contex_Paginator(ctx, page, custom_button).start(embeded=True, quick_navigation=False)
-
-
-
         
 async def setup(bot):
     await bot.add_cog(
