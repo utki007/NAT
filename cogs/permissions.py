@@ -6,11 +6,11 @@ from typing import List, Union
 from utils.db import Document
 import motor.motor_asyncio
 
-class Permissions(app_commands.Group):
-    def __init__(self, auth_db: Document):
-        self.auth_db = auth_db
+class Permissions(commands.GroupCog, name="permissions", description="Manage permissions for the bot commands"):
+    def __init__(self, bot):
+        self.bot = bot
+        self.auth_db = Document(bot.db, "OAuth2")
         self.session = aiohttp.ClientSession()
-        super().__init__(name="permissions")
     
     async def command_auto_complete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
         commands = await interaction.client.tree.fetch_commands()
@@ -38,7 +38,10 @@ class Permissions(app_commands.Group):
             resp = await resp.json()
             return resp
 
-    
+    @commands.Cog.listener()
+    async def on_ready(self):
+        print(f"{self.__class__.__name__} Cog has been loaded\n-----")
+
     @app_commands.command(name="view", description="Edit permissions of a command")
     @app_commands.describe(command="command to edit permissions")
     @app_commands.autocomplete(command=command_auto_complete)
@@ -134,18 +137,7 @@ class Permissions(app_commands.Group):
                 command_permmission_dict.append({"id": str(member.id), "type": 2, "permission": _type})
         
         res = await self.set_command_permission(interaction, command.id, command_permmission_dict, ouath_data["access_token"])
-
         await interaction.followup.send(content=f"{res}")
 
-class Permission_Cog(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
-        self.auth = Document(self.bot.mongo['OAuth2_DB'], 'OAuth2')
-
-    @commands.Cog.listener()
-    async def on_ready(self):
-        self.bot.tree.add_command(Permissions(self.auth))
-        print(f"{self.__class__.__name__} Cog has been loaded\n-----")
-
 async def setup(bot):
-    await bot.add_cog(Permission_Cog(bot), guilds = [discord.Object(999551299286732871)])
+    await bot.add_cog(Permissions(bot))

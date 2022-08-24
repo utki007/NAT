@@ -39,11 +39,13 @@ class Button(discord.ui.View):
 		
 		await self.message.edit(view=self)
 
-class timer_slash(app_commands.Group):
-	
+class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 	def __init__(self, bot):
-		super().__init__(name="timer")
 		self.bot = bot
+		self.timertask = self.timer_loop.start()
+
+	def cog_unload(self) -> None:
+		self.timertask.cancel()
 
 	@app_commands.command(name="start", description="Create a timer")
 	@app_commands.guild_only()
@@ -198,18 +200,8 @@ class timer_slash(app_commands.Group):
 				title=f"<a:nat_warning:1010618708688912466> **|** Invalid message id")
 			return await interaction.edit_original_response(embed=warning)
 
-class timer(commands.Cog):
-
-	def __init__(self, bot):
-		self.bot = bot
-		self.timertask = self.timer_loop.start()
-
-	def cog_unload(self) -> None:
-		self.timertask.cancel()
-
 	@commands.Cog.listener()
 	async def on_ready(self):
-		self.bot.tree.add_command(timer_slash(self.bot))
 		print(f"{self.__class__.__name__} Cog has been loaded\n-----")
 		current_timer = await self.bot.timer.get_all()
 		for timer in current_timer:
@@ -286,4 +278,4 @@ class timer(commands.Cog):
 
 	
 async def setup(bot):
-	await bot.add_cog(timer(bot))
+	await bot.add_cog(Timer(bot))

@@ -11,11 +11,13 @@ from utils.views.paginator import Paginator
 from utils.views.confirm import Confirm
 
 
-class reminder_slash(app_commands.Group):
-
+class Reminder(commands.GroupCog, name="reminder", description="Reminder commands"):
 	def __init__(self, bot):
-		super().__init__(name="reminder")
 		self.bot = bot
+		self.remindertask = self.reminder_loop.start()
+
+	def cog_unload(self) -> None:
+		self.remindertask.cancel()
 
 	@app_commands.command(name="create", description="Create a reminder")
 	@app_commands.guild_only()
@@ -219,19 +221,8 @@ class reminder_slash(app_commands.Group):
 		else:
 			return await interaction.edit_original_response(content="You are already subscribed to that reminder!")
 
-
-class reminder(commands.Cog):
-
-	def __init__(self, bot):
-		self.bot = bot
-		self.remindertask = self.reminder_loop.start()
-
-	def cog_unload(self) -> None:
-		self.remindertask.cancel()
-
 	@commands.Cog.listener()
 	async def on_ready(self):
-		self.bot.tree.add_command(reminder_slash(self.bot))
 		print(f"{self.__class__.__name__} Cog has been loaded\n-----")
 
 	@commands.Cog.listener()
@@ -290,4 +281,4 @@ class reminder(commands.Cog):
 
 
 async def setup(bot):
-	await bot.add_cog(reminder(bot))
+	await bot.add_cog(Reminder(bot))
