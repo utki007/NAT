@@ -1,7 +1,7 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
-from utils.paginator import Paginator
+from utils.views.paginator import Paginator
 class Button(discord.ui.View):
 	def __init__(self):
 		super().__init__(timeout=1)

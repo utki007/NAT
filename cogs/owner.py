@@ -3,7 +3,7 @@ import contextlib
 import io
 from traceback import format_exception
 import textwrap
-from utils.paginator import Contex_Paginator
+from utils.views.paginator import Contex_Paginator
 from discord import app_commands
 from discord.ext import commands
 from utils.functions import clean_code
