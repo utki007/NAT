@@ -84,8 +84,8 @@ else:
 	bot.amari = os.environ["amari"]
 
 # fetching assets
-if os.path.exists(os.getcwd()+"./assets/colors.json"):
-	with open("./assets/colors.json") as file_data:
+if os.path.exists(os.getcwd()+"./utils/assets/colors.json"):
+	with open("./utils/assets/colors.json") as file_data:
 		bot.color = json.load(file_data)
 		for color in bot.color:
 			bot.color[color] = discord.Color(literal_eval(bot.color[color]))
