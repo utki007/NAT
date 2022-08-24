@@ -27,7 +27,8 @@ class MyBot(commands.Bot):
 			case_insensitive=True,
 			owner_ids=[488614633670967307, 301657045248114690],
 			intents=discord.Intents.all(),
-			application_id=951019275844460565,
+			# application_id=951019275844460565, # for nat
+			application_id=1010883367119638658 # for natasha
 		)
 
 	async def setup_hook(self):
