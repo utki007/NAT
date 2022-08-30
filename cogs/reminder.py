@@ -254,10 +254,10 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
 
 		for member in member_list:
 			try:
-				await member.send(content = content, embed = reminder_embed, allowed_mentions=discord.AllowedMentions(everyone = False, users = False, roles = False, replied_user = True))
+				await member.send(content = content, embed = reminder_embed)
 				await asyncio.sleep(0.5)
 			except:
-				await channel.send(content = f"{member.mention}, {content}", embed = reminder_embed)
+				await channel.send(content = f"{member.mention}, Your reminder ended!", embed = reminder_embed, allowed_mentions=discord.AllowedMentions(everyone = False, users = True, roles = False, replied_user = True))
 
 		await self.bot.doc_remider.delete(reminder_data)
 
