@@ -62,8 +62,7 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
 			'about': about,
 			'time': datetime.datetime.now() + datetime.timedelta(seconds=cd),
 			'created_at': datetime.datetime.now(),
-			'remind_in_seconds': cd,
-			'members': [interaction.user.id]
+			'remind_in_seconds': cd
 		}
 		await interaction.client.doc_remider.upsert(reminder_data)
 
@@ -84,15 +83,7 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
 		if reminder_data == None:
 			return await interaction.edit_original_response(content="Invalid/Expired reminder!")
 		if reminder_data['host_id'] != interaction.user.id:
-			if interaction.user.id not in reminder_data['members']:
-				return await interaction.edit_original_response(content="You are not subscribed to that reminder!")
-			else:
-				reminder_data['members'].remove(interaction.user.id)
-				if len(reminder_data) > 0:
-					await interaction.client.doc_remider.update(reminder_data)
-				else:
-					await interaction.client.doc_remider.delete(reminder_data)
-				return await interaction.edit_original_response(content=f"You have successfully unsubscribed from **Reminder #{reminder_data['_id']}** for `{reminder_data['about']}`!")
+			return await interaction.edit_original_response(content="You are not subscribed to that reminder!")
 		else:
 			await interaction.client.doc_remider.delete(reminder_data)
 			return await interaction.edit_original_response(content=f"You have successfully deleted **Reminder #{reminder_data['_id']}** for `{reminder_data['about']}`!")
@@ -170,7 +161,7 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
 				content += f'\n<:nat_reply_cont:1011501118163013634> **About:** {reminder["about"]}\n\n'
 				desc.append(content)
 		if reminders == None or reminders == [] or len(desc) < 1:
-			return await interaction.edit_original_response(content=f"You don't have any reminders set.")
+			return await interaction.response.send_message(content=f"You don't have any reminders set.")
 		
 		pages = []
 		for i in range(0,len(desc),3): 
@@ -194,7 +185,7 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
 	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
 	async def reminderSubscibe(self, interaction: discord.Interaction, reminder_id: int):
-		await interaction.response.defer(ephemeral=True)
+		await interaction.response.defer()
 		reminder_data = await interaction.client.doc_remider.find({'_id': reminder_id})
 		if reminder_data == None:
 			return await interaction.edit_original_response(content="Invalid/Expired reminder!")
@@ -205,19 +196,32 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
 				await self.bot.doc_remider.insert({"_id": "reminder", "counter": id})
 			else:
 				counter["counter"] += 1
-			id = counter["counter"]
-			await self.bot.doc_remider.update(counter)
+				id = counter["counter"]
+				await self.bot.doc_remider.update(counter)
+
 			message = await interaction.original_response()
-			reminder_data['id'] = id
-			reminder_data['host_id'] = interaction.user.id
-			reminder_data['guild_id'] = interaction.guild.id
-			reminder_data['channel_id'] = interaction.channel.id
-			reminder_data['message_id'] = message.id
-			reminder_data['message_link'] = message.jump_url
-			return await interaction.edit_original_response(
-				content=f"Alright **{interaction.user.name}**, I'll remind you about `{reminder_data['about']}` in **{await convert_to_human_time((reminder_data['time'] - datetime.datetime.now()).total_seconds())}**. (at <t:{int(reminder_data['time'])}>)"
+			cd = int((reminder_data['time'] - datetime.datetime.now()).total_seconds())
+			about = reminder_data['about']
+			reminder_data = {
+				'_id': id,
+				'host_id': interaction.user.id,
+				'guild_id': interaction.guild.id,
+				'channel_id': interaction.channel.id,
+				'message_id': message.id,
+				'message_link': message.jump_url,
+				'about': reminder_data['about'],
+				'time': reminder_data['time'],
+				'created_at': datetime.datetime.now(),
+				'remind_in_seconds': cd
+			}
+			await interaction.client.doc_remider.upsert(reminder_data)
+
+			await interaction.edit_original_response(
+				content=f"Alright **{interaction.user.name}**, I'll remind you about `{about}` in **{await convert_to_human_time(cd)}**. (at <t:{int(datetime.datetime.timestamp(datetime.datetime.now() + datetime.timedelta(seconds=cd)))}>)"
 				f"\nThis reminder's ID is `{reminder_data['_id']}`."
 			)
+			if cd < 90:
+				self.bot.dispatch('reminder_end', reminder_data, True)
 		else:
 			return await interaction.edit_original_response(content="You are already subscribed to that reminder!")
 
@@ -240,19 +244,16 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
 		except discord.NotFound:
 			return await self.bot.doc_remider.delete(reminder_data['_id'])
 
-		member_list = [await self.bot.fetch_user(member) for member in reminder_data['members']]
-		member_list = [member for member in member_list if member != None]
-
 		content = f'Your reminder ended: **{reminder_data["about"]}**'
 		time_passed = await convert_to_human_time((datetime.datetime.now() - reminder_data['created_at']).total_seconds())
 
 		reminder_embed = discord.Embed(
 			title=f'Reminder #{reminder_data["_id"]}',
-			description=f"You asked to be reminded for `{reminder_data['about']}` [{time_passed} ago]({message.jump_url}).",
+			description=f"You asked to be reminded for **{reminder_data['about']}** [{time_passed} ago]({message.jump_url}).",
 			color=self.bot.color['default']
 		)
-
-		for member in member_list:
+		member = await self.bot.fetch_user(reminder_data['host_id'])
+		if member != None:
 			try:
 				await member.send(content = content, embed = reminder_embed)
 				await asyncio.sleep(0.5)
