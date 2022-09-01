@@ -69,7 +69,7 @@ class Help(commands.Cog):
                         else:
                             extra_flags = True
 
-                        query += f"**{argument.display_name}:** `{argument.description}`"
+                        query += f"**{argument.display_name}:** `{argument.description}`\n"
                     if extra_flags == True:
                         useage += f" <Extra Flags>"
                     sub_cmd_embed.add_field(name="Usage:", value=f"`{useage}`")
