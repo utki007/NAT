@@ -19,6 +19,9 @@ dt_fmt = '%Y-%m-%d %H:%M:%S'
 formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
+
+intents = discord.Intents.all()
+intents.presences = False
 class MyBot(commands.Bot):
 	def __init__(self):
 		
@@ -26,9 +29,9 @@ class MyBot(commands.Bot):
 			command_prefix=["nat "],
 			case_insensitive=True,
 			owner_ids=[488614633670967307, 301657045248114690],
-			intents=discord.Intents.all(),
-			# application_id=951019275844460565, # for nat
-			application_id=1010883367119638658 # for natasha
+			intents=intents,
+			application_id=951019275844460565, # for nat
+			# application_id=1010883367119638658 # for natasha
 		)
 
 	async def setup_hook(self):
