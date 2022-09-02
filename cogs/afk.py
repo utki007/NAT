@@ -3,8 +3,9 @@ import datetime
 from discord import app_commands, Interaction
 from discord.ext import commands
 from utils.db import Document
+from utils.views import paginator
 
-class Afk(commands.Cog):
+class Afk(commands.Cog, name="Afk"):
     def __init__(self, bot):
         self.bot = bot
         self.bot.afk = Document(self.bot.db, "afk")
@@ -37,20 +38,45 @@ class Afk(commands.Cog):
                     if str(message.guild.id) in afk['guilds']:
                         await message.reply(f"{user.mention} is afk: {afk['guilds'][str(message.guild.id)]['reason']}", delete_after=10, allowed_mentions=discord.AllowedMentions(users=False, roles=False, everyone=False))
         
-    @app_commands.command(name="afk", description="Set your afk status", extras={'example': '/afk I am afk'})
-    @app_commands.describe(reason='Reason for being afk')
+    @app_commands.command(name="set", description="Set your afk status", extras={'example': '/afk set [message]'})
+    @app_commands.describe(message='Reason for being afk')
     @app_commands.checks.cooldown(1, 60, key=lambda i: (i.guild_id, i.user.id))
-    async def afk(self, interaction: Interaction, reason:str=None):
+    async def afk(self, interaction: Interaction, message:str=None):
         data = await self.bot.afk.find(interaction.user.id)
         if data:
-            data['guilds'][str(interaction.guild_id)] = {'reason': reason, 'started':  round(datetime.datetime.now().timestamp())}
+            data['guilds'][str(interaction.guild_id)] = {'reason': message, 'started':  round(datetime.datetime.now().timestamp())}
             await self.bot.afk.update(interaction.user.id, data)
         else:
-            data = {'_id': interaction.user.id, 'guilds': {str(interaction.guild_id): {'reason': reason, 'started':  round(datetime.datetime.now().timestamp())}}}
+            data = {'_id': interaction.user.id, 'guilds': {str(interaction.guild_id): {'reason': message, 'started':  round(datetime.datetime.now().timestamp())}}}
             await self.bot.afk.insert(data)
         
-        await interaction.response.send_message(f"Set your afk status to `{reason}`", ephemeral=True)
+        await interaction.response.send_message(f"Set your afk status to `{message}`", ephemeral=True)
         self.afk_cache[interaction.user.id] = data
+    
+    # @app_commands.command(name="list", description="List all afk users", extras={'example': '/afk list'})
+    # @app_commands.checks.cooldown(1, 180, key=lambda i: (i.guild_id, i.user.id))
+    # async def list(self, interaction: Interaction):
+    #     data = self.afk_cache.values()
+    #     #make a list with 5 users per page if interaction.guild.id is in data['guilds'].keys()
+    #     if interaction.guild.id in [d['guilds'].keys() for d in data]:
+    #         pages = []
+    #         for i in range(0, len(data), 5):
+    #             pages.append(data[i:i+5])
+    #     embed_list = []
+    #     for page in pages:
+    #         embed = discord.Embed(title=f"List of Afk user", description="\n".join([f"{user.mention} - {d['guilds'][str(interaction.guild_id)]['reason']}" for user, d in page]), color=0x00ff00)
+    #         embed_list.append(embed)
+        
+
+    #     custom_button = [
+	# 		# discord.ui.Button(label="<<", style=discord.ButtonStyle.gray),
+	# 		discord.ui.Button(label="<", style=discord.ButtonStyle.blurple),
+	# 		discord.ui.Button(label="◼", style=discord.ButtonStyle.blurple),
+	# 		discord.ui.Button(label=">", style=discord.ButtonStyle.blurple),
+	# 		# discord.ui.Button(label=">>", style=discord.ButtonStyle.gray)
+	# 	]
+    #     await paginator(interaction, page, custom_button).start(embeded=True, quick_navigation=False)
+
 
 async def setup(bot):
     await bot.add_cog(Afk(bot))
