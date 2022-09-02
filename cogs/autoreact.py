@@ -28,6 +28,8 @@ class AutoReact(commands.GroupCog, name='autoreact', description='Auto react to 
                 if str(message.guild.id) in autoreact['guilds']:
                     if autoreact['last_reacted'] is None:
                         autoreact['last_reacted'] = datetime.datetime.now()
+                        if message.author.id == user.id:
+                            continue
                         await message.add_reaction(autoreact['guilds'][str(message.guild.id)]['emoji'])
                     else:
                         #check if last reacted was 30s ago
