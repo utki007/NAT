@@ -19,7 +19,7 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
 	def cog_unload(self) -> None:
 		self.remindertask.cancel()
 
-	@app_commands.command(name="create", description="Create a reminder")
+	@app_commands.command(name="create", description="Create a reminder", extras={'example': '/reminder create <about> <time>'})
 	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
 	@app_commands.describe(time="Enter time in format: 1h30m2s", about="Enter the message you want to be reminded of")
@@ -73,7 +73,7 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
 		if cd < 90:
 			self.bot.dispatch('reminder_end', reminder_data, True)
 
-	@app_commands.command(name="cancel", description="Cancel a reminder by id")
+	@app_commands.command(name="cancel", description="Cancel a reminder by id", extras={'example': '/reminder cancel <id>'})
 	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
 	@app_commands.describe(reminder_id = "ID of the reminder")
@@ -88,7 +88,7 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
 			await interaction.client.doc_remider.delete(reminder_data)
 			return await interaction.edit_original_response(content=f"You have successfully deleted **Reminder #{reminder_data['_id']}** for `{reminder_data['about']}`!")
 
-	@app_commands.command(name="clear", description="Clears all reminders")
+	@app_commands.command(name="clear", description="Clears all reminders", extras={'example': '/reminder clear'})
 	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
 	async def reminderClear(self, interaction: discord.Interaction, clear_from: Literal['current server', 'all servers']):
@@ -135,7 +135,7 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
 				description=f'Come back once you are sure about what you are doing.')
 			return await interaction.edit_original_response(embed=warning, content=None, view=None)
 
-	@app_commands.command(name="list", description="List of all reminders")
+	@app_commands.command(name="list", description="List of all reminders", extras={'example': '/reminder list [current server|all servers]'})
 	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
 	async def reminderList(self, interaction: discord.Interaction, list_from: Literal['current server', 'all servers']):
@@ -181,7 +181,7 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
 		]
 		await Paginator(interaction, pages, custom_button).start(embeded=True, quick_navigation=False)
 	
-	@app_commands.command(name="subscibe", description="Creates a copy of a reminder")
+	@app_commands.command(name="subscibe", description="Creates a copy of a reminder", extras={'example': '/reminder subscibe <reminder id>'})
 	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
 	async def reminderSubscibe(self, interaction: discord.Interaction, reminder_id: int):

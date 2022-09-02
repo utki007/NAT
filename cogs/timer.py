@@ -47,7 +47,7 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 	def cog_unload(self) -> None:
 		self.timertask.cancel()
 
-	@app_commands.command(name="start", description="Create a timer")
+	@app_commands.command(name="start", description="Create a timer", extras={'example': '/timer start [time]'})
 	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
 	@app_commands.describe(time = "Enter time in format: 1h30m2s")
@@ -97,7 +97,7 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 		if cd < 90:
 			self.bot.dispatch('timer_end', timer_data, True)
 
-	@app_commands.command(name="end", description="End a timer")
+	@app_commands.command(name="end", description="End a timer", extras={'example': '/timer end [timer_id]'})
 	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
 	@app_commands.describe(message_id = "Enter Message ID of an active timer")
@@ -117,7 +117,7 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 				title=f"<a:nat_warning:1010618708688912466> **|** Invalid message id")
 			return await interaction.edit_original_response(embed=warning)
 
-	@app_commands.command(name="delete", description="Delete a timer")
+	@app_commands.command(name="delete", description="Delete a timer", extras={'example': '/timer delete [timer_id]'})
 	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
 	@app_commands.describe(message_id = "Enter Message ID of an active timer")
@@ -148,7 +148,7 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 				title=f"<a:nat_warning:1010618708688912466> **|** Invalid message id")
 			return await interaction.edit_original_response(embed=warning)
 
-	@app_commands.command(name="re-ping", description="Ping from an expired timer!")
+	@app_commands.command(name="re-ping", description="Ping from an expired timer!" , extras={'example': '/timer re-ping [timer_id]'})
 	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
 	@app_commands.describe(message_id = "Inactive timer message id < 1h")

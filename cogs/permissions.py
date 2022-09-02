@@ -42,9 +42,10 @@ class Permissions(commands.GroupCog, name="permissions", description="Manage per
     async def on_ready(self):
         print(f"{self.__class__.__name__} Cog has been loaded\n-----")
 
-    @app_commands.command(name="view", description="Edit permissions of a command")
+    @app_commands.command(name="view", description="view permissions of a command", extras={'example': '/permissions view [command]'})
     @app_commands.describe(command="command to edit permissions")
     @app_commands.autocomplete(command=command_auto_complete)
+    @app_commands.default_permissions(administrator=True)
     async def _view(self, interaction: discord.Interaction, command: str):
         command = await interaction.client.tree.fetch_command(int(command))
         try:
@@ -76,10 +77,11 @@ class Permissions(commands.GroupCog, name="permissions", description="Manage per
 
         await interaction.response.send_message(embed=embed)
     
-    @app_commands.command(name="set", description="Set permissions of a command")
+    @app_commands.command(name="set", description="Set permissions of a command", extras={"example": "/permissions set [command] [permissions]"})
     @app_commands.describe(command="command to set permissions", channel="select channel to set permission", role="select role to set permission", member="select user to set permission", _type="type of permission to set")
     @app_commands.autocomplete(command=command_auto_complete)
-    async def _set(self, interaction: discord.Interaction, command: str, channel: discord.TextChannel=None, role: discord.Role=None, member:discord.Member=None, _type: bool=False):
+    @app_commands.default_permissions(administrator=True)
+    async def _set(self, interaction: discord.Interaction, command: str, _type: bool, channel: discord.TextChannel=None, role: discord.Role=None, member:discord.Member=None, ):
         ouath_data = await self.auth_db.find(interaction.user.id)
         await interaction.response.defer(thinking=True)
         if not ouath_data:

@@ -10,7 +10,7 @@ class Dump(commands.GroupCog, name="dump"):
 	def __init__(self, bot):
 		self.bot = bot
 	
-	@app_commands.command(name="role", description="Dump a role")
+	@app_commands.command(name="role", description="Dump a role", extras={'examples': '/dump role [role]'})
 	@app_commands.describe(role='Role to dump')
 	async def dump_role(self, interaction: Interaction, role:discord.Role):
 		msg = f"{role.name} has {len(role.members)} members"
@@ -27,7 +27,7 @@ class Dump(commands.GroupCog, name="dump"):
 			embed = discord.Embed(title=f"{role.name} dump", description="\n".join([f"{member.name}#{member.discriminator} | {member.id}" for member in role.members]), color=role.color)
 			await interaction.response.send_message(content=msg, embeds=[embed])
 	
-	@app_commands.command(name="channel", description="Dump a channel")
+	@app_commands.command(name="channel", description="Dump a channel", extras={'example': '/dump channel [channel]'})
 	@app_commands.describe(channel='Channel to dump')
 	async def dump_channel(self, interaction: Interaction, channel:discord.TextChannel):
 		msg = f"{channel.name} has {len(channel.members)} members"
@@ -42,7 +42,7 @@ class Dump(commands.GroupCog, name="dump"):
 			await interaction.edit_original_response(content=msg, attachments=[file])
 		
 		else:
-			embed = discord.Embed(title=f"{channel.name} dump", description="\n".join([f"{member.name}#{member.discriminator} | {member.id}" for member in channel.members]), color=self.bot.color['default'])
+			embed = discord.Embed(title=f"{channel.name} dump", description="\n".join([f"{member.mention} | `{member.id}`" for member in channel.members]), color=self.bot.color['default'])
 			await interaction.response.send_message(content=msg, embeds=[embed])
 
 
@@ -50,8 +50,7 @@ class serverUtils(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 
-
-	@app_commands.command(name="ping", description="Ping pong! 🏓")
+	@app_commands.command(name="ping", description="Ping pong! 🏓", extras={'example': '/ping'})
 	@app_commands.checks.cooldown(1, 30, key=lambda i: (i.guild_id, i.user.id))
 	async def ping(self, interaction:  discord.Interaction):
 		await interaction.response.send_message("Pong! 🏓")
