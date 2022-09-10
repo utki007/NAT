@@ -1,7 +1,7 @@
 import asyncio
 import datetime
 from tabnanny import check
-from typing import Literal
+from typing import Literal, List
 from unicodedata import name
 import discord
 from discord import app_commands
@@ -9,7 +9,11 @@ from discord.ext import commands, tasks
 from utils.convertor import *
 from utils.views.paginator import Paginator
 from utils.views.confirm import Confirm
-
+from copy import deepcopy
+import enum
+class RemiderType(enum.Enum):
+	WORK = "work"
+	NORMAL = "normal"
 
 class Reminder(commands.GroupCog, name="reminder", description="Reminder commands"):
 	def __init__(self, bot):
@@ -19,11 +23,25 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
 	def cog_unload(self) -> None:
 		self.remindertask.cancel()
 
+	async def remider_auto_complete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
+		current_remider = await self.bot.doc_remider.find_many_by_custom({'host_id': interaction.user.id, 'guild_id': interaction.guild.id})
+		if len(current) == 0:
+			choices = [
+				app_commands.Choice(name=f"#{remider['_id']} - " + remider['about'] if len(remider) < 50 else f"{remider['about'][:50]}...", value=remider['_id'])
+				for remider in current_remider
+			]
+		else:
+			choices = [
+				app_commands.Choice(name=f"#{remider['_id']} - " + remider['about'] if len(remider) < 50 else f"{remider['about'][:50]}...", value=remider['_id'])
+				for remider in current_remider if current.lower() in remider['about'].lower()
+			]
+		return choices[:24]
+
 	@app_commands.command(name="create", description="Create a reminder", extras={'example': '/reminder create <about> <time>'})
 	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
-	@app_commands.describe(time="Enter time in format: 1h30m2s", about="Enter the message you want to be reminded of")
-	async def reminderCreate(self, interaction:  discord.Interaction, about: str, time: str):
+	@app_commands.describe(time="Enter time in format: 1h30m2s", about="Enter the message you want to be reminded of", recurring="How many times your reminder should repeat")
+	async def reminderCreate(self, interaction:  discord.Interaction, about: str, time: str, recurring: app_commands.Range[int,2, 1000]= 1):
 		try:
 			time = await convert_to_time(time)
 			cd = int(await calculate(time))
@@ -62,7 +80,10 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
 			'about': about,
 			'time': datetime.datetime.now() + datetime.timedelta(seconds=cd),
 			'created_at': datetime.datetime.now(),
-			'remind_in_seconds': cd
+			'remind_in_seconds': cd,
+			'type': RemiderType.NORMAL.value,
+			'recurring': recurring,
+			'reminded': None,
 		}
 		await interaction.client.doc_remider.upsert(reminder_data)
 
@@ -77,6 +98,7 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
 	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
 	@app_commands.describe(reminder_id = "ID of the reminder")
+	@app_commands.autocomplete(reminder_id=remider_auto_complete)
 	async def reminderCancel(self, interaction:  discord.Interaction, reminder_id: int):
 		await interaction.response.defer(ephemeral=True)
 		reminder_data = await interaction.client.doc_remider.find({'_id': reminder_id})
@@ -110,7 +132,7 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
 			return await interaction.edit_original_response(embed=warning, content=None, view=None)
 
 		# sending a confirmation dialog box
-		view = Confirm()
+		view = Confirm(timeout=60)
 		await interaction.followup.send(content=question, view=view)
 		await view.wait()
 
@@ -212,7 +234,10 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
 				'about': reminder_data['about'],
 				'time': reminder_data['time'],
 				'created_at': datetime.datetime.now(),
-				'remind_in_seconds': cd
+				'remind_in_seconds': cd,
+				'recurring': 1,
+				'reminded': None,
+				'type': RemiderType.NORMAL.value
 			}
 			await interaction.client.doc_remider.upsert(reminder_data)
 
@@ -230,37 +255,168 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
 		print(f"{self.__class__.__name__} Cog has been loaded\n-----")
 
 	@commands.Cog.listener()
+	async def on_message(self, message):
+		if not message.author.bot and not message.author.id ==270904126974590976: return
+		if message.interaction == None: return
+		if message.interaction.name == "work shift":
+			try:
+				edited = await self.bot.wait_for('message_edit', check=lambda m: m.id == message.id and m.channel.id == message.channel.id, timeout=60)
+				self.bot.dispatch('work_shift', edited)
+			except:
+				pass
+				
+	@commands.Cog.listener()
+	async def on_work_shift(self, message):
+		user: discord.User = message.interaction.user
+		data = await self.bot.doc_remider.find_by_custom({'host_id': user.id, 'type': RemiderType.value})
+		if not data:
+
+			view = Confirm(user, 60)
+			msg = await message.channel.send(f"{user.mention} Do want to be reminded about your future work shifts?", view=view)
+			await view.wait()
+
+			if view.value == True:
+				counter = await self.bot.doc_remider.find("reminder")
+				reminder_data = {
+					'_id': counter['counter'],
+					'host_id': user.id,
+					'guild_id': message.guild.id,
+					'channel_id': message.channel.id,
+					'message_id': msg.id,
+					'message_link': msg.jump_url,
+					'about': "Work Shift",
+					'time': datetime.datetime.now() + datetime.timedelta(hours=1),
+					'created_at': datetime.datetime.now(),
+					'remind_in_seconds': 3600,
+					'type': RemiderType.WORK.value,
+					'reminded': False,
+					'recurring': 1,
+					'enabled': True
+				}
+				await self.bot.doc_remider.increment("reminder", 1, "counter")
+				await self.bot.doc_remider.insert(reminder_data)
+
+			elif view.value == False:
+
+				await msg.edit(content=f"{user.mention} Alright, I won't remind you about your future work shifts.", view=None)
+				reminder_data = {
+					'_id': counter['counter'],
+					'host_id': user.id,
+					'guild_id': message.guild.id,
+					'channel_id': message.channel.id,
+					'message_id': msg.id,
+					'message_link': msg.jump_url,
+					'about': "Work Shift",
+					'time': datetime.datetime.now() + datetime.timedelta(hours=1),
+					'created_at': datetime.datetime.now(),
+					'remind_in_seconds': 3600,
+					'type': RemiderType.WORK.value,
+					'reminded': False,
+					'recurring': 1,
+					'enabled': False
+				}
+				await self.bot.doc_remider.upsert(reminder_data)
+				await message.add_reaction("<:nat_cross:1010965036237324430>")
+		else:
+			if data['enabled'] == False:
+				return
+
+			data['reminded'] = False
+			data['time'] = datetime.datetime.now() + datetime.timedelta(hours=1)
+			data['remind_in_seconds'] = 3600
+			data['recurring'] = 1
+			await self.bot.doc_remider.upsert(data)
+			await message.add_reaction("<:nat_tick:1010964967970848778>")
+
+	@commands.Cog.listener()
 	async def on_reminder_end(self, reminder_data, sleep: bool = None):
+		remider_type = reminder_data['type']
 		if sleep:
 			time_diff = (reminder_data['time'] - datetime.datetime.now()).total_seconds()
 			await asyncio.sleep(time_diff)
-			reminder_data = await self.bot.doc_remider.find({'_id': reminder_data['_id']})
+			
+		match remider_type:
 
-		channel = self.bot.get_channel(reminder_data['channel_id'])
-		if channel == None:
-			return await self.bot.doc_remider.delete(reminder_data['_id'])
-		try:
-			message = await channel.fetch_message(reminder_data['message_id'])
-		except discord.NotFound:
-			return await self.bot.doc_remider.delete(reminder_data['_id'])
+			case 'work':
+				if reminder_data['reminded'] == True or reminder_data['enabled'] == False: return
+				user = self.bot.get_user(reminder_data['host_id'])
+				embed = discord.Embed(description=f"Hey you can work again! {user.mention}", color=discord.Color.green())
+				embed.set_footer(text="To stop getting reminded about work shifts, use /reminder dank type:work set:False", icon_url=self.bot.user.avatar.url)
+				try:
+					await user.send(embed=embed)
+				except discord.HTTPException:
+					channel = self.bot.get_channel(reminder_data['channel_id'])
+					await channel.send(f"{user.mention}",embed=embed)
+					reminder_data['reminded'] = True
+					await self.bot.doc_remider.update(reminder_data)
+				return
 
-		content = f'Your reminder ended: **{reminder_data["about"]}**'
-		time_passed = await convert_to_human_time((datetime.datetime.now() - reminder_data['created_at']).total_seconds())
+			case 'normal':
+				if reminder_data['recurring'] == 0: return await self.bot.doc_remider.delete(reminder_data['_id'])
+				guild = self.bot.get_guild(reminder_data['guild_id'])
+				if guild == None: return await self.bot.doc_remider.delete(reminder_data)
 
-		reminder_embed = discord.Embed(
-			title=f'Reminder #{reminder_data["_id"]}',
-			description=f"You asked to be reminded for **{reminder_data['about']}** [{time_passed} ago]({message.jump_url}).",
-			color=self.bot.color['default']
-		)
-		member = await self.bot.fetch_user(reminder_data['host_id'])
-		if member != None:
-			try:
-				await member.send(content = content, embed = reminder_embed)
-				await asyncio.sleep(0.5)
-			except:
-				await channel.send(content = f"{member.mention}, Your reminder ended!", embed = reminder_embed, allowed_mentions=discord.AllowedMentions(everyone = False, users = True, roles = False, replied_user = True))
+				channel = self.bot.get_channel(reminder_data['channel_id'])
+				if channel == None: return await self.bot.doc_remider.delete(reminder_data)
+				try:
+					message = await channel.fetch_message(reminder_data['message_id'])
+				except discord.NotFound:
+					return await self.bot.doc_remider.delete(reminder_data)
+				
+				content = f"Hey, you asked me to remind you about `{reminder_data['about']}`. (at <t:{round(reminder_data['created_at'].timestamp())}:R>)\nHere's the link to the message: {reminder_data['message_link']}"
 
-		await self.bot.doc_remider.delete(reminder_data)
+				remider_embed = discord.Embed(title=f"Reminder #{reminder_data['_id']}",description=content,color=self.bot.color['default'])
+
+				mmeber  = guild.get_member(reminder_data['host_id'])
+				if mmeber == None: return await self.bot.doc_remider.delete(reminder_data)
+				try:
+					await mmeber.send(embed=remider_embed)
+					await asyncio.sleep(0.5)
+					print("faild to send dm")
+				except discord.HTTPException:
+					print("Sent to channel")
+					await channel.send(f"{mmeber.mention}", embed=remider_embed)
+					await asyncio.sleep(0.5)
+				reminder_data['recurring'] -= 1
+				if reminder_data['recurring'] == 0:
+					await self.bot.doc_remider.delete(reminder_data['_id'])
+				else:
+
+					reminder_data['time'] = reminder_data['time'] + datetime.timedelta(seconds=reminder_data['remind_in_seconds'])
+					await self.bot.doc_remider.update(reminder_data)
+
+	# @commands.Cog.listener()
+	# async def on_reminder_end(self, reminder_data, sleep: bool = None):
+	# 	if sleep:
+	# 		time_diff = (reminder_data['time'] - datetime.datetime.now()).total_seconds()
+	# 		await asyncio.sleep(time_diff)
+	# 		reminder_data = await self.bot.doc_remider.find({'_id': reminder_data['_id']})
+
+	# 	channel = self.bot.get_channel(reminder_data['channel_id'])
+	# 	if channel == None:
+	# 		return await self.bot.doc_remider.delete(reminder_data['_id'])
+	# 	try:
+	# 		message = await channel.fetch_message(reminder_data['message_id'])
+	# 	except discord.NotFound:
+	# 		return await self.bot.doc_remider.delete(reminder_data['_id'])
+
+	# 	content = f'Your reminder ended: **{reminder_data["about"]}**'
+	# 	time_passed = await convert_to_human_time((datetime.datetime.now() - reminder_data['created_at']).total_seconds())
+
+	# 	reminder_embed = discord.Embed(
+	# 		title=f'Reminder #{reminder_data["_id"]}',
+	# 		description=f"You asked to be reminded for **{reminder_data['about']}** [{time_passed} ago]({message.jump_url}).",
+	# 		color=self.bot.color['default']
+	# 	)
+	# 	member = await self.bot.fetch_user(reminder_data['host_id'])
+	# 	if member != None:
+	# 		try:
+	# 			await member.send(content = content, embed = reminder_embed)
+	# 			await asyncio.sleep(0.5)
+	# 		except:
+	# 			await channel.send(content = f"{member.mention}, Your reminder ended!", embed = reminder_embed, allowed_mentions=discord.AllowedMentions(everyone = False, users = True, roles = False, replied_user = True))
+
+	# 	await self.bot.doc_remider.delete(reminder_data)
 
 	@tasks.loop(seconds=60)
 	async def reminder_loop(self):
@@ -271,8 +427,10 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
 			time_diff = (reminder['time'] - datetime.datetime.now()).total_seconds()
 			if time_diff <= 0:
 				self.bot.dispatch('reminder_end', reminder, False)
+				return
 			elif time_diff <= 60:
 				self.bot.dispatch('reminder_end', reminder, True)
+				return
 			else:
 				pass
 
