@@ -6,7 +6,8 @@ from utils.db import Document
 from typing import List
 from utils.views import confirm
 from utils.views import dono
-class ServerSettings(commands.GroupCog, name="serversettings"):
+
+class ServerSettings(commands.GroupCog, name="serversettings", description="Manage bot's settings for your server"):
     def __init__(self, bot):
         self.bot = bot
         self.bot.donation_config = Document(self.bot.db, "donation_config")
