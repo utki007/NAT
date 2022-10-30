@@ -7,7 +7,7 @@ from typing import Literal
 from utils.db import Document
 from utils.views.confirm import Confirm
 
-class DankReminder(commands.GroupCog, name="dankreminder"):
+class DankReminder(commands.GroupCog, name="dankreminder", description="Manage your dank reminders"):
     def __init__(self, bot):
         self.bot = bot
         self.bot.dank_reminders_cache = {}
