@@ -76,6 +76,7 @@ class DankReminder(commands.GroupCog, name="dankreminder"):
     @commands.Cog.listener()
     async def on_dank_reminder(self, data: dict, _type: str):
         guild = self.bot.get_guild(data['reminders'][_type]['last_guild'])
+        if guild is None: return
         channel = guild.get_channel(data['reminders'][_type]['channel'])
         user = guild.get_member(data['_id'])
         if user is None:
@@ -203,7 +204,6 @@ class DankReminder(commands.GroupCog, name="dankreminder"):
                 self.message_in_progress.remove(message.id)
                 return
         else:
-            print("work shift in data updating")
             if data['reminders']['work_shift']['enabled'] == False: return
             data['reminders']['work_shift']['last_used'] = datetime.datetime.now()
             data['reminders']['work_shift']['next_reminder'] = datetime.datetime.now() + datetime.timedelta(hours=1)
