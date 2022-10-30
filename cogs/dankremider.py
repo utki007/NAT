@@ -153,6 +153,7 @@ class DankReminder(commands.GroupCog, name="dankreminder", description="Manage y
         else:
             if data['reminders']['crime']['enabled']:
                 data['reminders']['crime']['last_reminder'] = datetime.datetime.now()
+                data['reminders']['work_shift']['channel'] = message.channel.id
                 data['reminders']['crime']['next_reminder'] = datetime.datetime.now() + datetime.timedelta(seconds=45)
                 data['reminders']['crime']['reminded'] = False
                 await self.update_data(self, user, data)
@@ -206,6 +207,7 @@ class DankReminder(commands.GroupCog, name="dankreminder", description="Manage y
         else:
             if data['reminders']['work_shift']['enabled'] == False: return
             data['reminders']['work_shift']['last_used'] = datetime.datetime.now()
+            data['reminders']['work_shift']['channel'] = message.channel.id
             data['reminders']['work_shift']['next_reminder'] = datetime.datetime.now() + datetime.timedelta(hours=1)
             data['reminders']['work_shift']['reminded'] = False
             await self.update_data(self, user, data)
