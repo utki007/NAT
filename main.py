@@ -43,7 +43,7 @@ class MyBot(commands.Bot):
 		bot.doc_remider = Document(bot.db, "reminders")
 
 		for file in os.listdir('./cogs'):
-			if file.endswith('.py') and not file.startswith("_"):
+			if file.endswith('.py') and not file.startswith("_") or file.startswith('dankremider') or file.startswith('help') or file.startswith('owner') or file.startswith('events'):
 				await bot.load_extension(f'cogs.{file[:-3]}')
 	
 	async def on_ready(self):		
@@ -60,7 +60,7 @@ class MyBot(commands.Bot):
 			await bot.tree.sync(guild=discord.Object(guild.id))
 		await bot.tree.sync()
 
-		await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.listening, name="tgk devs"))
+		await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.watching, name="Version a0.0.1"))
 
 bot = MyBot()
 
@@ -71,6 +71,15 @@ async def on_message(message):
 	if message.author.bot:
 		return
 	await bot.process_commands(message)
+
+@bot.event
+async def on_guild_join(guild):
+	if len(bot.guilds) > 20:
+		try:
+			await guild.owner.send("Sorry, I can't join your server because i have reached the maximum server limit of 20 servers.")
+		except:
+			pass
+		await guild.leave()
 
 # loading enviroment variables
 if os.path.exists(os.getcwd()+"./properties/tokens.json"):

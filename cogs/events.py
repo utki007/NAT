@@ -1,7 +1,7 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
-
+from utils.checks import Unauthorized
 class events(commands.Cog):
     
     def __init__(self, bot):
@@ -22,8 +22,19 @@ class events(commands.Cog):
                 await interaction.response.send_message(
                     f"The command is under a cooldown of **{int(h)} hours, {int(m)} minutes and {int(s)} seconds** to prevent abuse!", ephemeral=True,
                 )
+        elif isinstance(error, app_commands.MissingPermissions):
+            await interaction.response.send_message("You are missing the required permissions to use this command!", ephemeral=True)
+        elif isinstance(error, app_commands.MissingRole):
+            await interaction.response.send_message("You are missing the required role to use this command!", ephemeral=True)
+        elif isinstance(error, app_commands.MissingAnyRole):
+            await interaction.response.send_message("You are missing the required role to use this command!", ephemeral=True)
         else:
-            await interaction.response.send_message(f"An error has occured: {error}", ephemeral=True)
+            embed = discord.Embed(description="**Error:** {}".format(error), color=discord.Color.red())
+            try:
+                
+                await interaction.response.send_message(embed=embed)
+            except:
+                await interaction.followup.send(embed=embed, ephemeral=True)
 
     @commands.Cog.listener()
     async def on_ready(self):
