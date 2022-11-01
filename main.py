@@ -55,7 +55,9 @@ class MyBot(commands.Bot):
 				name="Starting up ..."
 			)
 		)
-		#await bot.tree.sync()
+		await bot.tree.sync()
+		await bot.tree.sync(guild=discord.Object(785839283847954433))
+		await bot.tree.sync(guild=discord.Object(999551299286732871))
 
 		await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.watching, name="Version a0.0.1"))
 
