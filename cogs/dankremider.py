@@ -13,14 +13,18 @@ class DankReminder(commands.GroupCog, name="dankreminder", description="Manage y
         self.bot.dank_reminders_cache = {}
         self.bot.dank_reminders = Document(self.bot.db, "dank_reminders")
         self.dank_reminder_task = self.dank_reminder.start()
-        self.command_info = {"work_shift": "</work shift:1011560371267579942>", "crime":"</crime:1011560371078832202>"}
+        self.command_info = {"work_shift": "</work shift:1011560371267579942>", "crime":"</crime:1011560371078832202>", "adventure": "</adventure:1011560371041095695>"}
         self.message_in_progress = []
+        self.reminder_task_on = False
     
     def cog_unload(self):
         self.dank_reminder_task.cancel()
     
     @tasks.loop(seconds=10)
     async def dank_reminder(self):
+        if self.reminder_task_on == True:
+            return
+        self.reminder_task_on = True
         for key, value in self.bot.dank_reminders_cache.items():
             if value['enabled'] == False: continue
             for command, rm in value['reminders'].items():
@@ -28,6 +32,7 @@ class DankReminder(commands.GroupCog, name="dankreminder", description="Manage y
                 if rm['next_reminder'] <= datetime.datetime.now():
                     if rm['reminded'] == False:
                         self.bot.dispatch("dank_reminder", value, command)
+        self.reminder_task_on = False
     
     @dank_reminder.before_loop
     async def before_dank_reminder(self):
@@ -85,20 +90,31 @@ class DankReminder(commands.GroupCog, name="dankreminder", description="Manage y
             except discord.NotFound:
                 await self.delete_data(self, data['_id'])
         
-        if _type == "work_shift":
-            await channel.send(f"Hey {user.mention}, you can use {self.command_info[_type]} again!")
-            data['reminders'][_type]['last_reminder'] = datetime.datetime.now()
-            data['reminders'][_type]['reminded'] = True
-            await self.update_data(self, user, data)
+        await channel.send(f"Hey {user.mention}, you can now use the command {self.command_info[_type]}")
+        data['reminders'][_type]['reminded'] = True
+        data['reminders'][_type]['last_reminder'] = datetime.datetime.now()
+        await self.update_data(self, user, data)
         
-        if _type == "crime":
-            await channel.send(f"Hey {user.mention}, you can use {self.command_info[_type]} again!")
-            data['reminders'][_type]['last_reminder'] = datetime.datetime.now()
-            data['reminders'][_type]['reminded'] = True
-            await self.update_data(self, user, data)
+        
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if not message.author.bot and not message.author.id == 270904126974590976: return
+        if message.guild is None: return
+        interaction= message.interaction
+
+        if interaction is None: return
+
+        if interaction.name == "adventure":
+            if isinstance(message.components[0].children[0], discord.components.SelectMenu):
+                return
+            else:
+                self.bot.dispatch("adventure_done", message)
+                        
+                    
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
+        if after.author.id != 270904126974590976: return
         if after.id in self.message_in_progress: return
         if not after.author.bot: return
         if after.guild is None: return
@@ -115,13 +131,59 @@ class DankReminder(commands.GroupCog, name="dankreminder", description="Manage y
                 self.bot.dispatch("dank_crime_done", after, after.interaction)
 
     @commands.Cog.listener()
+    async def on_adventure_done(self, message: discord.Message):
+        self.message_in_progress.append(message.id)
+        user = message.interaction.user
+        data = await self.get_cache(self, user)
+        if "adventure" not in data['reminders'].keys():
+            view = Confirm(user, 60)
+            msg = await message.channel.send(f"Hey {user.mention}, would you like to enable reminders for {self.command_info['adventure']}?", view=view)
+            view.message = msg
+            await view.wait()
+            if view.value:
+                data['reminders']['adventure'] = {
+                    "enabled": True,
+                    "last_reminder": datetime.datetime.now(),
+                    "next_reminder": datetime.datetime.now() + datetime.timedelta(minutes=3),
+                    "reminded": False,
+                    "channel": message.channel.id,
+                    "last_user": user.id,
+                    "last_guild": message.guild.id
+                }
+                await self.update_data(self, user, data)
+                await msg.edit(content=f"Hey {user.mention}, I will remind you to use {self.command_info['adventure']} in 3 minutes!", view=None)
+                await message.add_reaction("<:octane_yes:1019957051721535618>")
+            else:
+                await msg.edit(content=f"Hey {user.mention}, I won't remind you to use {self.command_info['adventure']}!", view=None)
+                data['reminders']['adventure'] = {
+                    "enabled": False,
+                    "last_reminder": datetime.datetime.now(),
+                    "next_reminder": datetime.datetime.now() + datetime.timedelta(minutes=3),
+                    "reminded": False,
+                    "channel": message.channel.id,
+                    "last_user": user.id,
+                    "last_guild": message.guild.id
+                }
+                await self.update_data(self, user, data)
+        else:
+            if data['reminders']['adventure']['enabled'] == True:
+                data['reminders']['adventure']['last_reminder'] = datetime.datetime.now()
+                data['reminders']['adventure']['next_reminder'] = datetime.datetime.now() + datetime.timedelta(minutes=3)
+                data['reminders']['adventure']['reminded'] = False
+                data['reminders']['adventure']['channel'] = message.channel.id
+                await self.update_data(self, user, data)
+                await message.add_reaction("<:octane_yes:1019957051721535618>")
+        
+        self.message_in_progress.remove(message.id)
+
+    @commands.Cog.listener()
     async def on_dank_crime_done(self, message, interaction):
         self.message_in_progress.append(message.id)
         user = interaction.user
         data = await self.get_cache(self, user)
         if "crime" not in data['reminders'].keys():
             view = Confirm(user, 60)
-            msg = await message.channel.send(f"{user.mention}, you have not set up a reminder for `/crime` yet. Would you like to set one up now?", view=view)
+            msg = await message.channel.send(f"Hey {user.mention}, would you like to enable reminders for {self.command_info['crime']}?", view=view)
             view.message = msg
             await view.wait()
             if view.value:
@@ -153,7 +215,7 @@ class DankReminder(commands.GroupCog, name="dankreminder", description="Manage y
         else:
             if data['reminders']['crime']['enabled']:
                 data['reminders']['crime']['last_reminder'] = datetime.datetime.now()
-                data['reminders']['work_shift']['channel'] = message.channel.id
+                data['reminders']['crime']['channel'] = message.channel.id
                 data['reminders']['crime']['next_reminder'] = datetime.datetime.now() + datetime.timedelta(seconds=45)
                 data['reminders']['crime']['reminded'] = False
                 await self.update_data(self, user, data)
@@ -170,7 +232,7 @@ class DankReminder(commands.GroupCog, name="dankreminder", description="Manage y
         if "work_shift" not in data["reminders"].keys():
             print("work shift not in data adding")
             view = Confirm(user, 60)
-            msg = await message.reply(f"Hey {user.mention}, you don't have a reminder set for `/work shift`, do you want to set one?", view=view)
+            msg = await message.channel.send(f"Hey {user.mention}, would you like to enable reminders for {self.command_info['work_shift']}?", view=view)
             view.message = msg
             await view.wait()
             if view.value:
@@ -217,7 +279,7 @@ class DankReminder(commands.GroupCog, name="dankreminder", description="Manage y
 
     @app_commands.command(name="toggle", description="Toggle a reminder")
     @app_commands.describe(command="Command to toggle a reminder", enabled="Enable or disable a reminder")
-    @app_commands.choices(command=[app_commands.Choice(name="All command", value="global"), app_commands.Choice(name="work shift", value="work_shift"), app_commands.Choice(name="crime", value="crime")])
+    @app_commands.choices(command=[app_commands.Choice(name="All command", value="global"), app_commands.Choice(name="work shift", value="work_shift"), app_commands.Choice(name="crime", value="crime"), app_commands.Choice(name="adventure", value="adventure")])
     async def toggle(self, interaction: discord.Interaction, command: app_commands.Choice[str], enabled: bool):
         data = await self.get_cache(self, interaction.user)
         if command == "global":
