@@ -43,7 +43,7 @@ class MyBot(commands.Bot):
 		bot.doc_remider = Document(bot.db, "reminders")
 
 		for file in os.listdir('./cogs'):
-			if file.endswith('.py') and not file.startswith("_") and file[:-3] in ['dankremider', 'help', 'owner', 'events']:
+			if file.endswith('.py') and not file.startswith("_"):
 				await bot.load_extension(f'cogs.{file[:-3]}')
 	
 	async def on_ready(self):		
@@ -59,7 +59,7 @@ class MyBot(commands.Bot):
 		await bot.tree.sync(guild=discord.Object(785839283847954433))
 		await bot.tree.sync(guild=discord.Object(999551299286732871))
 
-		await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.watching, name="Version a0.0.1"))
+		await bot.change_presence(status=discord.Status.invisible, activity=discord.Activity(type=discord.ActivityType.watching, name="Version a0.0.1"))
 
 bot = MyBot()
 
