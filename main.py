@@ -39,8 +39,7 @@ class MyBot(commands.Bot):
 		bot.mongo = motor.motor_asyncio.AsyncIOMotorClient(str(bot.connection_url))
 		bot.db = bot.mongo["NAT"]
 		bot.timer = Document(bot.db, "timer")
-		bot.oath = Document(bot.db, "oath")
-		bot.doc_remider = Document(bot.db, "reminders")
+		bot.lockdown = Document(bot.db, "lockdown")
 
 		for file in os.listdir('./cogs'):
 			if file.endswith('.py') and not file.startswith("_"):
