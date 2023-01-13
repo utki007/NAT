@@ -13,6 +13,12 @@ class settings(commands.GroupCog, name="settings"):
 		self.bot = bot
 
 	lockdown_command = app_commands.Group(name="lockdown", description="Manage the antinuke role settings")
+	
+	async def is_me(interaction: discord.Interaction) -> bool:
+		return interaction.user.id in [301657045248114690, 488614633670967307]
+	
+	async def is_admin(interaction: discord.Interaction) -> bool:
+		return interaction.user.guild_permissions.administrator
 
 	async def lockdown_profiles_list(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
 		current_panel = await self.bot.lockdown.find(interaction.guild.id)
@@ -34,6 +40,7 @@ class settings(commands.GroupCog, name="settings"):
 		return choice
 
 	@lockdown_command.command(name="create", description="Create lockdown profile", extras={'example': '/lockdown create'})
+	@app_commands.check(is_admin)
 	@app_commands.describe(name = "Enter Lockdown Profile Name")
 	async def create(self, interaction: discord.Interaction, name: str):
 		data = await self.bot.lockdown.find(interaction.guild.id)
@@ -62,6 +69,7 @@ class settings(commands.GroupCog, name="settings"):
 		await interaction.response.send_message(embed = embed)
 
 	@lockdown_command.command(name="modify", description="Modify lockdown profile")
+	@app_commands.check(is_admin)
 	@app_commands.autocomplete(name=lockdown_profiles_list, operation=lockdown_operation_list)
 	@app_commands.describe(name="Profile name", operation="Do you want to edit or delete?")
 	async def modify(self, interaction: discord.Interaction,operation:str, name:str):
