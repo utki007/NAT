@@ -3,6 +3,7 @@ import datetime
 import asyncio
 import io
 from discord import Interaction
+from discord.ui import ChannelSelect, RoleSelect
 
 async def update_embed(interaction: Interaction, data: dict, name:str , failed:bool):
 
@@ -39,15 +40,13 @@ async def update_embed(interaction: Interaction, data: dict, name:str , failed:b
 	unlockmsg_config += f"**Description:**\n```{panel['unlock_embed']['description']}```\n"
 	
 	embed.add_field(name="Embed Message for Unlockdown", value=f"{unlockmsg_config}", inline=False)
-	
-	embed.add_field(name="Embed Message for Unlockdown", value=f"{unlockmsg_config}", inline=False)
 
 	await interaction.message.edit(embed=embed)
-	await interaction.followup.send(f"Updated Lockdown Config", ephemeral=True)
+	# await interaction.followup.send(f"Updated Lockdown Config", ephemeral=True)
 
 class Lockdown_Config_Panel(discord.ui.View):
 	def __init__(self, interaction: discord.Interaction, data: dict, name: str ,message: discord.Message=None):
-		super().__init__(timeout=120)
+		super().__init__(timeout=180)
 		self.interaction = interaction
 		self.data = data
 		self.message = message
@@ -55,41 +54,27 @@ class Lockdown_Config_Panel(discord.ui.View):
 	
 	@discord.ui.button(label="Add/Edit Channel", style=discord.ButtonStyle.gray, emoji="<:channel:1017378607863181322>", custom_id="LOCKDOWN:ADD:CHANNEL", row = 0)
 	async def add_channel(self, interaction: discord.Interaction, button: discord.ui.Button):
-		modal = Lockdown_Add_Channel(interaction,self.name, self.data)
-
-		# panel = self.data[self.name]
-		# lockdown_config = ""
-		# if len(panel['channel_and_role']) > 0:
-		# 	for channel_id in panel['channel_and_role']:
-		# 		lockdown_config += f'{channel_id} : {panel["channel_and_role"][channel_id]}'
-		# else:
-		# 	lockdown_config = None
-		
-		modal.add_item( 
-			discord.ui.TextInput(
-				required=True,
-				label="add/edit channel config:", 
-				style=discord.TextStyle.short, 
-				custom_id="LOCKDOWN:ADD:CHANNEL:MODAL",
-				# default=lockdown_config, 
-				placeholder="channel_id: role_id1 role_id2"))
-
-		await interaction.response.send_modal(modal)
+		view = Select_channel_roles(interaction, self.data, self.name)
+		await interaction.response.send_message(content="Please choose from below dropdowns...", view=view, ephemeral=True)
+		await view.wait()
 	
 	@discord.ui.button(label="Delete Channel", style=discord.ButtonStyle.gray, emoji="<:nat_delete:1063067661602402314>", custom_id="LOCKDOWN:DELETE:CHANNEL", row=0)
 	async def delete_channel(self, interaction: discord.Interaction, button: discord.ui.Button):
-		modal = Lockdown_Add_Channel(interaction,self.name, self.data)
-		modal.add_item( 
-			discord.ui.TextInput(
-				required=True,
-				label="delete channel from config:", 
-				style=discord.TextStyle.short, 
-				custom_id="LOCKDOWN:DELETE:CHANNEL:MODAL",
-				# default=lockdown_config, 
-				placeholder="channel_id"))
+				
+		channels = [interaction.guild.get_channel(int(channel_id)) for channel_id in self.data[self.name]['channel_and_role'].keys()]
+		options = []
 
-		await interaction.response.send_modal(modal)
-	
+		for channel in channels:
+			role = interaction.guild.get_role(int(self.data[self.name]['channel_and_role'][str(channel.id)]))
+			options.append(discord.SelectOption(label=channel.name, value=str(channel.id), emoji="<:channel:1017378607863181322>", description=f"{role.name} 🧑 {len(role.members)}"))
+		# create ui.Select instance and add it to a new view
+		select = Delete_channel(interaction, self.data, self.name, options)
+		view_select = discord.ui.View()
+		view_select.add_item(select)
+
+		# edit the message with the new view
+		await interaction.response.send_message(content="Select channel to remove.", view=view_select, ephemeral=True)
+
 	@discord.ui.button(label="Lockdown Message", style=discord.ButtonStyle.gray, emoji="<a:nat_message:1063077628036272158>", custom_id="LOCKDOWN:MODIFY:LOCK:MSG", row = 1)
 	async def lockdown_msg(self, interaction: discord.Interaction, button: discord.ui.Button):
 		modal = Lockdown_Add_Channel(interaction,self.name, self.data)
@@ -166,7 +151,6 @@ class Lockdown_Config_Panel(discord.ui.View):
 
 		await interaction.response.send_modal(modal)
 
-
 	async def interaction_check(self, interaction: Interaction):
 		if interaction.user.id != self.interaction.user.id:
 			warning = discord.Embed(
@@ -237,3 +221,111 @@ class Lockdown_Add_Channel(discord.ui.Modal):
 			
 		await interaction.client.lockdown.update(self.data)
 		await update_embed(interaction, self.data, self.name, failed)
+
+class Select_channel_roles(discord.ui.View):
+	def __init__(self, interaction: discord.Interaction, data: dict, name: str):
+		super().__init__()
+		self.interaction = interaction
+		self.data = data
+		self.name = name
+		self.selected_channel = None
+		self.selected_role = None
+	
+	@discord.ui.select(cls=ChannelSelect, placeholder="Choose Channel",channel_types=[discord.ChannelType.text], disabled=False)
+	async def channel_select(self, interaction: discord.Interaction, select: discord.ui.Select):
+				
+		self.selected_channel = interaction.guild.get_channel(select.values[0].id)
+
+		if self.selected_role and self.selected_channel is not None:
+			self.children[2].disabled = False
+
+		if self.selected_channel == None and self.selected_role == None:
+			return await interaction.response.edit_message(
+				content=f"**Add/Edit Channel** \n` -> `   Channel `{self.selected_channel}` will be locked for `{self.selected_role}` role.", 
+				view=self, allowed_mentions=discord.AllowedMentions(users=False, roles=False, everyone=False)
+			)
+		elif self.selected_channel != None and self.selected_role == None:
+			return await interaction.response.edit_message(
+				content=f"**Add/Edit Channel** \n` -> `   Channel {self.selected_channel.mention} will be locked for `{self.selected_role}` role.", 
+				view=self, allowed_mentions=discord.AllowedMentions(users=False, roles=False, everyone=False)
+			)
+		elif self.selected_channel == None and self.selected_role != None:
+			return await interaction.response.edit_message(
+				content=f"**Add/Edit Channel** \n` -> `   Channel `{self.selected_channel}` will be locked for {self.selected_role.mention} role.", 
+				view=self, allowed_mentions=discord.AllowedMentions(users=False, roles=False, everyone=False)
+			)
+		else:
+			return await interaction.response.edit_message(
+				content=f"**Add/Edit Channel** \n` -> `   Channel {self.selected_channel.mention} will be locked for {self.selected_role.mention} role.", 
+				view=self, allowed_mentions=discord.AllowedMentions(users=False, roles=False, everyone=False)
+			)
+	
+	@discord.ui.select(cls=RoleSelect, placeholder="Lock for which role?", disabled=False)
+	async def role_select(self, interaction: discord.Interaction, select: discord.ui.Select):
+		
+		self.selected_role = interaction.guild.get_role(select.values[0].id)
+
+		if self.selected_role and self.selected_channel is not None:
+			self.children[2].disabled = False
+
+		if self.selected_channel == None and self.selected_role == None:
+			return await interaction.response.edit_message(
+				content=f"**Add/Edit Channel** \n` -> `   Channel `{self.selected_channel}` will be locked for `{self.selected_role}` role.", 
+				view=self, allowed_mentions=discord.AllowedMentions(users=False, roles=False, everyone=False)
+			)
+		elif self.selected_channel != None and self.selected_role == None:
+			return await interaction.response.edit_message(
+				content=f"**Add/Edit Channel** \n` -> `   Channel {self.selected_channel.mention} will be locked for `{self.selected_role}` role.", 
+				view=self, allowed_mentions=discord.AllowedMentions(users=False, roles=False, everyone=False)
+			)
+		elif self.selected_channel == None and self.selected_role != None:
+			return await interaction.response.edit_message(
+				content=f"**Add/Edit Channel** \n` -> `   Channel `{self.selected_channel}` will be locked for {self.selected_role.mention} role.", 
+				view=self, allowed_mentions=discord.AllowedMentions(users=False, roles=False, everyone=False)
+			)
+		else:
+			return await interaction.response.edit_message(
+				content=f"**Add/Edit Channel** \n` -> `   Channel {self.selected_channel.mention} will be locked for {self.selected_role.mention} role.", 
+				view=self, allowed_mentions=discord.AllowedMentions(users=False, roles=False, everyone=False)
+			)
+
+	@discord.ui.button(label="Submit", style=discord.ButtonStyle.green, disabled=True)
+	async def submit(self, interaction: discord.Interaction, button: discord.ui.Button):
+
+		if (len(self.data[self.name]['channel_and_role'].keys())>=25):
+			warning = discord.Embed(
+				color=0xDA2A2A,
+				description=f"<a:nat_cross:1010969491347357717> **|** Can't add more than 25 channels, please consider deleting some!")
+			return await interaction.response.edit_message(view=None, content=None, embed=warning)
+		
+		self.data[self.name]['channel_and_role'][str(self.selected_channel.id)] = str(self.selected_role.id)
+		await interaction.client.lockdown.update(self.data)
+		await update_embed(self.interaction, self.data, self.name, False)
+
+		# await interaction.response.edit_message(view=None ,content=f"\n` -> `   {self.selected_channel.mention}\n` -> `   {self.selected_role.mention}")
+		await interaction.response.edit_message(view=None ,content=f"Successfully Updated Channel Settings!")
+		
+		await interaction.delete_original_response()
+		self.selected_role = None
+		self.selected_channel = None
+
+class Delete_channel(discord.ui.Select):
+	def __init__(self, interaction: discord.Interaction, data: dict, name: str, options):
+		super().__init__(placeholder="Select", custom_id="LOCKDOWN:DELETE:CHANNEL", options=options)
+		self.interaction = interaction
+		self.data = data
+		self.name = name
+
+	# This function is called when the user has chosen an option
+	async def callback(self, interaction: discord.Interaction):
+
+		failed = False
+		if str(self.values[0]) in self.data[self.name]['channel_and_role'].keys():
+			del self.data[self.name]['channel_and_role'][str(self.values[0])]
+		else:
+			failed = True
+		await interaction.client.lockdown.update(self.data)
+		await update_embed(self.interaction, self.data, self.name, failed)
+
+		await interaction.response.edit_message(view=None ,content=f"Successfully Deleted Channel!")
+		await interaction.delete_original_response()
