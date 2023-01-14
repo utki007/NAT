@@ -207,7 +207,7 @@ class Lockdown_Add_Channel(discord.ui.Modal):
 						roleIds = [int(role_ids) for role_ids in roles.split(" ") if role_ids != '' and role_ids not in ["everyone"]]
 						roleIds = [discord.utils.get(interaction.guild.roles, id=id) for id in roleIds]
 						roles = [role for role in roleIds if role != None]
-						roles = " ".join([role.id for role in roles])
+						roles = " ".join([str(role.id) for role in roles])
 
 				self.data[self.name]['channel_and_role'][channel_id] = roles
 			
