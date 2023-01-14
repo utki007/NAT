@@ -28,14 +28,6 @@ class settings(commands.GroupCog, name="settings"):
 		]
 		return choice
 	
-	async def lockdown_operation_list(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
-				
-		choice = [
-			app_commands.Choice(name='edit', value='edit'),
-			app_commands.Choice(name='delete', value='delete')
-		]
-		return choice
-
 	@lockdown_command.command(name="create", description="Create lockdown profile", extras={'example': '/lockdown create'})
 	@app_commands.checks.has_permissions(administrator=True)
 	@app_commands.describe(name = "Enter Lockdown Profile Name")
@@ -67,7 +59,8 @@ class settings(commands.GroupCog, name="settings"):
 
 	@lockdown_command.command(name="modify", description="Modify lockdown profile")
 	@app_commands.checks.has_permissions(administrator=True)
-	@app_commands.autocomplete(name=lockdown_profiles_list, operation=lockdown_operation_list)
+	@app_commands.autocomplete(name=lockdown_profiles_list)
+	@app_commands.choices(operation=[app_commands.Choice(name='Edit Lockdown Profile', value='edit'),app_commands.Choice(name='Delete Lockdown Profile', value='delete')])
 	@app_commands.describe(name="Profile name", operation="Do you want to edit or delete?")
 	async def modify(self, interaction: discord.Interaction,operation:str, name:str):
 		if operation == 'edit':
