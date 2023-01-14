@@ -17,8 +17,9 @@ async def convert_to_time(query):
     query = query.replace("d", "*86400+",1)
     query = query.replace("h", "*3600+",1)
     query = query.replace("m", "*60+",1)       
-    query = query.replace("s", "*1+",1)  
-    query = f"{query}0"
+    query = query.replace("s", "*1+",1)
+    if query.endswith("+"):
+        query = f"{query}0"
     return query
     
 async def convert_to_numeral(query):
