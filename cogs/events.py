@@ -60,7 +60,39 @@ class events(commands.Cog):
 			await log_channel.send(embed=logg, view=view)
 			# await interaction.response.send_message(f"You are missing the required permissions to use this command!", ephemeral=True)
 		elif isinstance(error, app_commands.MissingRole):
-			await interaction.response.send_message("You are missing the required role to use this command!", ephemeral=True)
+			url = "https://cdn.discordapp.com/attachments/999555672733663285/1063392550192431134/access_Denied.png"
+			warning = discord.Embed(
+				color=0xffd300,
+				title=f"This incident has been reported!",
+				description=f"{error} Imagine trying though <a:nat_roflfr:1063393491549429801>")
+			warning.set_thumbnail(url=url)
+
+			perm = str(error).replace("You are missing ","",1)
+			perm = perm.replace("to run this command.","",1)
+			# for logging
+			logg = discord.Embed(
+				title="__Missing Perms!__",
+				description=
+				f"` - `   **Command:** `/{interaction.command.qualified_name}`\n"
+				f"` - `   **Used at:** <t:{int(datetime.datetime.timestamp(interaction.created_at))}>\n"
+				f'` - `   **User:** {interaction.user.mention}(`{interaction.user.id}`)\n'
+				f'` - `   **Missing:** {perm}\n',
+				colour=discord.Color.random(),
+				timestamp=datetime.datetime.utcnow()
+			)
+
+			logg.set_footer(
+				text=f"Sanctioned by: {interaction.user.name}", icon_url=interaction.user.avatar.url)
+
+			log_channel = self.bot.get_channel(1063395262757875822)
+
+			await interaction.response.send_message(embed=warning, ephemeral=False)
+			message = await interaction.original_response()
+
+			view = discord.ui.View()
+			view.add_item(discord.ui.Button(label=f'Used at', url=f"{message.jump_url}"))
+			await log_channel.send(embed=logg, view=view)
+			# await interaction.response.send_message("You are missing the required role to use this command!", ephemeral=True)
 		elif isinstance(error, app_commands.MissingAnyRole):
 			await interaction.response.send_message("You are missing the required role to use this command!", ephemeral=True)
 		else:
