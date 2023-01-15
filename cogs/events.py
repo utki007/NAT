@@ -136,7 +136,7 @@ class events(commands.Cog):
 		else:
 			#raise error
 			embed = discord.Embed(color=0xE74C3C, 
-				description=f"<:tgk_warning:840638147838738432> | Error: `{error}`")
+				description=f"<:tgk_warning:840638147838738432> **|** Error: `{error}`")
 			await ctx.send(embed=embed)
 
 async def setup(bot):

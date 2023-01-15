@@ -99,7 +99,7 @@ class owner(commands.Cog):
                 embed = discord.Embed(description=f"{cog} has been reloaded.", color=discord.Color.green())
                 await interaction.response.send_message(embed=embed)
             except Exception as e:
-                embed = discord.Embed(description="Error | {}".format(e), color=0xFF0000)
+                embed = discord.Embed(description="Error **|** {}".format(e), color=0xFF0000)
                 await interaction.response.send_message(embed=embed)
                 return
         elif cog == "*":
@@ -114,7 +114,7 @@ class owner(commands.Cog):
                         await interaction.edit_original_response(embed=embed)
                     except Exception as e:
                         error = "".join(format_exception(e,e,e.__traceback__))
-                        embed.add_field(name=f"{module}", value=f"Failure | {error[:100]}", inline=True)
+                        embed.add_field(name=f"{module}", value=f"Failure **|** {error[:100]}", inline=True)
                         await interaction.edit_original_response(embed=embed)
         
 async def setup(bot):

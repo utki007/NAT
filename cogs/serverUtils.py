@@ -17,14 +17,14 @@ class Dump(commands.GroupCog, name="dump"):
 		
 		if len(role.members) > 20:
 			await interaction.response.send_message("Role has more than 20 members, sending as file", ephemeral=False)
-			members = [f"{member.name}#{member.discriminator} | {member.id}" for member in role.members]
+			members = [f"{member.name}#{member.discriminator} **|** {member.id}" for member in role.members]
 
 			buffer = BytesIO("\n".join(members).encode('utf-8'))
 			file = discord.File(buffer, filename=f"{role.name}.txt")
 			buffer.close()
 			await interaction.edit_original_response(content=msg, attachments=[file])
 		else:
-			embed = discord.Embed(title=f"{role.name} dump", description="\n".join([f"{member.name}#{member.discriminator} | {member.id}" for member in role.members]), color=role.color)
+			embed = discord.Embed(title=f"{role.name} dump", description="\n".join([f"{member.name}#{member.discriminator} **|** {member.id}" for member in role.members]), color=role.color)
 			await interaction.response.send_message(content=msg, embeds=[embed])
 	
 	@app_commands.command(name="channel", description="Dump a channel", extras={'example': '/dump channel [channel]'})
@@ -34,7 +34,7 @@ class Dump(commands.GroupCog, name="dump"):
 
 		if len(channel.members) > 20:
 			await interaction.response.send_message("Channel has more than 20 members, sending as file", ephemeral=False)
-			members = [f"{member.name}#{member.discriminator} | {member.id}" for member in channel.members]
+			members = [f"{member.name}#{member.discriminator} **|** {member.id}" for member in channel.members]
 
 			buffer = BytesIO("\n".join(members).encode('utf-8'))
 			file = discord.File(buffer, filename=f"{channel.name}.txt")
@@ -42,7 +42,7 @@ class Dump(commands.GroupCog, name="dump"):
 			await interaction.edit_original_response(content=msg, attachments=[file])
 		
 		else:
-			embed = discord.Embed(title=f"{channel.name} dump", description="\n".join([f"{member.mention} | `{member.id}`" for member in channel.members]), color=self.bot.color['default'])
+			embed = discord.Embed(title=f"{channel.name} dump", description="\n".join([f"{member.mention} **|** `{member.id}`" for member in channel.members]), color=self.bot.color['default'])
 			await interaction.response.send_message(content=msg, embeds=[embed])
 
 

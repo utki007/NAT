@@ -54,7 +54,7 @@ class settings(commands.GroupCog, name="settings"):
 
 		await self.bot.lockdown.upsert(data)
 		embed = discord.Embed(
-				color=0x43b581, description=f'<a:nat_check:1010969401379536958> | Successfully created lockdown profile named: **`{name}`**!')
+				color=0x43b581, description=f'<a:nat_check:1010969401379536958> **|** Successfully created lockdown profile named: **`{name}`**!')
 		await interaction.response.send_message(embed = embed)
 
 	@lockdown_command.command(name="modify", description="Modify lockdown profile")
@@ -90,7 +90,7 @@ class settings(commands.GroupCog, name="settings"):
 					roleIds = [discord.utils.get(interaction.guild.roles, id=id) for id in roleIds]
 					role = [role for role in roleIds if role != None]
 					if channel:
-						lockdown_config += f'{channel.mention} | {" + ".join([role.mention for role in role])}\n'
+						lockdown_config += f'{channel.mention} **|** {" + ".join([role.mention for role in role])}\n'
 				if lockdown_config == "":
 					lockdown_config = "None"
 			else:
@@ -126,7 +126,7 @@ class settings(commands.GroupCog, name="settings"):
 			await self.bot.lockdown.upsert(data)
 			await self.bot.lockdown.unset({"_id":interaction.guild.id}, name)
 			embed = discord.Embed(
-					color=0x43b581, description=f'<a:nat_check:1010969401379536958> | Successfully deleted lockdown profile named **`{name}`**!')
+					color=0x43b581, description=f'<a:nat_check:1010969401379536958> **|** Successfully deleted lockdown profile named **`{name}`**!')
 			await interaction.response.send_message(embed=embed)
 		else:
 			warning = discord.Embed(

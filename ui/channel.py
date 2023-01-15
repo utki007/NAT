@@ -23,7 +23,7 @@ async def update_embed(interaction: Interaction, data: dict, name:str , failed:b
 			roleIds = [discord.utils.get(interaction.guild.roles, id=id) for id in roleIds]
 			role = [role for role in roleIds if role != None]
 			if channel:
-				lockdown_config += f'{channel.mention} | {" + ".join([role.mention for role in role])}\n'
+				lockdown_config += f'{channel.mention} **|** {" + ".join([role.mention for role in role])}\n'
 	else:
 		lockdown_config = "None"
 
@@ -302,10 +302,15 @@ class Select_channel_roles(discord.ui.View):
 		await interaction.client.lockdown.update(self.data)
 		await update_embed(self.interaction, self.data, self.name, False)
 
-		# await interaction.response.edit_message(view=None ,content=f"\n` -> `   {self.selected_channel.mention}\n` -> `   {self.selected_role.mention}")
-		await interaction.response.edit_message(view=None ,content=f"Successfully Updated Channel Settings!")
+		embed = discord.Embed(
+					color=0x43b581, 
+					description=f'<a:nat_check:1010969401379536958> **|** Channel {self.selected_channel.mention} will be locked/unlocked for role {self.selected_role.mention}.'
+				)
+		await interaction.response.edit_message(
+			content = None, embed = embed, view = None, 
+			allowed_mentions=discord.AllowedMentions(users=False, roles=False, everyone=False)
+		)
 		
-		await interaction.delete_original_response()
 		self.selected_role = None
 		self.selected_channel = None
 
@@ -327,5 +332,12 @@ class Delete_channel(discord.ui.Select):
 		await interaction.client.lockdown.update(self.data)
 		await update_embed(self.interaction, self.data, self.name, failed)
 
-		await interaction.response.edit_message(view=None ,content=f"Successfully Deleted Channel!")
-		await interaction.delete_original_response()
+		channel = interaction.guild.get_channel(str(self.values[0]))
+		embed = discord.Embed(
+					color=0x43b581, 
+					description=f'<a:nat_check:1010969401379536958> **|** Channel {channel.mention} is successfully removed from **Lockdown Profile** `{self.name}`.'
+				)
+		await interaction.response.edit_message(
+			content = None, embed = embed, view = None, 
+			allowed_mentions=discord.AllowedMentions(users=False, roles=False, everyone=False)
+		)

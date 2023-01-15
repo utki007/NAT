@@ -109,17 +109,17 @@ class channel(commands.GroupCog, name="channel"):
 				await channel.set_permissions(role, overwrite=overwrite)
 				if role == interaction.guild.default_role:
 					embed = discord.Embed(
-					color=0x43b581, description=f'<a:nat_check:1010969401379536958> | Locked **{channel.mention}** for {role}')
+					color=0x43b581, description=f'<a:nat_check:1010969401379536958> **|** Locked **{channel.mention}** for {role}')
 				else:
 					embed = discord.Embed(
-					color=0x43b581, description=f'<a:nat_check:1010969401379536958> | Locked **{channel.mention}** for {role.mention}')
+					color=0x43b581, description=f'<a:nat_check:1010969401379536958> **|** Locked **{channel.mention}** for {role.mention}')
 			elif unlockFor == "user":
 				overwrite = channel.overwrites_for(user)
 				overwrite.send_messages = False
 
 				await channel.set_permissions(user, overwrite=overwrite)
 				embed = discord.Embed(
-				color=0x43b581, description=f'<a:nat_check:1010969401379536958> | Locked **{channel.mention}** for {user.mention}')
+				color=0x43b581, description=f'<a:nat_check:1010969401379536958> **|** Locked **{channel.mention}** for {user.mention}')
 			else:
 				return await interaction.edit_original_response(f"Ran into some problem ...", hidden= True)
 
@@ -132,7 +132,7 @@ class channel(commands.GroupCog, name="channel"):
 
 		else:
 			embed = discord.Embed(
-				color=0x43b581, description=f'<a:nat_check:1010969401379536958> | Locked **{channel.mention}** for {interaction.guild.default_role}')
+				color=0x43b581, description=f'<a:nat_check:1010969401379536958> **|** Locked **{channel.mention}** for {interaction.guild.default_role}')
 			if interaction.user.id == 685705841264820247:
 				await interaction.channel.send(embed=embed)
 			else:
@@ -169,14 +169,14 @@ class channel(commands.GroupCog, name="channel"):
 				
 				if role == interaction.guild.default_role :
 					if state:
-						msg = f'<a:nat_check:1010969401379536958> | Unlocked **{channel.mention}** for {role} with state `True`'
+						msg = f'<a:nat_check:1010969401379536958> **|** Unlocked **{channel.mention}** for {role} with state `True`'
 					else:
-						msg = f'<a:nat_check:1010969401379536958> | Unlocked **{channel.mention}** for {role}'
+						msg = f'<a:nat_check:1010969401379536958> **|** Unlocked **{channel.mention}** for {role}'
 				else:
 					if state:
-						msg = f'<a:nat_check:1010969401379536958> | Unlocked **{channel.mention}** for {role.mention} with state `True`'
+						msg = f'<a:nat_check:1010969401379536958> **|** Unlocked **{channel.mention}** for {role.mention} with state `True`'
 					else:
-						msg = f'<a:nat_check:1010969401379536958> | Unlocked **{channel.mention}** for {role.mention}'
+						msg = f'<a:nat_check:1010969401379536958> **|** Unlocked **{channel.mention}** for {role.mention}'
 			
 				await channel.set_permissions(role, overwrite=overwrite)
 
@@ -193,9 +193,9 @@ class channel(commands.GroupCog, name="channel"):
 				msg = ''
 				
 				if state:
-					msg = f'<a:nat_check:1010969401379536958> | Unlocked **{channel}** for {user.mention} with state `True`'
+					msg = f'<a:nat_check:1010969401379536958> **|** Unlocked **{channel}** for {user.mention} with state `True`'
 				else:
-					msg = f'<a:nat_check:1010969401379536958> | Unlocked **{channel}** for {user.mention}'
+					msg = f'<a:nat_check:1010969401379536958> **|** Unlocked **{channel}** for {user.mention}'
 			
 				await channel.set_permissions(user, overwrite=overwrite)
 
@@ -231,10 +231,10 @@ class channel(commands.GroupCog, name="channel"):
 			await channel.set_permissions(role, overwrite=overwrite)
 			if role == interaction.guild.default_role:
 				embed = discord.Embed(
-				color=0x43b581, description=f'<a:nat_check:1010969401379536958> | Viewlocked **{channel.mention}** for {role}')
+				color=0x43b581, description=f'<a:nat_check:1010969401379536958> **|** Viewlocked **{channel.mention}** for {role}')
 			else:
 				embed = discord.Embed(
-				color=0x43b581, description=f'<a:nat_check:1010969401379536958> | Viewlocked **{channel.mention}** for {role.mention}')
+				color=0x43b581, description=f'<a:nat_check:1010969401379536958> **|** Viewlocked **{channel.mention}** for {role.mention}')
 			
 			if interaction.user.id == 685705841264820247:
 				await interaction.response.send_message(content="Viewlocking ...", ephemeral=True)
@@ -270,14 +270,14 @@ class channel(commands.GroupCog, name="channel"):
 			
 			if role == interaction.guild.default_role :
 				if state:
-					msg = f'<a:nat_check:1010969401379536958> | Unviewlocked **{channel.mention}** for {role} with state `True`'
+					msg = f'<a:nat_check:1010969401379536958> **|** Unviewlocked **{channel.mention}** for {role} with state `True`'
 				else:
-					msg = f'<a:nat_check:1010969401379536958> | Unviewlocked **{channel.mention}** for {role}'
+					msg = f'<a:nat_check:1010969401379536958> **|** Unviewlocked **{channel.mention}** for {role}'
 			else:
 				if state:
-					msg = f'<a:nat_check:1010969401379536958> | Unviewlocked **{channel.mention}** for {role.mention} with state `True`'
+					msg = f'<a:nat_check:1010969401379536958> **|** Unviewlocked **{channel.mention}** for {role.mention} with state `True`'
 				else:
-					msg = f'<a:nat_check:1010969401379536958> | Unviewlocked **{channel.mention}** for {role.mention}'
+					msg = f'<a:nat_check:1010969401379536958> **|** Unviewlocked **{channel.mention}** for {role.mention}'
 		
 			await channel.set_permissions(role, overwrite=overwrite)
 
@@ -304,7 +304,7 @@ class channel(commands.GroupCog, name="channel"):
 		if interaction.channel.type == discord.ChannelType.text:
 
 			embed = discord.Embed(
-			color=0x43b581, description=f'<a:nat_check:1010969401379536958> | Synced **{channel.mention}** with channel category.')
+			color=0x43b581, description=f'<a:nat_check:1010969401379536958> **|** Synced **{channel.mention}** with channel category.')
 			
 			await interaction.channel.edit(sync_permissions=True)
 
@@ -370,7 +370,7 @@ class channel(commands.GroupCog, name="channel"):
 				await channel.send(embed=lockdown_embed)
 		end = t.time()
 		embed = discord.Embed(
-			color=0x43b581, description=f'<a:nat_check:1010969401379536958> | Locked down profile `{name}` in: {round((end - start), 2)} s.')
+			color=0x43b581, description=f'<a:nat_check:1010969401379536958> **|** Locked down profile `{name}` in: {round((end - start), 2)} s.')
 			
 		await interaction.edit_original_response(
 			embed=embed
@@ -424,7 +424,7 @@ class channel(commands.GroupCog, name="channel"):
 				await channel.send(embed=lockdown_embed)
 		end = t.time()
 		embed = discord.Embed(
-			color=0x43b581, description=f'<a:nat_check:1010969401379536958> | Unlocked  profile `{name}` in: {round((end - start), 2)} s.')
+			color=0x43b581, description=f'<a:nat_check:1010969401379536958> **|** Unlocked  profile `{name}` in: {round((end - start), 2)} s.')
 			
 		await interaction.edit_original_response(
 			embed=embed
