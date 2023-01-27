@@ -4,3 +4,4 @@ properties/tokens.json
 discord.log
 bot.log
 __pycache__
+.env

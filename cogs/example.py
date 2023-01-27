@@ -2,6 +2,10 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from utils.views.paginator import Paginator
+from typing import Union
+from io import BytesIO
+from PIL import Image, ImageDraw, ImageFont, ImageChops
+
 class Button(discord.ui.View):
 	def __init__(self):
 		super().__init__(timeout=1)
@@ -127,9 +131,90 @@ class Example(commands.Cog):
 		await Paginator(interaction, pages).start(embeded=True, quick_navigation=True) #set quick_navitation to Flase if len(pages) > 24 or you want to remove dromdown
 
 
+class donation(commands.Cog):
+	def __init__(self, bot):
+		self.bot = bot
+	
+	async def round_pfp(self, pfp: Union[discord.Member, discord.Guild]):
+		if isinstance(pfp, discord.Member):
+			if pfp.avatar is None:
+				pfp = pfp.default_avatar.with_format("png")
+			else:
+				pfp = pfp.avatar.with_format("png")
+		else:
+			pfp = pfp.icon.with_format("png")
+
+		pfp = BytesIO(await pfp.read())
+		pfp = Image.open(pfp)
+		pfp = pfp.resize((95, 95), Image.Resampling.LANCZOS).convert('RGBA')
+
+		bigzise = (pfp.size[0] * 3, pfp.size[1] * 3)
+		mask = Image.new('L', bigzise, 0)
+		draw = ImageDraw.Draw(mask)
+		draw.ellipse((0, 0) + bigzise, fill=255)
+		mask = mask.resize(pfp.size, Image.Resampling.LANCZOS)
+		mask = ImageChops.darker(mask, pfp.split()[-1])
+		pfp.putalpha(mask)
+
+		return pfp
+
+	async def create_winner_card(self, guild: discord.Guild, event_name:str, data: list):
+		template = Image.open('./utils/assets/leaderboard_template.png')
+		guild_icon = await self.round_pfp(guild)
+		template.paste(guild_icon, (15, 8), guild_icon)
+
+		draw = ImageDraw.Draw(template)
+		font = ImageFont.truetype('arial.ttf', 25)
+		winner_name_font = ImageFont.truetype('arial.ttf', 28)
+		winner_exp_font = ImageFont.truetype('arial.ttf', 20)
+
+		winne_postions = {
+			#postions of the winners, pfp and name and donation
+			0: {'icon': (58, 150), 'name': (176, 165), 'donated': (176, 202)},
+			1: {'icon': (58, 265), 'name': (176, 273), 'donated': (176, 309)},
+			2: {'icon': (58, 380), 'name': (176, 392), 'donated': (176, 428)}}
+
+		draw.text((116, 28), f"{guild.name}", font=font, fill="#DADBE3") #guild name 
+		draw.text((116, 61), f"{event_name}", font=font, fill="#DADBE3") #event name
+
+		for i in data[:3]:
+			user = i['user']
+			index = data.index(i)
+			user_icon = await self.round_pfp(user)
+			template.paste(user_icon, winne_postions[index]['icon'], user_icon)
+			draw.text(winne_postions[index]['name'], f"{user.name}#{user.discriminator}", font=winner_name_font, fill="#9A9BD5")
+			draw.text(winne_postions[index]['donated'], f"⏣ {i['donated']} Dmc", font=winner_exp_font, fill="#A8A8C8")
+
+		return template
+	
+	@app_commands.command(name="leaderboard", description="Donate to the bot")
+	async def leaderborad(self, interaction: discord.Interaction, event_name: str):
+		await interaction.response.defer(thinking=True, ephemeral=False)
+
+		mok_data = [301657045248114690, 488614633670967307, self.bot.user.id]
+		leader_borad = []
+		for i in mok_data:
+			user = interaction.guild.get_member(i)
+			#do your logic here to change donation to k,m,billion etc
+			#also append member as 1st, 2nd, 3rd
+			#as they will be displayed in same order as they are appended
+			leader_borad.append({'user': user, 'donated': 1000000}) 
+		
+		image = await self.create_winner_card(interaction.guild, event_name, leader_borad)
+
+		with BytesIO() as image_binary:
+			image.save(image_binary, 'PNG')
+			image_binary.seek(0)
+			await interaction.followup.send(file=discord.File(fp=image_binary, filename=f'{interaction.guild.id}_weekly_winner_card.png'))
+			image_binary.close()
+
 async def setup(bot):
 	await bot.add_cog(
 		Example(bot),
+		guilds = [discord.Object(999551299286732871)]
+	)
+	await bot.add_cog(
+		donation(bot),
 		guilds = [discord.Object(999551299286732871)]
 	)
 
