@@ -25,6 +25,14 @@ class events(commands.Cog):
 				await interaction.response.send_message(
 					f"The command is under a cooldown of **{int(h)} hours, {int(m)} minutes and {int(s)} seconds** to prevent abuse!", ephemeral=True,
 				)
+		elif isinstance(error, app_commands.CheckFailure):
+			url = "https://cdn.discordapp.com/attachments/999555672733663285/1063392550192431134/access_Denied.png"
+			warning = discord.Embed(
+				color=0xffd300,
+				title=f"Only Server Owners can use this!",
+				description=f"Hey! You lack permission to use this command. Imagine trying though <a:nat_roflfr:1063393491549429801>")
+			warning.set_thumbnail(url=url)
+			await interaction.response.send_message(embed=warning, ephemeral=False)
 		elif isinstance(error, app_commands.MissingPermissions):
 			url = "https://cdn.discordapp.com/attachments/999555672733663285/1063392550192431134/access_Denied.png"
 			warning = discord.Embed(
