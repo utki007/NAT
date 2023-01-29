@@ -2,8 +2,6 @@ import discord
 import datetime
 from discord import app_commands
 from discord.ext import commands
-from utils.checks import Unauthorized
-
 
 class events(commands.Cog):
 	
