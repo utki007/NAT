@@ -172,7 +172,6 @@ class Lockdown_Add_Channel(discord.ui.Modal):
 		self.name = name
 	
 	async def on_submit(self, interaction: Interaction):
-		await interaction.response.defer(thinking=True, ephemeral=True)
 		failed = False
 		for child in self.children:
 			
@@ -220,6 +219,11 @@ class Lockdown_Add_Channel(discord.ui.Modal):
 				self.data[self.name]['unlock_embed']['description'] = child.value
 			
 		await interaction.client.lockdown.update(self.data)
+		embed = discord.Embed(
+					color=0x43b581, 
+					description=f'<a:nat_check:1010969401379536958> **|** Successfully updated embed message.'
+				)
+		await interaction.response.send_message(embed = embed, ephemeral=True)
 		await update_embed(interaction, self.data, self.name, failed)
 
 class Select_channel_roles(discord.ui.View):
@@ -332,7 +336,7 @@ class Delete_channel(discord.ui.Select):
 		await interaction.client.lockdown.update(self.data)
 		await update_embed(self.interaction, self.data, self.name, failed)
 
-		channel = interaction.guild.get_channel(str(self.values[0]))
+		channel = interaction.guild.get_channel(int(self.values[0]))
 		embed = discord.Embed(
 					color=0x43b581, 
 					description=f'<a:nat_check:1010969401379536958> **|** Channel {channel.mention} is successfully removed from **Lockdown Profile** `{self.name}`.'
