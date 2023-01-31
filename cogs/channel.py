@@ -247,7 +247,7 @@ class channel(commands.GroupCog, name="channel"):
 		else:
 			warning = discord.Embed(
 				color=0xDA2A2A,
-				title=f"<a:nat_warning:1062998119899484190> **|** It cant be view-locked dum dum")
+				description=f"<a:nat_warning:1062998119899484190> **|** It cant be view-locked dum dum")
 			return await interaction.response.send_message(embed=warning, ephemeral=True)
 
 	@app_commands.command(name="unviewlock", description="Unviewlock channel 🗣️", extras={'example': '/unviewlock'})
