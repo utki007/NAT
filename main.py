@@ -7,6 +7,8 @@ import logging.handlers
 import motor.motor_asyncio
 from utils.db import Document
 from ast import literal_eval
+from utils.functions import *
+from utils.embeds import *
 
 logger = logging.getLogger('discord')
 handler = logging.handlers.RotatingFileHandler(
@@ -40,6 +42,8 @@ class MyBot(commands.Bot):
 		bot.db = bot.mongo["NAT"]
 		bot.timer = Document(bot.db, "timer")
 		bot.lockdown = Document(bot.db, "lockdown")
+		bot.dankSecurity = Document(bot.db, "dankSecurity")
+		bot.quarantinedUsers = Document(bot.db, "quarantinedUsers")
 
 		for file in os.listdir('./cogs'):
 			if file.endswith('.py') and not file.startswith("_"):
@@ -55,8 +59,8 @@ class MyBot(commands.Bot):
 			)
 		)
 		await bot.tree.sync()
-		await bot.tree.sync(guild=discord.Object(785839283847954433))
-		await bot.tree.sync(guild=discord.Object(999551299286732871))
+		# await bot.tree.sync(guild=discord.Object(785839283847954433))
+		# await bot.tree.sync(guild=discord.Object(999551299286732871))
 
 		await bot.change_presence(status=discord.Status.invisible, activity=discord.Activity(type=discord.ActivityType.watching, name="Version a0.0.1"))
 
@@ -69,6 +73,49 @@ async def on_message(message):
 	if message.author.bot:
 		return
 	await bot.process_commands(message)
+
+@bot.event
+async def on_message_edit(before, after):
+	message = after
+
+	if message.author.id == 270904126974590976 and len(message.embeds)>0:
+		
+		# for serversettings in dank
+		if message.interaction is not None and message.interaction.name == 'serversettings':
+			if message.embeds[0].to_dict()['title'] == 'Events Manager':
+				managerRole = int(message.embeds[0].to_dict()['description'].split(" ")[-1])
+				data = await bot.dankSecurity.find(message.guild.id)
+				if not data:
+					data = {"_id": message.guild.id, "event_manager": None, "whitelist": [], "quarantine": None}
+				if data['event_manager'] != managerRole:
+					data['event_manager'] = managerRole
+					await bot.dankSecurity.upsert(data)
+
+	# return if message is from bot
+	if message.author.bot:
+		return
+
+@bot.event
+async def on_member_update(before, after):
+	member = after
+
+	after_roles = set([role.id for role in after.roles])
+	before_roles = set([role.id for role in before.roles])
+	roles = list(after_roles - before_roles)
+
+	if len(roles) > 0:
+		data = await bot.dankSecurity.find(member.guild.id)
+		if data:
+			if data['event_manager'] in roles and member.id not in data['whitelist']:
+				await member.remove_roles(member.guild.get_role(data['event_manager']), reason="Member is not a authorized Dank Manager.")
+				if data['quarantine'] is not None:
+					await quarantineUser(bot, member, data['quarantine'])
+					embed = await get_warning_embed(f"You have been quarantined for 24 hours for unauthorized attempt to get Dank Manager role.")
+					await member.send(embed=embed)
+					await member.guild.owner.send(f"{member.mention} has been quarantined for unauthorized attempt to get Dank Manager role in {member.guild.name}.")
+				else:
+					embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to get Dank Manager role in {member.guild.name}")
+					await member.guild.owner.send(embed = embed)
 
 @bot.event
 async def on_guild_join(guild):
