@@ -108,7 +108,7 @@ class serverUtils(commands.Cog):
 					return await interaction.edit_original_response(embed = embed)
 				else:
 					await quarantineUser(interaction.client, user, role)
-					embed = await get_success_embed("Successfully quarantined {user.mention}.")
+					embed = await get_success_embed(f"Successfully quarantined {user.mention}.")
 					return await interaction.edit_original_response(embed = embed)
 		else:
 			embed = await get_warning_embed("Quarantine role not set. Please set it using </serversettings:1068960308800008253> command.")
