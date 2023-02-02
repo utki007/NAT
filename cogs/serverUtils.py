@@ -1,10 +1,18 @@
+import asyncio
 import time as t
 import datetime
 import discord
 from discord import app_commands, Interaction
 from discord.ext import commands
+from utils.embeds import *
 from utils.convertor import *
+from utils.checks import App_commands_Checks
 from io import BytesIO
+from discord.ui import UserSelect, RoleSelect, ChannelSelect
+from typing import List, Union
+from ui.settings import *
+from ui.settings.dankPool import *
+from utils.functions import *
 
 class Dump(commands.GroupCog, name="dump"):
 	def __init__(self, bot):
@@ -45,7 +53,6 @@ class Dump(commands.GroupCog, name="dump"):
 			embed = discord.Embed(title=f"{channel.name} dump", description="\n".join([f"{member.mention} **|** `{member.id}`" for member in channel.members]), color=self.bot.color['default'])
 			await interaction.response.send_message(content=msg, embeds=[embed])
 
-
 class serverUtils(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
@@ -83,6 +90,148 @@ class serverUtils(commands.Cog):
 			embed=calc_embed
 		)
 
+	#quarantine user using quarantineUser
+	@app_commands.command(name="quarantine", description="Quarantine a user! 🦠")
+	@app_commands.checks.has_permissions(administrator=True)
+	async def quarantine(self, interaction:  discord.Interaction, user: discord.Member):
+		await interaction.response.defer()
+
+		dankSecurity = await interaction.client.dankSecurity.find(user.guild.id)
+		if dankSecurity:
+			if dankSecurity['quarantine'] is None:
+				embed = await get_warning_embed("Quarantine role not set. Please set it using </serversettings:1068960308800008253> command.")
+				return await interaction.edit_original_response(embed = embed)
+			else:
+				role = user.guild.get_role(dankSecurity['quarantine'])
+				if role in user.roles:
+					embed = await get_warning_embed("User is already quarantined.")
+					return await interaction.edit_original_response(embed = embed)
+				else:
+					await quarantineUser(interaction.client, user, role)
+					embed = await get_success_embed("Successfully quarantined {user.mention}.")
+					return await interaction.edit_original_response(embed = embed)
+		else:
+			embed = await get_warning_embed("Quarantine role not set. Please set it using </serversettings:1068960308800008253> command.")
+			return await interaction.edit_original_response(embed = embed)
+ 
+	@app_commands.command(name="unquarantine", description="Unquarantine a user! 🦠")
+	@app_commands.checks.has_permissions(administrator=True)
+	async def unquarantine(self, interaction:  discord.Interaction, user: discord.Member):
+		await interaction.response.defer()
+		unquarantined =  await unquarantineUser(interaction.client, user)
+		if unquarantined:
+			embed = await get_success_embed(f"Unquarantined {user.mention}!")
+			await interaction.edit_original_response(embed=embed)
+		else:
+			embed = await get_error_embed(f"{user.mention} is not quarantined!")
+			await interaction.edit_original_response(embed=embed)
+
+	@app_commands.command(name="serversettings", description="Adjust server-specific settings! ⚙️")
+	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
+	@App_commands_Checks.is_owner()
+	async def serversettings(self, interaction:  discord.Interaction):
+		embed = discord.Embed(
+			color=3092790,
+			title="Server Settings",
+			description=f"Adjust server-specific settings! ⚙️"
+		)
+		view = discord.ui.View()
+		view.add_item(Serversettings_Dropdown())
+		await interaction.response.send_message(embed=embed, view=view)
+		
+class Serversettings_Dropdown(discord.ui.Select):
+	def __init__(self):
+
+		# Set the options that will be presented inside the dropdown
+		options = [
+			discord.SelectOption(label='Dank Pool Access', description="Who all can access Server's Donation Pool", emoji='🏦'),
+			discord.SelectOption(label='Server Lockdown', description='Configure Lockdown Profiles', emoji='🔒'),
+		]
+
+		# The placeholder is what will be shown when no option is chosen
+		# The min and max values indicate we can only pick one of the three options
+		# The options parameter defines the dropdown options. We defined this above
+		super().__init__(placeholder='What would you like to configure today?', min_values=1, max_values=1, options=options)
+
+	async def callback(self, interaction: discord.Interaction):
+		
+		if self.values[0] == "Dank Pool Access":
+
+			data = await interaction.client.dankSecurity.find(interaction.guild.id)
+			if data is None:
+				data = {"_id": interaction.guild.id, "event_manager": None, "whitelist": [], "quarantine": None}
+				await interaction.client.dankSecurity.upsert(data)
+
+			users = f""
+			
+			if data['whitelist'] is None or len(data['whitelist']) == 0:
+				users += f"` - ` **Add users when?**\n"
+			else:
+				for member_id in data['whitelist']:
+					try: 
+						member = interaction.guild.get_member(int(member_id))
+						users += f"` - ` {member.mention}\n"
+					except:
+						data['whitelist'].remove(member_id)
+						await interaction.client.dankSecurity.upsert(data)
+						pass
+			event_manager = data['event_manager']
+
+			if event_manager is None:
+				event_manager = f"**`None`**"
+			else:
+				event_manager = interaction.guild.get_role(int(event_manager))
+				event_manager = f"**{event_manager.mention} (`{event_manager.id}`)**"
+
+				
+			quarantine = data['quarantine']
+
+			if quarantine is None:
+				quarantine = f"**`None`**"
+			else:
+				quarantine = interaction.guild.get_role(int(quarantine))
+				quarantine = f"**{quarantine.mention} (`{quarantine.id}`)**"
+			
+			embed = discord.Embed(
+				color=3092790,
+				title="Dank Pool Access"
+			)
+			embed.add_field(name="Following users are whitelisted:", value=f"{users}", inline=False)
+			embed.add_field(name="Event Manager Role:", value=f"{event_manager}", inline=False)
+			embed.add_field(name="Quarantine Role:", value=f"{quarantine}", inline=False)
+
+			for option in self.view.children[0].options:
+				if option.label == self.values[0]:
+					option.default = True
+				else:
+					option.default = False
+			dank_pool_view =  Dank_Pool_Panel(interaction)
+			dank_pool_view.clear_items()
+			dank_pool_view.add_item(self.view.children[0])
+			for item in Dank_Pool_Panel(interaction).children:
+				dank_pool_view.add_item(item)
+			await interaction.response.edit_message(embed=embed, view=dank_pool_view)
+			dank_pool_view.message = await interaction.original_response()
+
+		elif self.values[0] == "Server Lockdown":
+			embed = discord.Embed(
+				color=3092790,
+				title="Server Lockdown 🔒",
+				description="Chill kro yaaro!"
+			)
+			for option in self.view.children[0].options:
+				if option.label == self.values[0]:
+					option.default = True
+				else:
+					option.default = False
+			
+			view = discord.ui.View()
+			view.add_item(self.view.children[0])
+			
+			await interaction.response.edit_message(embed=embed, view=view)
+		
+		else:
+			await interaction.response.send_message(f'Invaid Interaction',ephemeral=True)
 
 async def setup(bot):
 	await bot.add_cog(serverUtils(bot))
