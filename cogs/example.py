@@ -8,14 +8,14 @@ from PIL import Image, ImageDraw, ImageFont, ImageChops
 
 class Button(discord.ui.View):
 	def __init__(self):
-		super().__init__(timeout=1)
+		super().__init__(timeout=None)
 		self.message = None #req for disabling buttons after timeout
 	
-	@discord.ui.button(label="Click me!", style=discord.ButtonStyle.blurple, emoji="<:StageIconRequests:1005075865564106812>")
+	@discord.ui.button(label="Click me!",custom_id='button1' , style=discord.ButtonStyle.blurple, emoji="<:StageIconRequests:1005075865564106812>")
 	async def click_me(self, interaction: discord.Interaction, button: discord.ui.Button):
 		await interaction.response.send_message("You clicked the button!", ephemeral=True)
 	
-	@discord.ui.button(label="Click 2!", style=discord.ButtonStyle.blurple, emoji="<:StageIconRequests:1005075865564106812>")
+	@discord.ui.button(label="Click 2!" ,custom_id='button2', style=discord.ButtonStyle.blurple, emoji="<:StageIconRequests:1005075865564106812>")
 	async def click_2(self, interaction: discord.Interaction, button: discord.ui.Button):
 		await interaction.response.send_message("You clicked the button!", ephemeral=True)
 
@@ -93,6 +93,7 @@ class Example(commands.Cog):
 	
 	@commands.Cog.listener()
 	async def on_ready(self):
+		self.bot.add_view(Button())
 		print(f"{self.__class__.__name__} Cog has been loaded\n-----")
 	
 	@app_commands.command(name="button", description="Send a buttonn with message")
