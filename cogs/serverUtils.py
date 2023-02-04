@@ -144,18 +144,15 @@ class serverUtils(commands.Cog):
 		await interaction.response.send_message(embed=embed, view=view)
 		
 class Serversettings_Dropdown(discord.ui.Select):
-	def __init__(self):
+	def __init__(self, default = -1):
 
-		# Set the options that will be presented inside the dropdown
 		options = [
 			discord.SelectOption(label='Dank Pool Access', description="Who all can access Server's Donation Pool", emoji='🏦'),
 			discord.SelectOption(label='Server Lockdown', description='Configure Lockdown Profiles', emoji='🔒'),
 		]
-
-		# The placeholder is what will be shown when no option is chosen
-		# The min and max values indicate we can only pick one of the three options
-		# The options parameter defines the dropdown options. We defined this above
-		super().__init__(placeholder='What would you like to configure today?', min_values=1, max_values=1, options=options)
+		if default != -1:
+			options[default].default = True
+		super().__init__(placeholder='What would you like to configure today?', min_values=1, max_values=1, options=options, row=0)
 
 	async def callback(self, interaction: discord.Interaction):
 		
@@ -204,38 +201,70 @@ class Serversettings_Dropdown(discord.ui.Select):
 			embed.add_field(name="Event Manager Role:", value=f"{event_manager}", inline=False)
 			embed.add_field(name="Quarantine Role:", value=f"{quarantine}", inline=False)
 
-			for option in self.view.children[0].options:
-				if option.label == self.values[0]:
-					option.default = True
-				else:
-					option.default = False
+			self.view.stop()
 			dank_pool_view =  Dank_Pool_Panel(interaction)
-			dank_pool_view.clear_items()
-			dank_pool_view.add_item(self.view.children[0])
-			for item in Dank_Pool_Panel(interaction).children:
-				dank_pool_view.add_item(item)
+			dank_pool_view.add_item(Serversettings_Dropdown(0))
+			
 			await interaction.response.edit_message(embed=embed, view=dank_pool_view)
 			dank_pool_view.message = await interaction.original_response()
 
 		elif self.values[0] == "Server Lockdown":
+
+			data = await interaction.client.lockdown.find(interaction.guild.id)
+			if not data:
+				data = {"_id": interaction.guild.id, "lockdown_profiles": []}
+				await interaction.client.lockdown.upsert(data)
+
+			if data['lockdown_profiles'] is None or len(data['lockdown_profiles']) == 0:
+				profiles = f"` - ` **Add profiles when?**\n"
+			else:
+				profiles = ""
+				for profile in data['lockdown_profiles']:
+					profiles += f"` - ` **{profile.title()}**\n"
+
 			embed = discord.Embed(
 				color=3092790,
-				title="Server Lockdown 🔒",
-				description="Chill kro yaaro!"
+				title="Server Lockdown 🔒"
 			)
-			for option in self.view.children[0].options:
-				if option.label == self.values[0]:
-					option.default = True
-				else:
-					option.default = False
+			embed.add_field(name="Lockdown Profiles:", value=f"{profiles}", inline=False)
 			
-			view = discord.ui.View()
-			view.add_item(self.view.children[0])
-			
-			await interaction.response.edit_message(embed=embed, view=view)
+			self.view.stop()
+			lockdown_profile_view =  Lockdown_Profile_Panel(interaction)			
+			lockdown_profile_view.add_item(Serversettings_Dropdown(1))
+			await interaction.response.edit_message(embed=embed, view=lockdown_profile_view)
+			lockdown_profile_view.message = await interaction.original_response()
+
+			await interaction.message.edit(embed=embed, view=lockdown_profile_view)
 		
 		else:
 			await interaction.response.send_message(f'Invaid Interaction',ephemeral=True)
+
+class Lockdown_Profile_Panel(discord.ui.View):
+	def __init__(self, interaction: discord.Interaction):
+		super().__init__()
+		self.interaction = interaction
+		self.message = None 
+	
+	@discord.ui.button(label="Add Profile", style=discord.ButtonStyle.gray, emoji="<:add_friend:1069597360491081880>",row=1)
+	async def whitelist_user(self, interaction: discord.Interaction, button: discord.ui.Button):
+		await interaction.response.send_message(content="Add profile",ephemeral=True)
+
+
+	@discord.ui.button(label="Configure Profile", style=discord.ButtonStyle.gray, emoji="<:settings:991733871118917683>",row=1)
+	async def modify_role(self, interaction: discord.Interaction, button: discord.ui.Button):
+		await interaction.response.send_message(content="Configure Profile",ephemeral=True)
+
+	async def interaction_check(self, interaction: discord.Interaction):
+		if interaction.user.id not in interaction.client.owner_ids:
+			await interaction.response.send_message("You do not have permission to use this button.")
+			return False
+		return True
+
+	async def on_timeout(self):
+		for button in self.children:
+			button.disabled = True
+		
+		await self.message.edit(view=self)
 
 async def setup(bot):
 	await bot.add_cog(serverUtils(bot))
