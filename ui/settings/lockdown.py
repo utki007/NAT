@@ -5,7 +5,7 @@ import io
 from discord import Interaction
 from discord.ui import ChannelSelect, RoleSelect
 
-async def update_embed(interaction: Interaction, data: dict, name:str , failed:bool):
+async def update_embed(interaction: Interaction, data: dict, name:str , failed:bool, message: discord.Message):
 
 	if failed:
 		warning = discord.Embed(
@@ -41,7 +41,7 @@ async def update_embed(interaction: Interaction, data: dict, name:str , failed:b
 	
 	embed.add_field(name="Embed Message for Unlockdown", value=f"{unlockmsg_config}", inline=False)
 
-	await interaction.message.edit(embed=embed)
+	await message.edit(embed=embed)
 	# await interaction.followup.send(f"Updated Lockdown Config", ephemeral=True)
 
 class Lockdown_Config_Panel(discord.ui.View):
@@ -54,7 +54,7 @@ class Lockdown_Config_Panel(discord.ui.View):
 	
 	@discord.ui.button(label="Add/Edit Channel", style=discord.ButtonStyle.gray, emoji="<:channel:1017378607863181322>", custom_id="LOCKDOWN:ADD:CHANNEL", row = 0)
 	async def add_channel(self, interaction: discord.Interaction, button: discord.ui.Button):
-		view = Select_channel_roles(interaction, self.data, self.name)
+		view = Select_channel_roles(interaction, self.data, self.name, self.message)
 		await interaction.response.send_message(content="Please choose from below dropdowns...", view=view, ephemeral=True)
 		await view.wait()
 	
@@ -68,7 +68,7 @@ class Lockdown_Config_Panel(discord.ui.View):
 			role = interaction.guild.get_role(int(self.data[self.name]['channel_and_role'][str(channel.id)]))
 			options.append(discord.SelectOption(label=channel.name, value=str(channel.id), emoji="<:channel:1017378607863181322>", description=f"{role.name} 🧑 {len(role.members)}"))
 		# create ui.Select instance and add it to a new view
-		select = Delete_channel(interaction, self.data, self.name, options)
+		select = Delete_channel(interaction, self.data, self.name, options, self.message)
 		view_select = discord.ui.View()
 		view_select.add_item(select)
 
@@ -77,7 +77,7 @@ class Lockdown_Config_Panel(discord.ui.View):
 
 	@discord.ui.button(label="Lockdown Message", style=discord.ButtonStyle.gray, emoji="<a:nat_message:1063077628036272158>", custom_id="LOCKDOWN:MODIFY:LOCK:MSG", row = 1)
 	async def lockdown_msg(self, interaction: discord.Interaction, button: discord.ui.Button):
-		modal = Lockdown_Add_Channel(interaction,self.name, self.data)
+		modal = Lockdown_Add_Channel(interaction,self.name, self.data, self.message)
 
 		panel = self.data[self.name]
 		title = f"{panel['lock_embed']['title']}"
@@ -115,7 +115,7 @@ class Lockdown_Config_Panel(discord.ui.View):
 
 	@discord.ui.button(label="Unlockdown Message", style=discord.ButtonStyle.gray, emoji="<a:nat_message:1063077628036272158>", custom_id="UNLOCKDOWN:MODIFY:LOCK:MSG", row = 1)
 	async def unlockdown_msg(self, interaction: discord.Interaction, button: discord.ui.Button):
-		modal = Lockdown_Add_Channel(interaction,self.name, self.data)
+		modal = Lockdown_Add_Channel(interaction,self.name, self.data, self.message)
 
 		panel = self.data[self.name]
 		title = f"{panel['unlock_embed']['title']}"
@@ -165,11 +165,12 @@ class Lockdown_Config_Panel(discord.ui.View):
 			await self.message.edit(view=self)
 
 class Lockdown_Add_Channel(discord.ui.Modal):
-	def __init__(self, interaction: Interaction, name: str, data: dict):
+	def __init__(self, interaction: Interaction, name: str, data: dict, message: discord.Message):
 		super().__init__(timeout=None, title=f"Configuring {name.title()}")
 		self.data = data
 		self.interaction = interaction
 		self.name = name
+		self.message = message
 	
 	async def on_submit(self, interaction: Interaction):
 		failed = False
@@ -224,14 +225,15 @@ class Lockdown_Add_Channel(discord.ui.Modal):
 					description=f'<a:nat_check:1010969401379536958> **|** Successfully updated embed message.'
 				)
 		await interaction.response.send_message(embed = embed, ephemeral=True)
-		await update_embed(interaction, self.data, self.name, failed)
+		await update_embed(interaction, self.data, self.name, failed, self.message)
 
 class Select_channel_roles(discord.ui.View):
-	def __init__(self, interaction: discord.Interaction, data: dict, name: str):
+	def __init__(self, interaction: discord.Interaction, data: dict, name: str, message: discord.Message):
 		super().__init__()
 		self.interaction = interaction
 		self.data = data
 		self.name = name
+		self.message = message
 		self.selected_channel = None
 		self.selected_role = None
 	
@@ -304,7 +306,7 @@ class Select_channel_roles(discord.ui.View):
 		
 		self.data[self.name]['channel_and_role'][str(self.selected_channel.id)] = str(self.selected_role.id)
 		await interaction.client.lockdown.update(self.data)
-		await update_embed(self.interaction, self.data, self.name, False)
+		await update_embed(self.interaction, self.data, self.name, False, self.message)
 
 		embed = discord.Embed(
 					color=0x43b581, 
@@ -319,11 +321,12 @@ class Select_channel_roles(discord.ui.View):
 		self.selected_channel = None
 
 class Delete_channel(discord.ui.Select):
-	def __init__(self, interaction: discord.Interaction, data: dict, name: str, options):
+	def __init__(self, interaction: discord.Interaction, data: dict, name: str, options, message: discord.Message):
 		super().__init__(placeholder="Select", custom_id="LOCKDOWN:DELETE:CHANNEL", options=options)
 		self.interaction = interaction
 		self.data = data
 		self.name = name
+		self.message = message
 
 	# This function is called when the user has chosen an option
 	async def callback(self, interaction: discord.Interaction):
@@ -334,7 +337,7 @@ class Delete_channel(discord.ui.Select):
 		else:
 			failed = True
 		await interaction.client.lockdown.update(self.data)
-		await update_embed(self.interaction, self.data, self.name, failed)
+		await update_embed(self.interaction, self.data, self.name, failed, self.message)
 
 		channel = interaction.guild.get_channel(int(self.values[0]))
 		embed = discord.Embed(
