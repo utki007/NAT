@@ -4,7 +4,7 @@ from discord import app_commands, Interaction
 from discord.ext import commands
 from utils.convertor import *
 from typing import Union, List
-from ui.channel import *
+from ui.settings.lockdown import *
 from utils.views.paginator import Paginator
 
 class settings(commands.GroupCog, name="settings"):
