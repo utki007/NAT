@@ -5,7 +5,7 @@ from discord.ext import commands
 from utils.convertor import *
 from utils.transformers import TimeConverter
 from typing import Union, List
-from ui.channel import *
+from ui.settings.lockdown import *
 
 class channel(commands.GroupCog, name="channel"):
 	def __init__(self, bot):
