@@ -8,11 +8,13 @@ from utils.embeds import *
 from utils.convertor import *
 from utils.checks import App_commands_Checks
 from io import BytesIO
-from discord.ui import UserSelect, RoleSelect, ChannelSelect
 from typing import List, Union
 from ui.settings import *
 from ui.settings.dankPool import *
 from utils.functions import *
+from utils.views.confirm import Confirm
+from utils.views.ui import *
+from ui.settings.lockdown import *
 
 class Dump(commands.GroupCog, name="dump"):
 	def __init__(self, bot):
@@ -147,8 +149,8 @@ class Serversettings_Dropdown(discord.ui.Select):
 	def __init__(self, default = -1):
 
 		options = [
-			discord.SelectOption(label='Dank Pool Access', description="Who all can access Server's Donation Pool", emoji='🏦'),
-			discord.SelectOption(label='Server Lockdown', description='Configure Lockdown Profiles', emoji='🔒'),
+			discord.SelectOption(label='Dank Pool Access', description="Who all can access Server's Donation Pool", emoji='<:tgk_bank:1073920882130558987>'),
+			discord.SelectOption(label='Server Lockdown', description='Configure Lockdown Profiles', emoji='<:tgk_lock:1072851190213259375>'),
 		]
 		if default != -1:
 			options[default].default = True
@@ -191,7 +193,8 @@ class Serversettings_Dropdown(discord.ui.Select):
 				quarantine = f"**`None`**"
 			else:
 				quarantine = interaction.guild.get_role(int(quarantine))
-				quarantine = f"**{quarantine.mention} (`{quarantine.id}`)**"
+				if quarantine is not None:
+					quarantine = f"**{quarantine.mention} (`{quarantine.id}`)**"
 			
 			embed = discord.Embed(
 				color=3092790,
@@ -224,7 +227,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 
 			embed = discord.Embed(
 				color=3092790,
-				title="Server Lockdown 🔒"
+				title="Server Lockdown <:tgk_lock:1072851190213259375>"
 			)
 			embed.add_field(name="Lockdown Profiles:", value=f"{profiles}", inline=False)
 			
@@ -238,33 +241,6 @@ class Serversettings_Dropdown(discord.ui.Select):
 		
 		else:
 			await interaction.response.send_message(f'Invaid Interaction',ephemeral=True)
-
-class Lockdown_Profile_Panel(discord.ui.View):
-	def __init__(self, interaction: discord.Interaction):
-		super().__init__()
-		self.interaction = interaction
-		self.message = None 
-	
-	@discord.ui.button(label="Add Profile", style=discord.ButtonStyle.gray, emoji="<:add_friend:1069597360491081880>",row=1)
-	async def whitelist_user(self, interaction: discord.Interaction, button: discord.ui.Button):
-		await interaction.response.send_message(content="Add profile",ephemeral=True)
-
-
-	@discord.ui.button(label="Configure Profile", style=discord.ButtonStyle.gray, emoji="<:settings:991733871118917683>",row=1)
-	async def modify_role(self, interaction: discord.Interaction, button: discord.ui.Button):
-		await interaction.response.send_message(content="Configure Profile",ephemeral=True)
-
-	async def interaction_check(self, interaction: discord.Interaction):
-		if interaction.user.id not in interaction.client.owner_ids:
-			await interaction.response.send_message("You do not have permission to use this button.")
-			return False
-		return True
-
-	async def on_timeout(self):
-		for button in self.children:
-			button.disabled = True
-		
-		await self.message.edit(view=self)
 
 async def setup(bot):
 	await bot.add_cog(serverUtils(bot))
