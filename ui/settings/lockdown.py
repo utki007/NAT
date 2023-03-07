@@ -4,6 +4,209 @@ import asyncio
 import io
 from discord import Interaction
 from discord.ui import ChannelSelect, RoleSelect
+from utils.views.confirm import Confirm
+from utils.views.ui import *
+from ui.settings.lockdown import *
+
+class Lockdown_Profile_Panel(discord.ui.View):
+	def __init__(self, interaction: discord.Interaction):
+		super().__init__()
+		self.interaction = interaction
+		self.message = None 
+	
+	@discord.ui.button(label="Add Profile", style=discord.ButtonStyle.gray, emoji="<:add_friend:1069597360491081880>",row=1)
+	async def whitelist_profile(self, interaction: discord.Interaction, button: discord.ui.Button):
+		await interaction.response.send_modal(Lockdown_Profile_Add())
+
+
+	@discord.ui.button(label="Configure Profile", style=discord.ButtonStyle.gray, emoji="✏",row=1)
+	async def modify_profile(self, interaction: discord.Interaction, button: discord.ui.Button):
+		data = await interaction.client.lockdown.find(interaction.guild.id)
+		options = []
+		for profile in data['lockdown_profiles']:
+			options.append(discord.SelectOption(
+				label=f"{profile.title()}", description=f"Configure {profile.title()}", emoji='<:nat_profile:1073644967492337786>', value=f"{profile}"))
+		if len(options) == 0:
+			embed = await get_warning_embed(interaction, "This server has no profiles yet! Add one using the `Add Profile` button.")
+			return await interaction.response.send_message(embed=embed, ephemeral=True)
+		
+		view = discord.ui.View()
+		view.profile = Dropdown_Default(interaction, options, placeholder="Select a profile to configure ...")
+		view.add_item(view.profile)
+		await interaction.response.send_message(view=view, ephemeral=True)
+		await view.wait()
+
+		if not view.value:
+			embed = await get_warning_embed("Some error occured!")
+			await interaction.followup.send(embed=embed, ephemeral=True)
+			return await interaction.delete_original_response()
+
+		profile_name = view.profile.values[0]
+
+		if profile_name not in data['lockdown_profiles']:
+			warning = discord.Embed(
+				color=0xffd300,
+				title=f"> The profile named **`{profile_name}`** does not exist. Are you trying to Create a profile? \n> Use </lockdown create:1062965049913778296> .")
+			warning.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/845404773360205854.gif?size=128&quality=lossless")
+			return await interaction.response.send_message(embed=warning, ephemeral=True)
+		try:
+			panel = data[profile_name]
+		except KeyError:
+			warning = discord.Embed(
+				color=0xffd300,
+				title=f"> The profile named **`{profile_name}`** does not exist. Are you trying to Create a profile? \n> Use </lockdown create:1062965049913778296> .")
+			warning.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/845404773360205854.gif?size=128&quality=lossless")
+			return await interaction.response.send_message(embed=warning, ephemeral=True)
+
+		embed = discord.Embed(title=f"Lockdown Settings for Profile: {profile_name}", color=discord.Color.blurple())
+		
+		lockdown_config = ""
+		if len(panel['channel_and_role']) > 0:
+			for channel_id in panel['channel_and_role']:
+				channel = interaction.guild.get_channel(int(channel_id))
+				roleIds = [int(role_ids) for role_ids in panel['channel_and_role'][channel_id].split(" ") if role_ids != '' and role_ids not in ["everyone"]]
+				roleIds = [discord.utils.get(interaction.guild.roles, id=id) for id in roleIds]
+				role = [role for role in roleIds if role != None]
+				if channel:
+					lockdown_config += f'{channel.mention} **|** {" + ".join([role.mention for role in role])}\n'
+			if lockdown_config == "":
+				lockdown_config = "None"
+		else:
+			lockdown_config = "None"
+
+		embed.add_field(name="Channel Settings", value=f"{lockdown_config}", inline=False)
+
+		lockmsg_config = f"**Title:** {panel['lock_embed']['title']}\n"
+		lockmsg_config += f"**Thumbnail:** [**Click here**]({panel['lock_embed']['thumbnail']})\n" 
+		lockmsg_config += f"**Description:**\n```{panel['lock_embed']['description']}```\n"
+		
+		embed.add_field(name="Embed Message for Lockdown", value=f"{lockmsg_config}", inline=False)
+
+		unlockmsg_config = f"**Title:** {panel['unlock_embed']['title']}\n"
+		unlockmsg_config += f"**Thumbnail:** [**Click here**]({panel['unlock_embed']['thumbnail']})\n"
+		unlockmsg_config += f"**Description:**\n```{panel['unlock_embed']['description']}```\n"
+		
+		embed.add_field(name="Embed Message for Unlockdown", value=f"{unlockmsg_config}", inline=False)
+
+		
+		view = Lockdown_Config_Panel(interaction, data, profile_name)
+		confirm_message = await interaction.followup.send(embed=embed, view=view, wait=True, ephemeral=True)
+		view.message = confirm_message
+		await interaction.delete_original_response()
+
+	@discord.ui.button(label="Delete Profile", style=discord.ButtonStyle.gray, emoji="<:nat_delete:1063067661602402314>",row=1)
+	async def delete_profile(self, interaction: discord.Interaction, button: discord.ui.Button):
+		data = await interaction.client.lockdown.find(interaction.guild.id)
+		options = []
+		for profile in data['lockdown_profiles']:
+			options.append(discord.SelectOption(
+				label=f"{profile.title()}", description=f"Delete {profile.title()}", emoji='<:nat_profile:1073644967492337786>', value=f"{profile}"))
+		if len(options) == 0:
+			embed = await get_warning_embed(interaction, "This server has no profiles yet! Add one using the `Add Profile` button.")
+			return await interaction.response.send_message(embed=embed, ephemeral=True)
+
+		view = discord.ui.View()
+		view.profile = Dropdown_Default(interaction, options, placeholder="Select a profile to delete ...")
+		view.add_item(view.profile)
+		await interaction.response.send_message(view=view, ephemeral=True, delete_after=190)
+		await view.wait()
+
+		if not view.value:
+			embed = await get_warning_embed("Some error occured!")
+			await interaction.followup.send(embed=embed, ephemeral=True)
+			return await interaction.delete_original_response()
+			
+			
+		profile_name = view.profile.values[0]
+		confirmation_view = Confirm(interaction.user)
+		embed = discord.Embed(
+			color=3092790,
+			description=f"This will delete the profile `{profile_name.title()}`. Are you sure?"
+		)
+		confirm_message = await interaction.followup.send(embed=embed, view=confirmation_view, wait=True, ephemeral=True)
+		await interaction.delete_original_response()
+		await confirmation_view.wait()
+		if confirmation_view.value:
+			data['lockdown_profiles'].remove(view.profile.values[0])
+			await interaction.client.lockdown.upsert(data)
+			embed = await get_success_embed(f"Deleted profile `{view.profile.values[0].title()}`")
+			await update_lockdown_embed(interaction, data)
+			await confirm_message.edit(embed=embed, view=None)
+		elif confirmation_view.value == False:
+			embed = await get_error_embed("Cancelled profile deletion.")
+			await confirm_message.edit(embed=embed, view=None)
+
+	async def interaction_check(self, interaction: discord.Interaction):
+		if interaction.user.id not in interaction.client.owner_ids:
+			await interaction.response.send_message("You do not have permission to use this button.")
+			return False
+		return True
+
+	async def on_timeout(self):
+		for button in self.children:
+			button.disabled = True
+		
+		await self.message.edit(view=self)
+
+async def update_lockdown_embed(interaction: Interaction, data: dict):
+
+	if data['lockdown_profiles'] is None or len(data['lockdown_profiles']) == 0:
+		profiles = f"` - ` **Add profiles when?**\n"
+	else:
+		profiles = ""
+		for profile in data['lockdown_profiles']:
+			profiles += f"` - ` **{profile.title()}**\n"
+
+	embed = discord.Embed(
+		color=3092790,
+		title="Server Lockdown <:tgk_lock:1072851190213259375>"
+	)
+	embed.add_field(name="Lockdown Profiles:", value=f"{profiles}", inline=False)
+	
+	await interaction.message.edit(embed=embed)
+
+class Lockdown_Profile_Add(discord.ui.Modal, title='Add Lockdown Profile'):
+
+	profile_name = discord.ui.TextInput(
+		label='What do you think of this new feature?',
+		style=discord.TextStyle.short,
+		placeholder='Enter lockdown profile name',
+		required=True,
+		max_length=50,
+		min_length=3
+	)
+
+	async def on_submit(self, interaction: discord.Interaction):
+
+		name = self.profile_name.value
+
+		data = await interaction.client.lockdown.find(interaction.guild.id)
+		if not data:
+			data = {"_id": interaction.guild.id, "lockdown_profiles": []}
+
+		data['lockdown_profiles'].append(name)
+		data[name] = {
+			'creator': interaction.user.id, 
+			'channel_and_role': {}, 
+			'lock_embed':{
+				'title':'Server Lockdown <:tgk_lock:1072851190213259375>', 
+				'description':f"This channel has been locked.\nRefrain from dm'ing staff, **__you are not muted.__**", 
+				'thumbnail':'https://cdn.discordapp.com/emojis/830548561329782815.gif?v=1'
+			}, 
+			'unlock_embed':{
+				'title':'Server Unlock <:tgk_unlock:1072851439161983028>', 
+				'description':f"Channel has been unlocked.\nRefrain from asking us why it was previously locked.", 
+				'thumbnail':'https://cdn.discordapp.com/emojis/802121702384730112.gif?v=1'
+			}
+		}
+		await interaction.client.lockdown.upsert(data)
+		embed = await get_success_embed(f"Successfully created lockdown profile named: **`{name}`**!")
+		await update_lockdown_embed(interaction, data)
+		await interaction.response.send_message(embed = embed, ephemeral=True)
+		
+
+	async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+		await interaction.response.send_message('Oops! Something went wrong.', ephemeral=True)
 
 async def update_embed(interaction: Interaction, data: dict, name:str , failed:bool, message: discord.Message):
 
