@@ -131,14 +131,13 @@ if os.path.exists(os.getcwd()+"./properties/tokens.json"):
 	# loading from tokens.py
 	with open("./properties/tokens.json") as file_data:
 		configData = json.load(file_data)
-	bot.botToken = configData["token"]
-	bot.connection_url = configData["mongo"]
+	bot.botToken = configData["BOT_TOKEN"]
+	bot.connection_url = configData["MongoConnectionUrl"]
 	bot.amari = configData["amari"]
 else:
 	# for heroku
 	bot.botToken = os.environ['BOT_TOKEN']
 	bot.connection_url = os.environ['MongoConnectionUrl']
-	bot.connection_url2 = os.environ["mongoBanDB"]
 	bot.amari = os.environ["amari"]
 
 # fetching assets
