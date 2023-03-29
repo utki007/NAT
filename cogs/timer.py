@@ -1,11 +1,15 @@
 import asyncio
 import datetime
+from itertools import islice
 from tabnanny import check
+
 import discord
 from discord import app_commands
 from discord.ext import commands, tasks
-from utils.convertor import *
-from itertools import islice
+
+from utils.convertor import convert_to_time, calculate
+from utils.embeds import get_error_embed, get_success_embed, get_warning_embed
+
 
 def chunk(it, size):
 	it = iter(it)
@@ -24,12 +28,14 @@ class Button(discord.ui.View):
 			return await interaction.response.send_message("Invalid/Expired timer", ephemeral=True)
 
 		if interaction.user.id in timer_data['members']:
-			return await interaction.response.send_message("<a:nat_cross:1010969491347357717> **|** You have already entered the timer!", ephemeral=True)
+			error_embed = await get_error_embed(f"You have already entered the timer!")
+			return await interaction.response.send_message(embed = error_embed, ephemeral=True)
 		timer_data['members'].append(interaction.user.id)
 
 		button.label = len(timer_data['members'])
 		await interaction.message.edit(view=self)
-		await interaction.response.send_message("<a:nat_check:1010969401379536958> **|** I will remind you once timer ends!", ephemeral=True)
+		embed = await get_success_embed(f"I will remind you once timer ends!")
+		await interaction.response.send_message(embed = embed, ephemeral=True)
 		await interaction.client.timer.update(timer_data)
 		self.timer = timer_data
 
@@ -57,15 +63,11 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 			cd = int(await calculate(time))
 			end = datetime.datetime.now() + datetime.timedelta(seconds=cd)
 		except:
-			warning = discord.Embed(
-				color=self.bot.color['danger'],
-				title=f"<a:nat_warning:1010618708688912466> **|** Incorrect time format, please use `1h30m10s`")
+			warning = await get_warning_embed("Incorrect time format, please use `1h30m10s`")
 			return await interaction.response.send_message(embed=warning, ephemeral=True)
 
 		if cd < 30:
-			warning = discord.Embed(
-				color=self.bot.color['danger'],
-				title=f"<a:nat_warning:1010618708688912466> **|** Time should be more than 30s")
+			warning = await get_warning_embed("Time should be more than 30s")
 			return await interaction.response.send_message(embed=warning, ephemeral=True)
 		await interaction.response.defer()
 		message = await interaction.original_response()
@@ -112,9 +114,7 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 			interaction.client.dispatch('timer_end', timer_data, False)
 			await interaction.edit_original_response(content="Timer ended successfully!")
 		except:
-			warning = discord.Embed(
-				color=self.bot.color['danger'],
-				title=f"<a:nat_warning:1010618708688912466> **|** Invalid message id")
+			warning = await get_warning_embed("Invalid timer ID")
 			return await interaction.edit_original_response(embed=warning)
 
 	@app_commands.command(name="delete", description="Delete a timer", extras={'example': '/timer delete [timer_id]'})
@@ -143,9 +143,7 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 			await interaction.client.timer.delete(timer_data['_id'])
 			await interaction.edit_original_response(content="Timer deleted successfully!")
 		except:
-			warning = discord.Embed(
-				color=self.bot.color['danger'],
-				title=f"<a:nat_warning:1010618708688912466> **|** Invalid message id")
+			warning = await get_warning_embed("Invalid timer ID")
 			return await interaction.edit_original_response(embed=warning)
 
 	@app_commands.command(name="re-ping", description="Ping from an expired timer!" , extras={'example': '/timer re-ping [timer_id]'})
@@ -195,9 +193,7 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 				pass
 			await interaction.edit_original_response(content="Ping sent successfully!")
 		except:
-			warning = discord.Embed(
-				color=self.bot.color['danger'],
-				title=f"<a:nat_warning:1010618708688912466> **|** Invalid message id")
+			warning = await get_warning_embed("Invalid timer ID")
 			return await interaction.edit_original_response(embed=warning)
 
 	@commands.Cog.listener()
