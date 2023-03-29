@@ -1,21 +1,23 @@
-import discord
 import json
-import os
-from discord.ext import commands
 import logging
 import logging.handlers
-import motor.motor_asyncio
-from utils.db import Document
+import os
 from ast import literal_eval
-from utils.functions import *
+
+import discord
+import motor.motor_asyncio
+from discord.ext import commands
+
+from utils.db import Document
 from utils.embeds import *
+from utils.functions import *
 
 logger = logging.getLogger('discord')
 handler = logging.handlers.RotatingFileHandler(
-    filename='bot.log',
-    encoding='utf-8',
-    maxBytes=32 * 1024 * 1024,  # 32 MiB
-    backupCount=5,  # Rotate through 5 files
+	filename='bot.log',
+	encoding='utf-8',
+	maxBytes=32 * 1024 * 1024,  # 32 MiB
+	backupCount=5,  # Rotate through 5 files
 )
 dt_fmt = '%Y-%m-%d %H:%M:%S'
 formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
@@ -59,10 +61,13 @@ class MyBot(commands.Bot):
 			)
 		)
 		await bot.tree.sync()
-		# await bot.tree.sync(guild=discord.Object(785839283847954433))
-		# await bot.tree.sync(guild=discord.Object(999551299286732871))
+		for guild in bot.guilds:
+			await bot.tree.sync(guild=guild)
 
-		await bot.change_presence(status=discord.Status.invisible, activity=discord.Activity(type=discord.ActivityType.watching, name="Version a0.0.1"))
+		members_list = [len(guild.members) for guild in  bot.guilds]
+		total_members = sum(members_list)
+
+		await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.listening, name=f"{total_members} members!"))
 
 bot = MyBot()
 
@@ -107,21 +112,29 @@ async def on_member_update(before, after):
 		data = await bot.dankSecurity.find(member.guild.id)
 		if data:
 			if data['event_manager'] in roles and member.id not in data['whitelist']:
-				await member.remove_roles(member.guild.get_role(data['event_manager']), reason="Member is not a authorized Dank Manager.")
-				if data['quarantine'] is not None:
-					await quarantineUser(bot, member, data['quarantine'])
-					embed = await get_warning_embed(f"You have been quarantined for 24 hours for unauthorized attempt to get Dank Manager role.")
-					await member.send(embed=embed)
-					await member.guild.owner.send(f"{member.mention} has been quarantined for unauthorized attempt to get Dank Manager role in {member.guild.name}.")
-				else:
+				securityLog = bot.get_channel(1089973828215644241)
+				await securityLog.send(f"{member.mention} has made an unauthorized attempt to get **Dank Manager role** in {member.guild.name}.")
+				try:
+					await member.remove_roles(member.guild.get_role(data['event_manager']), reason="Member is not a authorized Dank Manager.")
+				except:
+					pass
+				role = None
+				if data['quarantine'] is not None:					
+					role = member.guild.get_role(data['quarantine'])
+				await quarantineUser(bot, member, role)					
+				try:
 					embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to get Dank Manager role in {member.guild.name}")
 					await member.guild.owner.send(embed = embed)
+				except:
+					pass
 
 @bot.event
 async def on_guild_join(guild):
-	if len(bot.guilds) > 20:
+	embed = await get_invisible_embed(f'Unable to stay in {guild.name}.\n > Dm utki007#0690 to whitelist your server.')
+	whitelistedServer = [815849745327194153, 947525009247707157, 999551299286732871, 1069994776977494146, 991711295139233834]
+	if guild.id not in whitelistedServer:
 		try:
-			await guild.owner.send("Sorry, I can't join your server because i have reached the maximum server limit of 20 servers.")
+			await guild.owner.send(embed=embed)
 		except:
 			pass
 		await guild.leave()
