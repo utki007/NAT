@@ -37,7 +37,7 @@ async def calculate(query):
     end = time.time()
 
     output_string = output.body.replace("{m:", "").replace("}", "")
-    return int(float(output_string))
+    return round((float(output_string)),2)
 
 async def millify(n):
     n = float(n)
