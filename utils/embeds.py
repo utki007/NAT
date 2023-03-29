@@ -20,3 +20,10 @@ async def get_error_embed(content):
 		description=f"<a:nat_cross:1010969491347357717> **|** {content}"
 	)
 	return error_embed
+
+async def get_invisible_embed(content):
+	invis_embed = discord.Embed(
+		color=2829617,
+		description=f"{content}"
+	)
+	return invis_embed
