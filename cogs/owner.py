@@ -76,11 +76,9 @@ class owner(commands.Cog):
             page.append(discord.Embed(description=f'```py\n{result[i:i + 2000]}\n```', color=ctx.author.color))
         
         custom_button = [
-			# discord.ui.Button(label="<<", style=discord.ButtonStyle.gray),
-			discord.ui.Button(label="<", style=discord.ButtonStyle.blurple),
-			discord.ui.Button(label="◼", style=discord.ButtonStyle.blurple),
-			discord.ui.Button(label=">", style=discord.ButtonStyle.blurple),
-			# discord.ui.Button(label=">>", style=discord.ButtonStyle.gray)
+			discord.ui.Button(label="<", style=discord.ButtonStyle.gray),
+			discord.ui.Button(label="◼", style=discord.ButtonStyle.gray),
+			discord.ui.Button(label=">", style=discord.ButtonStyle.gray)
 		]
         await Contex_Paginator(ctx, page, custom_button).start(embeded=True, quick_navigation=False)
     
@@ -120,5 +118,5 @@ class owner(commands.Cog):
 async def setup(bot):
     await bot.add_cog(
         owner(bot),
-        guilds = [discord.Object(999551299286732871), discord.Object(785839283847954433)]
+        guilds = [discord.Object(999551299286732871)]
     )
