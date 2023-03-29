@@ -15,45 +15,12 @@ from utils.functions import *
 from utils.views.confirm import Confirm
 from utils.views.ui import *
 from ui.settings.lockdown import *
+from utils.views.paginator import Paginator
+from itertools import islice
 
-class Dump(commands.GroupCog, name="dump"):
-	def __init__(self, bot):
-		self.bot = bot
-	
-	@app_commands.command(name="role", description="Dump a role", extras={'examples': '/dump role [role]'})
-	@app_commands.describe(role='Role to dump')
-	async def dump_role(self, interaction: Interaction, role:discord.Role):
-		msg = f"{role.name} has {len(role.members)} members"
-		
-		if len(role.members) > 20:
-			await interaction.response.send_message("Role has more than 20 members, sending as file", ephemeral=False)
-			members = [f"{member.name}#{member.discriminator} **|** {member.id}" for member in role.members]
-
-			buffer = BytesIO("\n".join(members).encode('utf-8'))
-			file = discord.File(buffer, filename=f"{role.name}.txt")
-			buffer.close()
-			await interaction.edit_original_response(content=msg, attachments=[file])
-		else:
-			embed = discord.Embed(title=f"{role.name} dump", description="\n".join([f"{member.name}#{member.discriminator} **|** {member.id}" for member in role.members]), color=role.color)
-			await interaction.response.send_message(content=msg, embeds=[embed])
-	
-	@app_commands.command(name="channel", description="Dump a channel", extras={'example': '/dump channel [channel]'})
-	@app_commands.describe(channel='Channel to dump')
-	async def dump_channel(self, interaction: Interaction, channel:discord.TextChannel):
-		msg = f"{channel.name} has {len(channel.members)} members"
-
-		if len(channel.members) > 20:
-			await interaction.response.send_message("Channel has more than 20 members, sending as file", ephemeral=False)
-			members = [f"{member.name}#{member.discriminator} **|** {member.id}" for member in channel.members]
-
-			buffer = BytesIO("\n".join(members).encode('utf-8'))
-			file = discord.File(buffer, filename=f"{channel.name}.txt")
-			buffer.close()
-			await interaction.edit_original_response(content=msg, attachments=[file])
-		
-		else:
-			embed = discord.Embed(title=f"{channel.name} dump", description="\n".join([f"{member.mention} **|** `{member.id}`" for member in channel.members]), color=self.bot.color['default'])
-			await interaction.response.send_message(content=msg, embeds=[embed])
+def chunk(it, size):
+	it = iter(it)
+	return iter(lambda: tuple(islice(it, size)), ())
 
 class serverUtils(commands.Cog):
 	def __init__(self, bot):
@@ -92,48 +59,9 @@ class serverUtils(commands.Cog):
 			embed=calc_embed
 		)
 
-	#quarantine user using quarantineUser
-	@app_commands.command(name="quarantine", description="Quarantine a user! 🦠")
-	@app_commands.checks.has_permissions(administrator=True)
-	async def quarantine(self, interaction:  discord.Interaction, user: discord.Member):
-		await interaction.response.defer()
-
-		dankSecurity = await interaction.client.dankSecurity.find(user.guild.id)
-		if dankSecurity:
-			if dankSecurity['quarantine'] is None:
-				embed = await get_warning_embed("Quarantine role not set. Please set it using </serversettings:1068960308800008253> command.")
-				return await interaction.edit_original_response(embed = embed)
-			else:
-				role = user.guild.get_role(dankSecurity['quarantine'])
-				if role in user.roles:
-					embed = await get_warning_embed("User is already quarantined.")
-					return await interaction.edit_original_response(embed = embed)
-				else:
-					quarantined = await quarantineUser(interaction.client, user, role)
-					if quarantined:
-						embed = await get_success_embed(f"Successfully quarantined {user.mention}.")
-						return await interaction.edit_original_response(embed = embed)
-					else:
-						embed = await get_error_embed(f"Failed to quarantine {user.mention}. I lack permissions to do so.")
-						return await interaction.edit_original_response(embed = embed)
-		else:
-			embed = await get_warning_embed("Quarantine role not set. Please set it using </serversettings:1068960308800008253> command.")
-			return await interaction.edit_original_response(embed = embed)
- 
-	@app_commands.command(name="unquarantine", description="Unquarantine a user! 🦠")
-	@app_commands.checks.has_permissions(administrator=True)
-	async def unquarantine(self, interaction:  discord.Interaction, user: discord.Member):
-		await interaction.response.defer()
-		unquarantined =  await unquarantineUser(interaction.client, user)
-		if unquarantined:
-			embed = await get_success_embed(f"Unquarantined {user.mention}!")
-			await interaction.edit_original_response(embed=embed)
-		else:
-			embed = await get_error_embed(f"{user.mention} is not quarantined!")
-			await interaction.edit_original_response(embed=embed)
-
 	@app_commands.command(name="serversettings", description="Adjust server-specific settings! ⚙️")
 	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
+	# @App_commands_Checks.is_server_owner()
 	@App_commands_Checks.is_owner()
 	async def serversettings(self, interaction:  discord.Interaction):
 		embed = discord.Embed(
@@ -244,5 +172,4 @@ class Serversettings_Dropdown(discord.ui.Select):
 
 async def setup(bot):
 	await bot.add_cog(serverUtils(bot))
-	await bot.add_cog(Dump(bot))
 	print(f"loaded serverUtils cog")
