@@ -130,8 +130,8 @@ async def on_member_update(before, after):
 
 @bot.event
 async def on_guild_join(guild):
-	embed = await get_invisible_embed(f'Unable to stay in {guild.name}.\n > Dm utki007#0690 to whitelist your server.')
-	whitelistedServer = [815849745327194153, 947525009247707157, 999551299286732871, 1069994776977494146, 991711295139233834]
+	embed = await get_invisible_embed(f'Unable to stay in **{guild.name}**.\n > Dm utki007#0690 to whitelist your server.')
+	whitelistedServer = [815849745327194153, 947525009247707157, 999551299286732871, 1069994776977494146, 991711295139233834, 785839283847954433]
 	if guild.id not in whitelistedServer:
 		try:
 			await guild.owner.send(embed=embed)
