@@ -7,7 +7,7 @@ from discord.ext import commands
 from utils.embeds import get_error_embed, get_success_embed, get_warning_embed
 from utils.functions import quarantineUser, unquarantineUser
 
-
+@app_commands.guild_only()
 class moderation(commands.GroupCog, name="moderate", description="Server moderation commands"):
 	def __init__(self, bot):
 		self.bot = bot

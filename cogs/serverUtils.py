@@ -36,6 +36,7 @@ class serverUtils(commands.Cog):
 		)
 
 	@app_commands.command(name="calculate", description="Do math! 🧮", extras={'example': '/calculate query: 2m+40k'})
+	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 2, key=lambda i: (i.guild_id, i.user.id))
 	@app_commands.describe(query = "5 Mil -> 5e6 or 5m", hidden = "Nobody knows how you calculated so accurately 🥂")
 	async def calculate(self, interaction:  discord.Interaction, query: str , hidden: bool = False):
@@ -60,6 +61,7 @@ class serverUtils(commands.Cog):
 		)
 
 	@app_commands.command(name="serversettings", description="Adjust server-specific settings! ⚙️")
+	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
 	# @App_commands_Checks.is_server_owner()
 	@App_commands_Checks.is_owner()

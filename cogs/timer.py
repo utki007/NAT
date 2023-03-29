@@ -45,6 +45,7 @@ class Button(discord.ui.View):
 		
 		await self.message.edit(view=self)
 
+@app_commands.guild_only()
 class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 	def __init__(self, bot):
 		self.bot = bot
@@ -54,7 +55,6 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 		self.timertask.cancel()
 
 	@app_commands.command(name="start", description="Create a timer", extras={'example': '/timer start [time]'})
-	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 3, key=lambda i: (i.guild_id, i.user.id))
 	@app_commands.describe(time = "Enter time in format: 1h30m2s", title = "Enter title of the timer")
 	async def timerStart(self, interaction:  discord.Interaction, time: str, title: str = 'Timer'):
@@ -101,7 +101,6 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 			self.bot.dispatch('timer_end', timer_data, True)
 
 	@app_commands.command(name="end", description="End a timer", extras={'example': '/timer end [timer_id]'})
-	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 3, key=lambda i: (i.guild_id, i.user.id))
 	@app_commands.describe(message_id = "Enter Message ID of an active timer")
 	async def timerEnd(self, interaction:  discord.Interaction, message_id: str):
@@ -119,7 +118,6 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 			return await interaction.edit_original_response(embed=warning)
 
 	@app_commands.command(name="delete", description="Delete a timer", extras={'example': '/timer delete [timer_id]'})
-	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 3, key=lambda i: (i.guild_id, i.user.id))
 	@app_commands.describe(message_id = "Enter Message ID of an active timer")
 	async def timerDelete(self, interaction:  discord.Interaction, message_id: str):
@@ -148,7 +146,6 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 			return await interaction.edit_original_response(embed=warning)
 
 	@app_commands.command(name="re-ping", description="Ping from an expired timer!" , extras={'example': '/timer re-ping [timer_id]'})
-	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 3, key=lambda i: (i.guild_id, i.user.id))
 	@app_commands.describe(message_id = "Inactive timer message id < 1h")
 	async def timerPing(self, interaction:  discord.Interaction, message_id: str):
