@@ -11,14 +11,16 @@ class Help(commands.Cog):
     async def command_auto_complete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
         commands = interaction.client.tree.get_commands()
         return [
-            app_commands.Choice(name=str(commnad.name), value=str(commnad.name))
-            for commnad in commands if current.lower() in commnad.name.lower()
+            app_commands.Choice(name=str(command.name), value=str(command.name))
+            for command in commands if (current.lower() in command.name.lower() and command.name != "help")
         ]
     
     @app_commands.command(name="help", description="Show an short help message about a command", extras={'example': '/help command: ping'})
     @app_commands.describe(command="command to show help message")
     @app_commands.autocomplete(command=command_auto_complete)
     async def _help(self, interaction: discord.Interaction, command: str):
+        if command.lower() in ["help", "serversettings"]:
+            command = None
         command = interaction.client.tree.get_command(command)
         if type(command) == app_commands.commands.Command:
             embed = discord.Embed(title=f"{interaction.client.user.name} help Menu", description="",color=interaction.client.color['default'])
@@ -128,10 +130,11 @@ class Help(commands.Cog):
                                 embed.add_field(name="Parameters", value=useage, inline=False)
                             pages.append(embed)
 
-            custom_button = [discord.ui.Button(label="<", style=discord.ButtonStyle.blurple),discord.ui.Button(label="◼", style=discord.ButtonStyle.red),discord.ui.Button(label=">", style=discord.ButtonStyle.blurple)]
+            custom_button = [discord.ui.Button(label="<<", style=discord.ButtonStyle.gray),discord.ui.Button(label="<", style=discord.ButtonStyle.gray),discord.ui.Button(label=">", style=discord.ButtonStyle.gray),discord.ui.Button(label=">>", style=discord.ButtonStyle.gray)]
 
             await Paginator(interaction, pages, custom_button).start(embeded=True, quick_navigation=False)
-
+        else:
+            await interaction.response.send_message("No help found for this command", ephemeral=True)
     
 async def setup(bot):
     await bot.add_cog(Help(bot))
