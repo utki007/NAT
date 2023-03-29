@@ -56,8 +56,8 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 	@app_commands.command(name="start", description="Create a timer", extras={'example': '/timer start [time]'})
 	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 3, key=lambda i: (i.guild_id, i.user.id))
-	@app_commands.describe(time = "Enter time in format: 1h30m2s")
-	async def timerStart(self, interaction:  discord.Interaction, time: str):
+	@app_commands.describe(time = "Enter time in format: 1h30m2s", title = "Enter title of the timer")
+	async def timerStart(self, interaction:  discord.Interaction, time: str, title: str = 'Timer'):
 		try:
 			time = await convert_to_time(time)
 			cd = int(await calculate(time))
@@ -77,6 +77,7 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 			'guild_id': interaction.guild.id,
 			'channel_id': interaction.channel.id,
 			'time': end,
+			'title': title,
 			'members': []
 		}
 		await interaction.client.timer.upsert(timer_data)
@@ -85,7 +86,7 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 
 		e = discord.Embed(
 			color=self.bot.color['default'],
-			title=f"{'Timer'}",
+			title=f"{title}",
 			description = f"> **Ends:** **<t:{int(datetime.datetime.timestamp(end))}:R>**\n> **Launched by:** <@{timer_data['user_id']}>\n",
 			timestamp=end
 		)
