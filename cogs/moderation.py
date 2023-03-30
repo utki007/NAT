@@ -4,7 +4,7 @@ import discord
 from discord import Interaction, app_commands
 from discord.ext import commands
 
-from utils.embeds import get_error_embed, get_success_embed, get_warning_embed
+from utils.embeds import get_error_embed, get_invisible_embed, get_success_embed, get_warning_embed
 from utils.functions import quarantineUser, unquarantineUser
 
 @app_commands.guild_only()
@@ -46,11 +46,7 @@ class moderation(commands.GroupCog, name="moderate", description="Server moderat
 
 				# quarantine user
 				await quarantineUser(interaction.client, user, role, f'Quarantined by {interaction.user.name}#{interaction.user.discriminator} (ID: {interaction.user.id})')
-				embed = await get_success_embed(f"Successfully quarantined {user.mention}.")
-				embed.title = f"{user.name}#{user.discriminator} Quarantined."
-				embed.description = f'<:tgk_greenarrow:1005361235715424296> {user.mention}(`{user.id}`) has been quarantined.\n'
-				embed.set_thumbnail(url=user.avatar.url)
-				embed.timestamp = datetime.datetime.utcnow()
+				embed = await get_success_embed(f"Successfully quarantined {user.mention}!")
 				return await interaction.edit_original_response(embed = embed)
 		else:
 			embed = await get_warning_embed("Quarantine role not set. Please set it using </serversettings:1068960308800008253> command.")
@@ -94,10 +90,6 @@ class moderation(commands.GroupCog, name="moderate", description="Server moderat
 				# unquarantine user
 				await unquarantineUser(interaction.client, user, role, f'Unquarantined by {interaction.user.name}#{interaction.user.discriminator} (ID: {interaction.user.id})')
 				embed = await get_success_embed(f"Successfully unquarantined {user.mention}.")
-				embed.title = f"{user.name}#{user.discriminator} Unquarantined."
-				embed.description = f'<:tgk_greenarrow:1005361235715424296> {user.mention}(`{user.id}`) has been unquarantined.\n'
-				embed.set_thumbnail(url=user.avatar.url)
-				embed.timestamp = datetime.datetime.utcnow()
 				return await interaction.edit_original_response(embed = embed)
 		else:
 			embed = await get_warning_embed("Quarantine role not set. Please set it using </serversettings:1068960308800008253> command.")
