@@ -47,7 +47,7 @@ class moderation(commands.GroupCog, name="moderate", description="Server moderat
 				# quarantine user
 				await quarantineUser(interaction.client, user, role)
 				embed = await get_success_embed(f"Successfully quarantined {user.mention}.")
-				embed.title = "{user.name}#{user.discriminator} Quarantined."
+				embed.title = f"{user.name}#{user.discriminator} Quarantined."
 				embed.description = f'<:tgk_greenarrow:1005361235715424296> {user.mention}(`{user.id}`) has been quarantined.\n'
 				embed.set_thumbnail(url=user.avatar.url)
 				embed.timestamp = datetime.datetime.utcnow()
@@ -94,7 +94,7 @@ class moderation(commands.GroupCog, name="moderate", description="Server moderat
 				# unquarantine user
 				await unquarantineUser(interaction.client, user, role)
 				embed = await get_success_embed(f"Successfully unquarantined {user.mention}.")
-				embed.title = "{user.name}#{user.discriminator} Unquarantined."
+				embed.title = f"{user.name}#{user.discriminator} Unquarantined."
 				embed.description = f'<:tgk_greenarrow:1005361235715424296> {user.mention}(`{user.id}`) has been unquarantined.\n'
 				embed.set_thumbnail(url=user.avatar.url)
 				embed.timestamp = datetime.datetime.utcnow()
