@@ -77,6 +77,7 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 			await interaction.edit_original_response(embed=embed)
 
 	@app_commands.command(name="lock", description="Lock channel 🙊", extras={'example': '/lock'})
+	@app_commands.checks.has_permissions(manage_messages=True)
 	@app_commands.describe(role = "Provide role", user = "Input user 👤")
 	async def lock(self, interaction:  discord.Interaction, role: discord.Role = None, user: discord.User = None):
 		await interaction.response.defer(ephemeral = False)
@@ -126,6 +127,7 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 			await channel.edit(archived=True, locked=True)
 
 	@app_commands.command(name="unlock", description="Unlock channel 🗣️", extras={'example': '/unlock'})
+	@app_commands.checks.has_permissions(manage_messages=True)
 	@app_commands.describe(role = "Provide role", user = "Input user 👤", state = "False for deafult perm, True for override perms")
 	async def unlock(self, interaction:  discord.Interaction, state: bool = True, role: discord.Role = None, user: discord.User = None):
 		
@@ -283,7 +285,6 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 			return await interaction.response.send_message(embed=error, ephemeral=True)
 
 	@app_commands.command(name="dump", description="Dump members in a channel or a role 📜", extras={'example': '/dump'})
-	@app_commands.checks.has_permissions(manage_messages=True)
 	async def dump(self, interaction:  discord.Interaction, channel: discord.TextChannel = None, role: discord.Role = None):
 		
 		type = None
