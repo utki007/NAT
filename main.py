@@ -121,7 +121,7 @@ async def on_member_update(before, after):
 				role = None
 				if data['quarantine'] is not None:					
 					role = member.guild.get_role(data['quarantine'])
-				await quarantineUser(bot, member, role)					
+				await quarantineUser(bot, member, role, f"{member.name}#{member.discriminator} (ID: {member.id}) has made an unauthorized attempt to get Dank Manager role.")					
 				try:
 					embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to get Dank Manager role in {member.guild.name}")
 					await member.guild.owner.send(embed = embed)
