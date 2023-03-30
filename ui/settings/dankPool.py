@@ -171,6 +171,15 @@ class Dank_Pool_Quarantine_Role(discord.ui.View):
 
 		role = select.values[0]
 		data = await interaction.client.dankSecurity.find(interaction.guild.id)
+		if role.position >= interaction.guild.me.top_role.position:
+			embed = await get_error_embed(f"Quarantine role cannot be higher than my highest role {interaction.guild.me.top_role.mention}.")
+			await interaction.response.edit_message(
+				content = None, embed = embed, view = None, 
+				allowed_mentions=discord.AllowedMentions.none()
+			)
+			await asyncio.sleep(30)
+			await interaction.delete_original_response()
+			return
 		if data['quarantine'] is None or role.id != int(data['quarantine']):
 			embed = await get_success_embed(f"Updated quarantine role from <@&{data['quarantine']}> to {role.mention}")
 			data['quarantine'] = role.id

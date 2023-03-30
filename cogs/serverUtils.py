@@ -63,8 +63,7 @@ class serverUtils(commands.Cog):
 	@app_commands.command(name="serversettings", description="Adjust server-specific settings! ⚙️")
 	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
-	# @App_commands_Checks.is_server_owner()
-	@App_commands_Checks.is_owner()
+	@App_commands_Checks.is_server_owner()
 	async def serversettings(self, interaction:  discord.Interaction):
 		embed = discord.Embed(
 			color=3092790,
@@ -80,7 +79,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 
 		options = [
 			discord.SelectOption(label='Dank Pool Access', description="Who all can access Server's Donation Pool", emoji='<:tgk_bank:1073920882130558987>'),
-			discord.SelectOption(label='Server Lockdown', description='Configure Lockdown Profiles', emoji='<:tgk_lock:1072851190213259375>'),
+			# discord.SelectOption(label='Server Lockdown', description='Configure Lockdown Profiles', emoji='<:tgk_lock:1072851190213259375>'),
 		]
 		if default != -1:
 			options[default].default = True
