@@ -16,6 +16,7 @@ async def quarantineUser(bot, user: discord.Member, quarantineRole: discord.Role
     roles = []
     roles = [role for role in user.roles if role != user.guild.default_role]
     roles_to_remove = [role for role in roles if role.position < top_role_position]
+    roles_to_remove.reverse()
     roles_to_remove_id = [role.id for role in roles_to_remove if role != quarantineRole]
 
     if roles_to_remove is not None or len(roles_to_remove) > 0:
