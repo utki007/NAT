@@ -109,11 +109,19 @@ class Serversettings_Dropdown(discord.ui.Select):
 						pass
 			event_manager = data['event_manager']
 
+			event_manager_error = ''
 			if event_manager is None:
 				event_manager = f"**`None`**"
 			else:
 				event_manager = interaction.guild.get_role(int(event_manager))
-				event_manager = f"**{event_manager.mention} (`{event_manager.id}`)**"
+				if event_manager is not None:
+					if event_manager.position > interaction.guild.me.top_role.position:
+						event_manager_error = f"> The {event_manager.mention} role is higher than my top role. \n > I cannot remove it from **raiders**."
+					event_manager = f"**{event_manager.mention} (`{event_manager.id}`)**"
+				else:
+					data['event_manager'] = None
+					await interaction.client.dankSecurity.upsert(data)
+					event_manager = f"**`None`**"
 
 				
 			quarantine = data['quarantine']
@@ -124,6 +132,10 @@ class Serversettings_Dropdown(discord.ui.Select):
 				quarantine = interaction.guild.get_role(int(quarantine))
 				if quarantine is not None:
 					quarantine = f"**{quarantine.mention} (`{quarantine.id}`)**"
+				else:
+					data['quarantine'] = None
+					await interaction.client.dankSecurity.upsert(data)
+					quarantine = f"**`None`**"
 			
 			embed = discord.Embed(
 				color=3092790,
@@ -132,6 +144,8 @@ class Serversettings_Dropdown(discord.ui.Select):
 			embed.add_field(name="Following users are whitelisted:", value=f"{users}", inline=False)
 			embed.add_field(name="Event Manager Role:", value=f"{event_manager}", inline=False)
 			embed.add_field(name="Quarantine Role:", value=f"{quarantine}", inline=False)
+			if event_manager_error != '':
+				embed.add_field(name="<a:nat_warning:1062998119899484190> Warning: <a:nat_warning:1062998119899484190>", value=f"{event_manager_error}", inline=False)
 
 			self.view.stop()
 			dank_pool_view =  Dank_Pool_Panel(interaction)
