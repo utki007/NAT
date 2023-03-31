@@ -80,7 +80,11 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 	@app_commands.checks.has_permissions(manage_messages=True)
 	@app_commands.describe(role = "Provide role", user = "Input user 👤")
 	async def lock(self, interaction:  discord.Interaction, role: discord.Role = None, user: discord.User = None):
-		await interaction.response.defer(ephemeral = False)
+		
+		if interaction.user.id == 685705841264820247:
+			await interaction.response.defer(ephemeral = True)
+		else:
+			await interaction.response.defer(ephemeral = False)
 
 		unlockFor = ""
 		channel = interaction.channel
@@ -114,6 +118,8 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 				embed = await get_warning_embed(content = f"Ran into some problem ...")
 
 			await interaction.edit_original_response(embed=embed)
+			if interaction.user.id == 685705841264820247:
+				await interaction.channel.send(embed=embed)
 
 		else:
 			embed = discord.Embed(
@@ -124,6 +130,8 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 				await interaction.edit_original_response(
 					embed=embed
 				)
+				if interaction.user.id == 685705841264820247:
+					await interaction.channel.send(embed=embed)
 			await channel.edit(archived=True, locked=True)
 
 	@app_commands.command(name="unlock", description="Unlock channel 🗣️", extras={'example': '/unlock'})
@@ -131,6 +139,11 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 	@app_commands.describe(role = "Provide role", user = "Input user 👤", state = "False for deafult perm, True for override perms")
 	async def unlock(self, interaction:  discord.Interaction, state: bool = True, role: discord.Role = None, user: discord.User = None):
 		
+		if interaction.user.id == 685705841264820247:
+			await interaction.response.defer(ephemeral = True)
+		else:
+			await interaction.response.defer(ephemeral = False)
+
 		unlockFor = ""
 		channel = interaction.channel        
 		if role == None:
@@ -194,10 +207,16 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 			else:
 				embed = await get_error_embed(content = f"Ran into some problem ...")
 			
-			await interaction.response.send_message(embed=embed, ephemeral=False)
+			await interaction.edit_original_response(embed=embed)
+			if interaction.user.id == 685705841264820247:
+				await interaction.edit_original_response(embed=embed)
+				await interaction.channel.send(embed=embed)
+			
 		else:
 			warning = await get_warning_embed(content = f"It's already unlocked dum dum")
-			return await interaction.response.send_message(embed=warning, ephemeral=True)
+			await interaction.edit_original_response(embed=warning, ephemeral=True)
+			if interaction.user.id == 685705841264820247:
+				await interaction.channel.send(embed=warning)
 
 	@app_commands.command(name="viewlock", description="viewloock channel 🙈", extras={'example': '/viewlock'})
 	@app_commands.checks.has_permissions(manage_messages=True)
@@ -269,6 +288,12 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 	@app_commands.command(name="sync", description="sync channel 🔄️", extras={'example': '/sync'})
 	@app_commands.checks.has_permissions(manage_messages=True)
 	async def sync(self, interaction:  discord.Interaction):
+
+		if interaction.user.id == 685705841264820247:
+			await interaction.response.defer(hidden=True)
+		else:
+			await interaction.response.defer(hidden=False)
+
 		
 		channel = interaction.channel
 
@@ -278,11 +303,15 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 			
 			await interaction.channel.edit(sync_permissions=True, reason=f"Channel synced by {interaction.user} (ID: {interaction.user.id})")
 
-			await interaction.response.send_message(embed=embed, ephemeral=False)
+			await interaction.edit_original_response(embed=embed, ephemeral=False)
+			if interaction.user.id == 685705841264820247:
+				await interaction.channel.send(embed=embed)
 
 		else:
 			error = await get_error_embed(content = f"It cant be synced dum dum")
-			return await interaction.response.send_message(embed=error, ephemeral=True)
+			await interaction.edit_original_response(embed=error, ephemeral=True)
+			if interaction.user.id == 685705841264820247:
+				await interaction.channel.send(embed=error)
 
 	@app_commands.command(name="dump", description="Dump members in a channel or a role 📜", extras={'example': '/dump'})
 	async def dump(self, interaction:  discord.Interaction, channel: discord.TextChannel = None, role: discord.Role = None):
