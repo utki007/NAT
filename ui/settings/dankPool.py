@@ -1,7 +1,7 @@
 import asyncio
 import discord
 from discord import Interaction
-from utils.embeds import get_error_embed, get_warning_embed, get_success_embed
+from utils.embeds import get_error_embed, get_invisible_embed, get_warning_embed, get_success_embed
 from discord.ui import UserSelect, RoleSelect
 
 async def update_pool_embed(interaction: Interaction, data: dict):
@@ -104,9 +104,9 @@ class Dank_Pool_Panel(discord.ui.View):
 		view.message = await interaction.original_response()
 
 	async def interaction_check(self, interaction: discord.Interaction):
-		if interaction.user.id not in interaction.client.owner_ids:
-			await interaction.response.send_message("You do not have permission to use this button.")
-			return False
+		if interaction.user.id != self.interaction.user.id:
+			warning = await get_invisible_embed(f"This is not for you")
+			return await interaction.response.send_message(embed=warning, ephemeral=True)	
 		return True
 
 	async def on_timeout(self):

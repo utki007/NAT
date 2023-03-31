@@ -1,6 +1,7 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
+from utils.embeds import get_invisible_embed
 from utils.views.paginator import Paginator
 from typing import Union
 from io import BytesIO
@@ -20,9 +21,9 @@ class Button(discord.ui.View):
 		await interaction.response.send_message("You clicked the button!", ephemeral=True)
 
 	async def interaction_check(self, interaction: discord.Interaction):
-		if interaction.user.id not in interaction.client.owner_ids:
-			await interaction.response.send_message("You do not have permission to use this button.")
-			return False
+		if interaction.user.id != self.interaction.user.id:
+			warning = await get_invisible_embed(f"This is not for you")
+			return await interaction.response.send_message(embed=warning, ephemeral=True)	
 		return True
 
 	async def on_timeout(self):

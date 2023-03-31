@@ -137,9 +137,9 @@ class Lockdown_Profile_Panel(discord.ui.View):
 			await confirm_message.edit(embed=embed, view=None)
 
 	async def interaction_check(self, interaction: discord.Interaction):
-		if interaction.user.id not in interaction.client.owner_ids:
-			await interaction.response.send_message("You do not have permission to use this button.")
-			return False
+		if interaction.user.id != self.interaction.user.id:
+			warning = await get_invisible_embed(f"This is not for you")
+			return await interaction.response.send_message(embed=warning, ephemeral=True)	
 		return True
 
 	async def on_timeout(self):
@@ -356,9 +356,7 @@ class Lockdown_Config_Panel(discord.ui.View):
 
 	async def interaction_check(self, interaction: Interaction):
 		if interaction.user.id != self.interaction.user.id:
-			warning = discord.Embed(
-				color=0xffd300,
-				title=f"<a:nat_warning:1062998119899484190> **|** This is not your menu.")
+			warning = await get_invisible_embed(f"This is not for you")
 			return await interaction.response.send_message(embed=warning, ephemeral=True)	
 		return True
 

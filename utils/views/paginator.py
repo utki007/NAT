@@ -30,6 +30,8 @@ from discord.ui import View, select, Select, button, Button
 from typing import Optional, List, Union
 from discord.ext import commands
 
+from utils.embeds import get_invisible_embed
+
 class _select(Select):
 	def __init__(self, pages: List[str]):
 		super().__init__(placeholder="Quick navigation", min_values=1, max_values=1, options=pages, row=0)
@@ -51,7 +53,10 @@ class _view(View):
 		self.current_page = 0
 
 	async def interaction_check(self, interaction: Interaction) -> bool:
-		return (interaction.user.id == self.author.id)
+		if interaction.user.id != self.interaction.user.id:
+			warning = await get_invisible_embed(f"This is not for you")
+			return await interaction.response.send_message(embed=warning, ephemeral=True)	
+		return True
 
 	async def on_timeout(self):		
 		self.stop()
