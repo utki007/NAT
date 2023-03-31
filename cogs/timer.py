@@ -97,9 +97,6 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 		timer = await interaction.edit_original_response(embed=e, view=view)
 		view.message = timer
 
-		if cd < 90:
-			self.bot.dispatch('timer_end', timer_data, True)
-
 	@app_commands.command(name="end", description="End a timer", extras={'example': '/timer end [timer_id]'})
 	@app_commands.checks.cooldown(1, 3, key=lambda i: (i.guild_id, i.user.id))
 	@app_commands.describe(message_id = "Enter Message ID of an active timer")
