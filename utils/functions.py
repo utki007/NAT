@@ -22,7 +22,8 @@ async def quarantineUser(bot, user: discord.Member, quarantineRole: discord.Role
 
     if quarantineRole is not None and quarantineRole not in user.roles and quarantineRole.position < top_role_position:
         roles_to_keep.append(quarantineRole)
-        await user.edit(roles = roles_to_keep, reason=reason)
+    
+    await user.edit(roles = roles_to_keep, reason=reason)
 
     data = await bot.quarantinedUsers.find(user.guild.id)
     if not data:
