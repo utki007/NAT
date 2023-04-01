@@ -209,7 +209,6 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 			
 			await interaction.edit_original_response(embed=embed)
 			if interaction.user.id == 685705841264820247:
-				await interaction.edit_original_response(embed=embed)
 				await interaction.channel.send(embed=embed)
 			
 		else:
@@ -303,13 +302,13 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 			
 			await interaction.channel.edit(sync_permissions=True, reason=f"Channel synced by {interaction.user} (ID: {interaction.user.id})")
 
-			await interaction.edit_original_response(embed=embed, ephemeral=False)
+			await interaction.edit_original_response(embed=embed)
 			if interaction.user.id == 685705841264820247:
 				await interaction.channel.send(embed=embed)
 
 		else:
 			error = await get_error_embed(content = f"It cant be synced dum dum")
-			await interaction.edit_original_response(embed=error, ephemeral=True)
+			await interaction.edit_original_response(embed=error)
 			if interaction.user.id == 685705841264820247:
 				await interaction.channel.send(embed=error)
 
