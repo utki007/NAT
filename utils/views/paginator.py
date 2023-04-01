@@ -53,7 +53,7 @@ class _view(View):
 		self.current_page = 0
 
 	async def interaction_check(self, interaction: Interaction) -> bool:
-		if interaction.user.id != self.interaction.user.id:
+		if interaction.user.id != self.author.id:
 			warning = await get_invisible_embed(f"This is not for you")
 			return await interaction.response.send_message(embed=warning, ephemeral=True)	
 		return True
