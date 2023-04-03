@@ -45,11 +45,10 @@ class _select(Select):
 
 class _view(View):
 	def __init__(self, author: User, pages: List[SelectOption], embeded: bool):
-		super().__init__(timeout=15)
+		super().__init__(timeout=60)
 		self.author = author
 		self.pages = pages
 		self.embeded = embeded
-
 		self.current_page = 0
 
 	async def interaction_check(self, interaction: Interaction) -> bool:
@@ -85,7 +84,6 @@ class _view(View):
 
 		await self.update_children(interaction)
 
-	
 	@button(label="◼", style=ButtonStyle.gray, row=1,custom_id='stop')
 	async def quit(self, interaction: Interaction, button: Button):
 		kwargs = {'content': self.pages[self.current_page]} if not (self.embeded) else {'embed': self.pages[self.current_page]}
@@ -250,4 +248,13 @@ class Contex_Paginator:
 		kwargs = {'content': self.pages[view.current_page]} if not (embeded) else {'embed': self.pages[view.current_page]}
 		kwargs['view'] = view
 
-		await self.interaction.channel.send(**kwargs)
+		msg = await self.interaction.channel.send(**kwargs)
+
+		await view.wait()
+
+		for button in view.children:
+			button.disabled = True
+		try:
+			await msg.edit(view=view)
+		except:
+			pass
