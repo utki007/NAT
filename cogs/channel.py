@@ -201,9 +201,9 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 
 				
 				if state:
-					msg = f'<a:nat_check:1010969401379536958> **|** Unlocked **{channel}** for {user.mention} with state `True`'
+					msg = f'Unlocked **{channel}** for {user.mention} with state `True`'
 				else:
-					msg = f'<a:nat_check:1010969401379536958> **|** Unlocked **{channel}** for {user.mention}'
+					msg = f'Unlocked **{channel}** for {user.mention}'
 			
 				await channel.set_permissions(user, overwrite=overwrite, reason=reason)
 
