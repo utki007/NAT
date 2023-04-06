@@ -99,21 +99,25 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 			else:
 				unlockFor = "role"
 
+			role_mention = role.mention if role != interaction.guild.default_role else role
+
 			if unlockFor == "role":
 				overwrite = channel.overwrites_for(role)
-				overwrite.send_messages = False
-
-				await channel.set_permissions(role, overwrite=overwrite, reason = f'Channel lockdown sanctioned by {interaction.user} (ID: {interaction.user.id}) for {role}')
-				if role == interaction.guild.default_role:
-					embed = await get_success_embed(content = f"Locked {channel.mention} for {role}")
+				if overwrite.send_messages == False:
+					embed = await get_warning_embed(content = f"{channel.mention} is already locked for {role_mention}.")
 				else:
-					embed = await get_success_embed(content = f"Locked {channel.mention} for {role.mention}")
+					overwrite.send_messages = False
+					await channel.set_permissions(role, overwrite=overwrite, reason = f'Channel lockdown sanctioned by {interaction.user} (ID: {interaction.user.id}) for {role}')
+					embed = await get_success_embed(content = f"Locked {channel.mention} for {role_mention}.")
 			elif unlockFor == "user":
 				overwrite = channel.overwrites_for(user)
-				overwrite.send_messages = False
+				if overwrite.send_messages == False:
+					embed = await get_warning_embed(content = f"{channel.mention} is already locked for {user.mention}.")
+				else:		
+					overwrite.send_messages = False
 
-				await channel.set_permissions(user, overwrite=overwrite, reason = f'Channel lockdown sanctioned by {interaction.user} (ID: {interaction.user.id}) for {user} ({user.id})')
-				embed = await get_success_embed(content = f"Locked {channel.mention} for {user.mention}")
+					await channel.set_permissions(user, overwrite=overwrite, reason = f'Channel lockdown sanctioned by {interaction.user} (ID: {interaction.user.id}) for {user} ({user.id})')
+					embed = await get_success_embed(content = f"Locked {channel.mention} for {user.mention}.")
 			else:
 				embed = await get_warning_embed(content = f"Ran into some problem ...")
 
@@ -145,7 +149,7 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 			await interaction.response.defer(ephemeral = False)
 
 		unlockFor = ""
-		channel = interaction.channel        
+		channel = interaction.channel    
 		if role == None:
 			if user == None:
 				role = interaction.guild.default_role
@@ -218,24 +222,24 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 				await interaction.channel.send(embed=warning)
 
 	@app_commands.command(name="viewlock", description="viewloock channel 🙈", extras={'example': '/viewlock'})
-	@app_commands.checks.has_permissions(manage_messages=True)
+	@app_commands.checks.has_permissions(administrator=True)
 	@app_commands.describe(role = "Provide role")
 	async def viewlock(self, interaction:  discord.Interaction, role: discord.Role = None):
 		
 		channel = interaction.channel
+		role = role or interaction.guild.default_role
+		role_mention = role.mention if role != interaction.guild.default_role else role
 
 		if interaction.channel.type == discord.ChannelType.text:
-			if role == None:
-				role = interaction.guild.default_role
 
 			overwrite = channel.overwrites_for(role)
-			overwrite.view_channel = False
-
-			await channel.set_permissions(role, overwrite=overwrite, reason = f'Channel viewlock sanctioned by {interaction.user} (ID: {interaction.user.id}) for {role}')
-			if role == interaction.guild.default_role:
-				embed = await get_success_embed(content = f"Viewlocked **{channel.mention}** for {role}")
+			if overwrite.view_channel == False:
+				warning = await get_error_embed(content = f"{role_mention} is already viewlocked")
 			else:
-				embed = await get_success_embed(content = f"Viewlocked **{channel.mention}** for {role.mention}")
+				overwrite.view_channel = False
+
+				await channel.set_permissions(role, overwrite=overwrite, reason = f'Channel viewlock sanctioned by {interaction.user} (ID: {interaction.user.id}) for {role}')
+				embed = await get_success_embed(content = f"Viewlocked **{channel.mention}** for {role_mention}.")
 			
 			await interaction.response.send_message(embed=embed, ephemeral=False)
 
@@ -244,7 +248,7 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 			return await interaction.response.send_message(embed=warning, ephemeral=True)
 
 	@app_commands.command(name="unviewlock", description="Unviewlock channel 🗣️", extras={'example': '/unviewlock'})
-	@app_commands.checks.has_permissions(manage_messages=True)
+	@app_commands.checks.has_permissions(administrator=True)
 	@app_commands.describe(role = "Provide role", state = "Input state.")
 	async def unviewlock(self, interaction:  discord.Interaction, state: bool = True, role: discord.Role = None):
 		
