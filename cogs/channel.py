@@ -293,9 +293,9 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 	async def sync(self, interaction:  discord.Interaction):
 
 		if interaction.user.id == 685705841264820247:
-			await interaction.response.defer(hidden=True)
+			await interaction.response.defer(ephemeral=True)
 		else:
-			await interaction.response.defer(hidden=False)
+			await interaction.response.defer(ephemeral=False)
 
 		
 		channel = interaction.channel
