@@ -7,6 +7,7 @@ import re
 import discord
 import motor.motor_asyncio
 from discord.ext import commands
+import datetime
 
 from utils.db import Document
 from utils.embeds import *
@@ -40,12 +41,18 @@ class MyBot(commands.Bot):
 
 	async def setup_hook(self):
 
+		# Nat DB
 		bot.mongo = motor.motor_asyncio.AsyncIOMotorClient(str(bot.connection_url))
 		bot.db = bot.mongo["NAT"]
 		bot.timer = Document(bot.db, "timer")
 		bot.lockdown = Document(bot.db, "lockdown")
 		bot.dankSecurity = Document(bot.db, "dankSecurity")
 		bot.quarantinedUsers = Document(bot.db, "quarantinedUsers")
+		
+		# Octane DB
+		bot.octane = motor.motor_asyncio.AsyncIOMotorClient(str(bot.connection_url2))
+		bot.db2 = bot.octane["Dank_Data"]
+		bot.dankItems = Document(bot.db2, "Item prices")
 
 		for file in os.listdir('./cogs'):
 			if file.endswith('.py') and not file.startswith("_"):
@@ -74,6 +81,46 @@ bot = MyBot()
 @bot.event
 async def on_message(message):
 	
+	# payout logging
+	if message.author.id == 270904126974590976 and len(message.embeds)>0:
+		embed = message.embeds[0]
+		if embed.description is not None and embed.description.startswith('Successfully paid') and embed.description.endswith("from the server's pool!"):
+			try:
+				command_message = await message.channel.fetch_message(message.reference.message_id)
+			except:
+				command_message = None
+			
+			if command_message is not None and command_message.interaction.name == "serverevents payout":
+				payoutEmbed = command_message.embeds[0].to_dict()
+				winner = re.findall(r"<@!?\d+>", payoutEmbed['description'])
+
+				# get prize
+				prize = re.findall(r"\*\*(.*?)\*\*", payoutEmbed['description'])[0]
+				emojis = list(set(re.findall(":\w*:\d*", prize)))
+				for emoji in emojis:
+					prize = prize.replace(emoji,"",100)
+					prize = prize.replace("<>","",100)
+					prize = prize.replace("<a>","",100)
+					prize = prize.replace("  "," ",100)
+				prize = prize.strip()
+				if "⏣" not in prize:
+					number_of_item = prize.split(" ")[0][:-1]
+					item = " ".join(prize.split(" ")[1:])
+					item_prize = int((await bot.dankItems.find(item))['price'])
+					prize = int(number_of_item)*item_prize
+				else:
+					prize = int(prize.split(" ")[1])
+
+				user = command_message.interaction.user.id
+				guild = message.guild.id
+				time = datetime.datetime.utcnow()
+					
+
+
+			payoutLog = bot.get_channel(1089973828215644241)
+			if payoutLog is not None:
+				await payoutLog.send(embed=embed)
+
 	# return if message is from bot
 	if message.author.bot:
 		return
@@ -113,10 +160,7 @@ async def on_member_update(before, after):
 	data = await bot.dankSecurity.find(member.guild.id)
 	if data:
 		event_manager = member.guild.get_role(data['event_manager'])
-		if event_manager is not None and event_manager in member.roles and member.id not in data['whitelist']: 
-			securityLog = bot.get_channel(1089973828215644241)
-			if securityLog is not None:
-				await securityLog.send(f"{member.mention} has made an unauthorized attempt to get **Dank Manager role** in {member.guild.name}.")
+		if event_manager is not None and event_manager in member.roles and member.id not in data['whitelist'] and member.id != member.guild.owner.id: 
 			try:
 				await member.remove_roles(member.guild.get_role(data['event_manager']), reason="Member is not a authorized Dank Manager.")
 			except:
@@ -124,12 +168,17 @@ async def on_member_update(before, after):
 			role = None
 			if data['quarantine'] is not None:					
 				role = member.guild.get_role(data['quarantine'])
-			await quarantineUser(bot, member, role, f"{member.name}#{member.discriminator} (ID: {member.id}) has made an unauthorized attempt to get Dank Manager role.")					
-			try:
-				embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to get Dank Manager role in {member.guild.name}")
-				await member.guild.owner.send(embed = embed)
-			except:
-				pass
+			quarantined = await quarantineUser(bot, member, role, f"{member.name}#{member.discriminator} (ID: {member.id}) has made an unauthorized attempt to get Dank Manager role.")					
+			if quarantined:
+				try:
+					securityLog = bot.get_channel(1089973828215644241)
+					if securityLog is not None:
+						await securityLog.send(f"{member.mention} has made an unauthorized attempt to get **Dank Manager role** in {member.guild.name}.")
+					embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to get Dank Manager role in {member.guild.name}")
+					await member.guild.owner.send(embed = embed)
+				except:
+					pass
+
 
 # @bot.event
 # async def on_guild_join(guild):
@@ -150,11 +199,13 @@ if os.path.exists(os.getcwd()+"./properties/tokens.json"):
 	bot.botToken = configData["BOT_TOKEN"]
 	bot.connection_url = configData["MongoConnectionUrl"]
 	bot.amari = configData["amari"]
+	bot.dankHelper = configData["dankHelper"]
 else:
 	# for heroku
 	bot.botToken = os.environ['BOT_TOKEN']
 	bot.connection_url = os.environ['MongoConnectionUrl']
 	bot.amari = os.environ["amari"]
+	bot.dankHelper = os.environ["dankHelper"]
 
 # fetching assets
 if os.path.exists("./utils/assets/colors.json"):

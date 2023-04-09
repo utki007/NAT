@@ -21,7 +21,10 @@ async def quarantineUser(bot, user: discord.Member, quarantineRole: discord.Role
 
     if quarantineRole is not None and quarantineRole.position < top_role_position:
         roles_to_keep.append(quarantineRole)
-    await user.edit(roles = roles_to_keep, reason=reason)
+    if sorted(roles_to_keep) == sorted(roles):
+        return False
+    else:
+        await user.edit(roles = roles_to_keep, reason=reason)
 
     data = await bot.quarantinedUsers.find(user.guild.id)
     if not data:
@@ -33,6 +36,7 @@ async def quarantineUser(bot, user: discord.Member, quarantineRole: discord.Role
         else:
             data['users'][str(user.id)] = roles_to_remove_id
     await bot.quarantinedUsers.upsert(data)
+    return True
 
 async def unquarantineUser(bot, user: discord.Member, quarantineRole: discord.Role = None, reason: str = None):
     data = await bot.quarantinedUsers.find(user.guild.id)

@@ -45,9 +45,15 @@ class moderation(commands.GroupCog, name="moderate", description="Server moderat
 					return await interaction.edit_original_response(embed = embed)
 
 				# quarantine user
-				await quarantineUser(interaction.client, user, role, f'Quarantined by {interaction.user.name}#{interaction.user.discriminator} (ID: {interaction.user.id})')
-				embed = await get_success_embed(f"Successfully quarantined {user.mention}!")
-				return await interaction.edit_original_response(embed = embed)
+				quarantined = await quarantineUser(interaction.client, user, role, f'Quarantined by {interaction.user.name}#{interaction.user.discriminator} (ID: {interaction.user.id})')
+				if quarantined: 
+					embed = await get_success_embed(f"Successfully quarantined {user.mention}!")
+					return await interaction.edit_original_response(embed = embed)
+				else:
+					embed = await get_error_embed(f"Failed to quarantine {user.mention}!")
+					embed.title = "Failed to unquarantine."
+					embed.description = f'<:tgk_redarrow:1005361235715424296> {user.mention} is already quarantined.\n'
+					return await interaction.edit_original_response(embed = embed)
 		else:
 			embed = await get_warning_embed("Quarantine role not set. Please set it using </serversettings:1068960308800008253> command.")
 			embed.title = "Failed to quarantine."
