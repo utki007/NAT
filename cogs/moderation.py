@@ -51,7 +51,7 @@ class moderation(commands.GroupCog, name="moderate", description="Server moderat
 					return await interaction.edit_original_response(embed = embed)
 				else:
 					embed = await get_error_embed(f"Failed to quarantine {user.mention}!")
-					embed.title = "Failed to unquarantine."
+					embed.title = "Failed to quarantine."
 					embed.description = f'<:tgk_redarrow:1005361235715424296> {user.mention} is already quarantined.\n'
 					return await interaction.edit_original_response(embed = embed)
 		else:
