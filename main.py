@@ -151,33 +151,33 @@ async def on_message_edit(before, after):
 	if message.author.bot:
 		return
 
-@bot.event
-async def on_member_update(before, after):
-	member = after
+# @bot.event
+# async def on_member_update(before, after):
+# 	member = after
 
-	roles = [role.id for role in after.roles]
+# 	roles = [role.id for role in after.roles]
 	
-	data = await bot.dankSecurity.find(member.guild.id)
-	if data:
-		event_manager = member.guild.get_role(data['event_manager'])
-		if event_manager is not None and event_manager in member.roles and member.id not in data['whitelist'] and member.id != member.guild.owner.id: 
-			try:
-				await member.remove_roles(member.guild.get_role(data['event_manager']), reason="Member is not a authorized Dank Manager.")
-			except:
-				pass
-			role = None
-			if data['quarantine'] is not None:					
-				role = member.guild.get_role(data['quarantine'])
-			quarantined = await quarantineUser(bot, member, role, f"{member.name}#{member.discriminator} (ID: {member.id}) has made an unauthorized attempt to get Dank Manager role.")					
-			if quarantined:
-				try:
-					securityLog = bot.get_channel(1089973828215644241)
-					if securityLog is not None:
-						await securityLog.send(f"{member.mention} has made an unauthorized attempt to get **Dank Manager role** in {member.guild.name}.")
-					embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to get Dank Manager role in {member.guild.name}")
-					await member.guild.owner.send(embed = embed)
-				except:
-					pass
+# 	data = await bot.dankSecurity.find(member.guild.id)
+# 	if data:
+# 		event_manager = member.guild.get_role(data['event_manager'])
+# 		if event_manager is not None and event_manager in member.roles and member.id not in data['whitelist'] and member.id != member.guild.owner.id: 
+# 			try:
+# 				await member.remove_roles(member.guild.get_role(data['event_manager']), reason="Member is not a authorized Dank Manager.")
+# 			except:
+# 				pass
+# 			role = None
+# 			if data['quarantine'] is not None:					
+# 				role = member.guild.get_role(data['quarantine'])
+# 			quarantined = await quarantineUser(bot, member, role, f"{member.name}#{member.discriminator} (ID: {member.id}) has made an unauthorized attempt to get Dank Manager role.")					
+# 			if quarantined:
+# 				try:
+# 					securityLog = bot.get_channel(1089973828215644241)
+# 					if securityLog is not None:
+# 						await securityLog.send(f"{member.mention} has made an unauthorized attempt to get **Dank Manager role** in {member.guild.name}.")
+# 					embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to get Dank Manager role in {member.guild.name}")
+# 					await member.guild.owner.send(embed = embed)
+# 				except:
+# 					pass
 
 
 # @bot.event
