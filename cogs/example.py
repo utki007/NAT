@@ -166,9 +166,9 @@ class donation(commands.Cog):
 		template.paste(guild_icon, (15, 8), guild_icon)
 
 		draw = ImageDraw.Draw(template)
-		font = ImageFont.truetype('arial.ttf', 25)
-		winner_name_font = ImageFont.truetype('arial.ttf', 28)
-		winner_exp_font = ImageFont.truetype('arial.ttf', 20)
+		font = ImageFont.truetype('./utils/assets/fonts/DejaVuSans.ttf', 25)
+		winner_name_font = ImageFont.truetype('./utils/assets/fonts/Symbola.ttf', 28)
+		winner_exp_font = ImageFont.truetype('./utils/assets/fonts/DejaVuSans.ttf', 20)
 
 		winne_postions = {
 			#postions of the winners, pfp and name and donation
@@ -184,8 +184,8 @@ class donation(commands.Cog):
 			index = data.index(i)
 			user_icon = await self.round_pfp(user)
 			template.paste(user_icon, winne_postions[index]['icon'], user_icon)
-			draw.text(winne_postions[index]['name'], f"{user.name}#{user.discriminator}", font=winner_name_font, fill="#9A9BD5")
-			draw.text(winne_postions[index]['donated'], f"⏣ {i['donated']} Dmc", font=winner_exp_font, fill="#A8A8C8")
+			draw.text(winne_postions[index]['name'], f"👑 | {user.name}", font=winner_name_font, fill="#9A9BD5")
+			draw.text(winne_postions[index]['donated'], f"⏣ {i['donated']:,}", font=winner_exp_font, fill="#A8A8C8")
 
 		return template
 	
