@@ -166,9 +166,9 @@ class donation(commands.Cog):
 		template.paste(guild_icon, (15, 8), guild_icon)
 
 		draw = ImageDraw.Draw(template)
-		font = ImageFont.truetype('arial.ttf', 25)
-		winner_name_font = ImageFont.truetype('arial.ttf', 28)
-		winner_exp_font = ImageFont.truetype('arial.ttf', 20)
+		font = ImageFont.load_default('Arial.ttf', 25)
+		winner_name_font = ImageFont.truetype('Arial.ttf', 28)
+		winner_exp_font = ImageFont.truetype('Arial.ttf', 20)
 
 		winne_postions = {
 			#postions of the winners, pfp and name and donation
