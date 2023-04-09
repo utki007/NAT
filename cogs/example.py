@@ -166,7 +166,7 @@ class donation(commands.Cog):
 		template.paste(guild_icon, (15, 8), guild_icon)
 
 		draw = ImageDraw.Draw(template)
-		font = ImageFont.truetype('./utils/assets/fonts/DejaVuSans.ttf', 25)
+		font = ImageFont.truetype('./utils/assets/fonts/DejaVuSans.ttf', 28)
 		winner_name_font = ImageFont.truetype('./utils/assets/fonts/Symbola.ttf', 28)
 		winner_exp_font = ImageFont.truetype('./utils/assets/fonts/DejaVuSans.ttf', 20)
 
@@ -177,7 +177,7 @@ class donation(commands.Cog):
 			2: {'icon': (58, 380), 'name': (176, 392), 'donated': (176, 428)}}
 
 		draw.text((116, 28), f"{guild.name}", font=font, fill="#DADBE3") #guild name 
-		draw.text((116, 61), f"{event_name}", font=font, fill="#DADBE3") #event name
+		draw.text((116, 61), f"{event_name}", font=winner_name_font, fill="#DADBE3") #event name
 
 		for i in data[:3]:
 			user = i['user']
