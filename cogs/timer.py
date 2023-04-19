@@ -29,13 +29,16 @@ class Button(discord.ui.View):
 
 		if interaction.user.id in timer_data['members']:
 			error_embed = await get_error_embed(f"You have already entered the timer!")
-			return await interaction.response.send_message(embed = error_embed, ephemeral=True)
+			# return await interaction.response.send_message(embed = error_embed, ephemeral=True)
+			return await interaction.followup.send(embed = embed, ephemeral=True)
 		timer_data['members'].append(interaction.user.id)
 
 		button.label = len(timer_data['members'])
-		await interaction.message.edit(view=self)
+		# await interaction.message.edit(view=self)
+		await interaction.response.edit_message(view=self)
 		embed = await get_success_embed(f"I will remind you once timer ends!")
-		await interaction.response.send_message(embed = embed, ephemeral=True)
+		# await interaction.response.send_message(embed = embed, ephemeral=True)
+		await interaction.followup.send(embed = embed, ephemeral=True)
 		await interaction.client.timer.update(timer_data)
 		self.timer = timer_data
 
@@ -87,7 +90,7 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 		e = discord.Embed(
 			color=self.bot.color['default'],
 			title=f"{title}",
-			description = f"> **Ends:** **<t:{int(datetime.datetime.timestamp(end))}:R>**\n> **Launched by:** <@{timer_data['user_id']}>\n",
+			description = f"> **Ends:** **<t:{int(datetime.datetime.timestamp(end))}:R>**\n> **Launched by:** {interaction.user.mention}\n",
 			timestamp=end
 		)
 		e.set_footer(
@@ -241,13 +244,13 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 		except:
 			pass
 
-		try:
-			view = discord.ui.View()
-			view.add_item(discord.ui.Button(label=f'Timer link', url=message.jump_url))
-			end_message = await channel.send(f"<@{timer_data['user_id']}> your timer has ended!", view=view)
-			await end_message.add_reaction("<a:gk_waiting:945772518776664104>")
-		except:
-			pass
+		# try:
+		view = discord.ui.View()
+		view.add_item(discord.ui.Button(label=f'Timer link', url=message.jump_url))
+		end_message = await channel.send(f"<@{timer_data['user_id']}> your timer has ended!", view=view)
+		await end_message.add_reaction("<a:gk_waiting:945772518776664104>")
+		# except:
+		# 	pass
 		
 		await self.bot.timer.update(timer_data)
 
