@@ -30,7 +30,7 @@ class Button(discord.ui.View):
 		if interaction.user.id in timer_data['members']:
 			error_embed = await get_error_embed(f"You have already entered the timer!")
 			# return await interaction.response.send_message(embed = error_embed, ephemeral=True)
-			return await interaction.followup.send(embed = embed, ephemeral=True)
+			return await interaction.followup.send(embed = error_embed, ephemeral=True)
 		timer_data['members'].append(interaction.user.id)
 
 		button.label = len(timer_data['members'])
