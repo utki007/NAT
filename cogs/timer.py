@@ -131,12 +131,12 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 			
 			channel = self.bot.get_channel(timer_data['channel_id'])
 			if channel == None:
-				self.bot.remove_view(Button(timer_data))
+				# self.bot.remove_view(Button(timer_data))
 				return await self.bot.timer.delete(timer_data['_id'])
 			try:
 				message = await channel.fetch_message(timer_data['_id'])
 			except discord.NotFound:
-				self.bot.remove_view(Button(timer_data))
+				# self.bot.remove_view(Button(timer_data))
 				return await self.bot.timer.delete(timer_data['_id'])
 			await message.delete()
 			await interaction.client.timer.delete(timer_data['_id'])
@@ -163,12 +163,12 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 			
 			channel = self.bot.get_channel(timer_data['channel_id'])
 			if channel == None:
-				self.bot.remove_view(Button(timer_data))
+				# self.bot.remove_view(Button(timer_data))
 				return await self.bot.timer.delete(timer_data['_id'])
 			try:
 				message = await channel.fetch_message(timer_data['_id'])
 			except discord.NotFound:
-				self.bot.remove_view(Button(timer_data))
+				# self.bot.remove_view(Button(timer_data))
 				return await self.bot.timer.delete(timer_data['_id'])
 			
 			member_list = [await self.bot.fetch_user(member) for member in timer_data['members']]
@@ -210,7 +210,7 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 
 		channel = self.bot.get_channel(timer_data['channel_id'])
 		if channel == None:
-			self.bot.remove_view(Button(timer_data))
+			# self.bot.remove_view(Button(timer_data))
 			return await self.bot.timer.delete(timer_data['_id'])
 		try:
 			message = await channel.fetch_message(timer_data['_id'])
@@ -232,7 +232,6 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 		for children in view.children:
 			children.disabled = True
 			children.label = None
-		await message.edit(embed=embed,view=view)
 
 		member_list = [await self.bot.fetch_user(member) for member in timer_data['members']]
 		member_list = [member for member in member_list if member != None]
@@ -243,7 +242,7 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 				await channel.send(f"{', '.join(user.mention for user in members)}",delete_after=1)
 		except:
 			pass
-
+			
 		# try:
 		view = discord.ui.View()
 		view.add_item(discord.ui.Button(label=f'Timer link', url=message.jump_url))
@@ -252,6 +251,11 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 		# except:
 		# 	pass
 		
+		
+		try:
+			await message.edit(embed=embed,view=view)
+		except:
+			pass
 		await self.bot.timer.update(timer_data)
 
 	@tasks.loop(seconds=60)
@@ -261,7 +265,7 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 			time_diff = (timer['time'] - datetime.datetime.now()).total_seconds()
 			if time_diff <= 0:
 				self.bot.dispatch('timer_end', timer, False)
-			elif time_diff <= 60:
+			elif time_diff <= 90:
 				self.bot.dispatch('timer_end', timer, True)
 			else:
 				pass
