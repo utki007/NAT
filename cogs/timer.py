@@ -131,12 +131,12 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 			
 			channel = self.bot.get_channel(timer_data['channel_id'])
 			if channel == None:
-				self.bot.remove_view(Button(timer_data))
+				# self.bot.remove_view(Button(timer_data))
 				return await self.bot.timer.delete(timer_data['_id'])
 			try:
 				message = await channel.fetch_message(timer_data['_id'])
 			except discord.NotFound:
-				self.bot.remove_view(Button(timer_data))
+				# self.bot.remove_view(Button(timer_data))
 				return await self.bot.timer.delete(timer_data['_id'])
 			await message.delete()
 			await interaction.client.timer.delete(timer_data['_id'])
@@ -163,12 +163,12 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 			
 			channel = self.bot.get_channel(timer_data['channel_id'])
 			if channel == None:
-				self.bot.remove_view(Button(timer_data))
+				# self.bot.remove_view(Button(timer_data))
 				return await self.bot.timer.delete(timer_data['_id'])
 			try:
 				message = await channel.fetch_message(timer_data['_id'])
 			except discord.NotFound:
-				self.bot.remove_view(Button(timer_data))
+				# self.bot.remove_view(Button(timer_data))
 				return await self.bot.timer.delete(timer_data['_id'])
 			
 			member_list = [await self.bot.fetch_user(member) for member in timer_data['members']]
@@ -210,7 +210,7 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 
 		channel = self.bot.get_channel(timer_data['channel_id'])
 		if channel == None:
-			self.bot.remove_view(Button(timer_data))
+			# self.bot.remove_view(Button(timer_data))
 			return await self.bot.timer.delete(timer_data['_id'])
 		try:
 			message = await channel.fetch_message(timer_data['_id'])
