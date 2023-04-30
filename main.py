@@ -93,15 +93,15 @@ async def on_message(message):
 			guild = channel.guild
 			if guild.id != 785839283847954433:
 				return
-			bot = guild.me
-			log_channel = bot.get_channel(1096669152447582318)
+			client = guild.me
+			log_channel = client.get_channel(1096669152447582318)
 
 			messages = [message async for message in channel.history(limit=None)]
 
 			# print transcript file
 			transcript_file = await chat_exporter.raw_export(
 				channel, messages=messages, tz_info="Asia/Kolkata", 
-				guild=guild, bot=bot, fancy_times=True, support_dev=False)
+				guild=guild, bot=client, fancy_times=True, support_dev=False)
 			transcript_file = discord.File(io.BytesIO(transcript_file.encode()), filename=f"Mafia Logs.html")
 			link_msg  = await log_channel.send(content = f"**Mafia Logs:** <t:{int(datetime.datetime.utcnow().timestamp())}>", file=transcript_file, allowed_mentions=discord.AllowedMentions.none())
 			link_view = discord.ui.View()
