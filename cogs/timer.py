@@ -232,7 +232,8 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 		for children in view.children:
 			children.disabled = True
 			children.label = None
-		await message.edit(embed=embed,view=view)
+		if message.author.id == self.bot.user.id:
+			await message.edit(embed=embed,view=view)
 
 		member_list = [await self.bot.fetch_user(member) for member in timer_data['members']]
 		member_list = [member for member in member_list if member != None]

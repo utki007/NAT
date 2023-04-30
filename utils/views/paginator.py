@@ -180,7 +180,10 @@ class Paginator:
 
 		for button in view.children:
 			button.disabled = True
-		await self.interaction.edit_original_response(view=view)
+		try:
+			await self.interaction.edit_original_response(view=view)
+		except:
+			pass
 
 class Contex_Paginator:
 	def __init__(self, interaction: commands.Context, pages: list, custom_children: Optional[List[Union[Button, Select]]] = []):
