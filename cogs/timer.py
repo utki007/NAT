@@ -234,6 +234,8 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 			children.label = None
 		if message.author.id == self.bot.user.id:
 			await message.edit(embed=embed,view=view)
+		else:
+			return await self.bot.timer.delete(timer_data['_id'])
 
 		member_list = [await self.bot.fetch_user(member) for member in timer_data['members']]
 		member_list = [member for member in member_list if member != None]
@@ -245,13 +247,13 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 		except:
 			pass
 
-		# try:
-		view = discord.ui.View()
-		view.add_item(discord.ui.Button(label=f'Timer link', url=message.jump_url))
-		end_message = await channel.send(f"<@{timer_data['user_id']}> your timer has ended!", view=view)
-		await end_message.add_reaction("<a:gk_waiting:945772518776664104>")
-		# except:
-		# 	pass
+		try:
+			view = discord.ui.View()
+			view.add_item(discord.ui.Button(label=f'Timer link', url=message.jump_url))
+			end_message = await channel.send(f"<@{timer_data['user_id']}> your timer has ended!", view=view)
+			await end_message.add_reaction("<a:gk_waiting:945772518776664104>")
+		except:
+			pass
 		
 		await self.bot.timer.update(timer_data)
 

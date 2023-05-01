@@ -94,7 +94,7 @@ async def on_message(message):
 			if guild.id != 785839283847954433:
 				return
 			client = guild.me
-			log_channel = client.get_channel(1096669152447582318)
+			log_channel = guild.get_channel(1096669152447582318)
 
 			messages = [message async for message in channel.history(limit=None)]
 
