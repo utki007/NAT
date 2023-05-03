@@ -237,20 +237,23 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 		else:
 			return await self.bot.timer.delete(timer_data['_id'])
 
-		member_list = [await self.bot.fetch_user(member) for member in timer_data['members']]
-		member_list = [member for member in member_list if member != None]
+		member_list = timer_data['members']
+		title = timer_data['title']
 
 		try:
-			ping_group = list(chunk(member_list,30))
+			ping_group = list(chunk(member_list,50))
 			for members in ping_group:
-				await channel.send(f"{', '.join(user.mention for user in members)}",delete_after=1)
+				await channel.send(f"{', '.join(f'<@{id}>' for id in members)}",delete_after=0)
 		except:
 			pass
 
 		try:
 			view = discord.ui.View()
 			view.add_item(discord.ui.Button(label=f'Timer link', url=message.jump_url))
-			end_message = await channel.send(f"<@{timer_data['user_id']}> your timer has ended!", view=view)
+			if title == 'Timer':
+				end_message = await channel.send(f"<@{timer_data['user_id']}> your timer has ended!", view=view)
+			else:
+				end_message = await channel.send(f"<@{timer_data['user_id']}> your timer for **{timer_data['title'].title()}** has ended!", view=view)
 			await end_message.add_reaction("<a:gk_waiting:945772518776664104>")
 		except:
 			pass
