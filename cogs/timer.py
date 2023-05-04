@@ -30,16 +30,14 @@ class Button(discord.ui.View):
 		if interaction.user.id in timer_data['members']:
 			error_embed = await get_error_embed(f"You have already entered the timer!")
 			return await interaction.response.send_message(embed = error_embed, ephemeral=True)
-			# return await interaction.followup.send(embed = error_embed, ephemeral=True)
 		timer_data['members'].append(interaction.user.id)
+		await interaction.client.timer.update(timer_data)
 
-		button.label = len(timer_data['members'])
-		# await interaction.message.edit(view=self)
+		button.label = str(len(timer_data['members'])) 
 		await interaction.response.edit_message(view=self)
 		embed = await get_success_embed(f"I will remind you once timer ends!")
-		# await interaction.response.send_message(embed = embed, ephemeral=True)
+		await asyncio.sleep(1)
 		await interaction.followup.send(embed = embed, ephemeral=True)
-		await interaction.client.timer.update(timer_data)
 		self.timer = timer_data
 
 	async def on_timeout(self):
