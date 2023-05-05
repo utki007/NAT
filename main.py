@@ -38,8 +38,8 @@ class MyBot(commands.Bot):
 			case_insensitive=True,
 			owner_ids=[488614633670967307, 301657045248114690],
 			intents=intents,
-			application_id=951019275844460565, # for nat
-			# application_id=1010883367119638658 # for natasha
+			# application_id=951019275844460565, # for nat
+			application_id=1010883367119638658 # for natasha
 		)
 
 	async def setup_hook(self):
@@ -51,6 +51,7 @@ class MyBot(commands.Bot):
 		bot.lockdown = Document(bot.db, "lockdown")
 		bot.dankSecurity = Document(bot.db, "dankSecurity")
 		bot.quarantinedUsers = Document(bot.db, "quarantinedUsers")
+		bot.mafiaConfig = Document(bot.db, "mafiaConfig")
 		
 		# Octane DB
 		bot.octane = motor.motor_asyncio.AsyncIOMotorClient(str(bot.dankHelper))
@@ -84,29 +85,34 @@ bot = MyBot()
 @bot.event
 async def on_message(message):
 	
-	# setup mafia logging
+	# setup mafia transcript
 	if message.author.id == 511786918783090688 and len(message.embeds)>0:
 		embed = message.embeds[0]
 		if embed.description is not None and "Thank you all for playing! Deleting this channel in 10 seconds" in embed.description:
 			
 			channel = message.channel
 			guild = channel.guild
-			if guild.id != 785839283847954433:
-				return
 			client = guild.me
-			log_channel = guild.get_channel(1096669152447582318)
-
 			messages = [message async for message in channel.history(limit=None)]
 
-			# print transcript file
-			transcript_file = await chat_exporter.raw_export(
-				channel, messages=messages, tz_info="Asia/Kolkata", 
-				guild=guild, bot=client, fancy_times=True, support_dev=False)
-			transcript_file = discord.File(io.BytesIO(transcript_file.encode()), filename=f"Mafia Logs.html")
-			link_msg  = await log_channel.send(content = f"**Mafia Logs:** <t:{int(datetime.datetime.utcnow().timestamp())}>", file=transcript_file, allowed_mentions=discord.AllowedMentions.none())
-			link_view = discord.ui.View()
-			link_view.add_item(discord.ui.Button(emoji="<:nat_mafia:1102305100527042622>",label="Mafia Evidence", style=discord.ButtonStyle.link, url=f"https://mahto.id/chat-exporter?url={link_msg.attachments[0].url}"))
-			await link_msg.edit(view=link_view)
+			data = await bot.mafiaConfig.find(guild.id)
+			if data is None:
+				return
+			
+			if data['enable_logging'] is True and data['log_channel'] is not None:
+				log_channel = guild.get_channel(int(data['log_channel']))
+				if log_channel is None:
+					return
+				
+				# print transcript file
+				transcript_file = await chat_exporter.raw_export(
+					channel, messages=messages, tz_info="Asia/Kolkata", 
+					guild=guild, bot=client, fancy_times=True, support_dev=False)
+				transcript_file = discord.File(io.BytesIO(transcript_file.encode()), filename=f"Mafia Logs.html")
+				link_msg  = await log_channel.send(content = f"**Mafia Logs:** <t:{int(datetime.datetime.utcnow().timestamp())}>", file=transcript_file, allowed_mentions=discord.AllowedMentions.none())
+				link_view = discord.ui.View()
+				link_view.add_item(discord.ui.Button(emoji="<:nat_mafia:1102305100527042622>",label="Mafia Evidence", style=discord.ButtonStyle.link, url=f"https://mahto.id/chat-exporter?url={link_msg.attachments[0].url}"))
+				await link_msg.edit(view=link_view)
 
 	# payout logging
 	# if message.author.id == 270904126974590976 and len(message.embeds)>0:

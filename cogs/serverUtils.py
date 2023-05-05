@@ -4,6 +4,7 @@ import datetime
 import discord
 from discord import app_commands, Interaction
 from discord.ext import commands
+from ui.settings.mafia import Mafia_Panel
 from utils.embeds import *
 from utils.convertor import *
 from utils.checks import App_commands_Checks
@@ -79,6 +80,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 
 		options = [
 			discord.SelectOption(label='Dank Pool Access', description="Who all can access Server's Donation Pool", emoji='<:tgk_bank:1073920882130558987>'),
+			discord.SelectOption(label='Mafia Logs Setup', description='Configure Lockdown Profiles', emoji='<:tgk_amongUs:1103542462628253726>'),
 			# discord.SelectOption(label='Server Lockdown', description='Configure Lockdown Profiles', emoji='<:tgk_lock:1072851190213259375>'),
 		]
 		if default != -1:
@@ -154,6 +156,51 @@ class Serversettings_Dropdown(discord.ui.Select):
 			await interaction.response.edit_message(embed=embed, view=dank_pool_view)
 			dank_pool_view.message = await interaction.original_response()
 
+		elif self.values[0] == "Mafia Logs Setup":
+
+			data = await interaction.client.mafiaConfig.find(interaction.guild.id)
+			if data is None:
+				data = {"_id": interaction.guild.id, "enable_logging":False, "logs_channel": None, "message_logs": []}
+				await interaction.client.mafiaConfig.upsert(data)
+
+			channel = data['logs_channel']
+
+			if channel is None:
+				channel = f"**`None`**"
+			else:
+				channel = interaction.guild.get_channel(int(channel))
+				if channel is not None:
+					channel = f"**{channel.mention} (`{channel.name}`)**"
+				else:
+					data['logs_channel'] = None
+					await interaction.client.mafiaConfig.upsert(data)
+					channel = f"**`None`**"
+
+			embed = discord.Embed(
+				color=3092790,
+				title="Mafia Logs Setup"
+			)
+			embed.add_field(name="Logging Channel:", value=f"{channel}", inline=False)
+
+			self.view.stop()
+			mafia_view = Mafia_Panel(interaction , data)
+
+			# Initialize the button
+			if data['enable_logging']:
+				mafia_view.children[0].style = discord.ButtonStyle.green
+				mafia_view.children[0].label = 'Logging Enabled'
+				mafia_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
+			else:
+				mafia_view.children[0].style = discord.ButtonStyle.red
+				mafia_view.children[0].label = 'Logging Disabled'
+				mafia_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
+
+			mafia_view.add_item(Serversettings_Dropdown(1))
+
+			await interaction.response.edit_message(embed=embed, view=mafia_view)
+			mafia_view.message = await interaction.original_response()
+
+		
 		elif self.values[0] == "Server Lockdown":
 
 			data = await interaction.client.lockdown.find(interaction.guild.id)
@@ -176,12 +223,12 @@ class Serversettings_Dropdown(discord.ui.Select):
 			
 			self.view.stop()
 			lockdown_profile_view =  Lockdown_Profile_Panel(interaction)			
-			lockdown_profile_view.add_item(Serversettings_Dropdown(1))
+			lockdown_profile_view.add_item(Serversettings_Dropdown(2))
 			await interaction.response.edit_message(embed=embed, view=lockdown_profile_view)
 			lockdown_profile_view.message = await interaction.original_response()
 
 			await interaction.message.edit(embed=embed, view=lockdown_profile_view)
-		
+
 		else:
 			await interaction.response.send_message(f'Invaid Interaction',ephemeral=True)
 
