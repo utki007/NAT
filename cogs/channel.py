@@ -342,8 +342,12 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 		
 		pages = []
 		ping_group = list(chunk(member_list,10))
+		member_count = 0
 		for members in ping_group:
-			desc = "\n".join([f'> {member.mention} (`{member.id}`)' for member in members])
+			desc = ''
+			for member in members:
+				member_count += 1
+				desc += f'` {member_count}. ` {member.mention} (`{member.id}`)\n'
 			desc = f"{title}{desc}"
 			embed = discord.Embed(description=desc, color=color)
 			pages.append(embed)
