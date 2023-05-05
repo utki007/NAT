@@ -99,8 +99,8 @@ async def on_message(message):
 			if data is None:
 				return
 			
-			if data['enable_logging'] is True and data['log_channel'] is not None:
-				log_channel = guild.get_channel(int(data['log_channel']))
+			if data['enable_logging'] is True and data['logs_channel'] is not None:
+				log_channel = guild.get_channel(int(data['logs_channel']))
 				if log_channel is None:
 					return
 				
