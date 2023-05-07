@@ -16,6 +16,8 @@ def chunk(it, size):
 	return iter(lambda: tuple(islice(it, size)), ())
 
 @app_commands.guild_only()
+# @app_commands.default_permissions(manage_messages=True)
+# @app_commands.bot_has_permissions(manage_messages=True)
 class channel(commands.GroupCog, name="channel", description="Helps you manage channels #️⃣"):
 	def __init__(self, bot):
 		self.bot = bot
@@ -234,7 +236,7 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 
 			overwrite = channel.overwrites_for(role)
 			if overwrite.view_channel == False:
-				warning = await get_error_embed(content = f"{role_mention} is already viewlocked")
+				embed = await get_error_embed(content = f"{role_mention} is already viewlocked")
 			else:
 				overwrite.view_channel = False
 
@@ -270,14 +272,14 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 			
 			if role == interaction.guild.default_role :
 				if state:
-					msg = f'<a:nat_check:1010969401379536958> **|** Unviewlocked **{channel.mention}** for {role} with state `True`'
+					msg = f'Unviewlocked **{channel.mention}** for {role} with state `True`'
 				else:
-					msg = f'<a:nat_check:1010969401379536958> **|** Unviewlocked **{channel.mention}** for {role}'
+					msg = f'Unviewlocked **{channel.mention}** for {role}'
 			else:
 				if state:
-					msg = f'<a:nat_check:1010969401379536958> **|** Unviewlocked **{channel.mention}** for {role.mention} with state `True`'
+					msg = f'Unviewlocked **{channel.mention}** for {role.mention} with state `True`'
 				else:
-					msg = f'<a:nat_check:1010969401379536958> **|** Unviewlocked **{channel.mention}** for {role.mention}'
+					msg = f'Unviewlocked **{channel.mention}** for {role.mention}'
 		
 			await channel.set_permissions(role, overwrite=overwrite)
 
