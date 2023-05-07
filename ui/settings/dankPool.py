@@ -4,6 +4,8 @@ from discord import Interaction
 from utils.embeds import get_error_embed, get_invisible_embed, get_warning_embed, get_success_embed
 from discord.ui import UserSelect, RoleSelect
 
+from utils.views.ui import Dropdown_Channel
+
 async def update_pool_embed(interaction: Interaction, data: dict):
 
 	desc = f""
@@ -17,6 +19,19 @@ async def update_pool_embed(interaction: Interaction, data: dict):
 				desc += f"` - ` {member.mention}\n"
 			except:
 				pass
+	
+	channel = data['logs_channel']
+
+	if channel is None:
+		channel = f"**`None`**"
+	else:
+		channel = interaction.guild.get_channel(int(channel))
+		if channel is not None:
+			channel = f"**{channel.mention} (`{channel.name}`)**"
+		else:
+			data['logs_channel'] = None
+			await interaction.client.mafiaConfig.upsert(data)
+			channel = f"**`None`**"
 
 	event_manager = data['event_manager']
 
@@ -54,6 +69,7 @@ async def update_pool_embed(interaction: Interaction, data: dict):
 	embed.add_field(name="Following users are whitelisted:", value=f"{desc}", inline=False)
 	embed.add_field(name="Event Manager Role:", value=f"{event_manager}", inline=False)
 	embed.add_field(name="Quarantine Role:", value=f"{quarantine}", inline=False)
+	embed.add_field(name="Logging Channel:", value=f"{channel}", inline=False)
 	if event_manager_error != '':
 		embed.add_field(name="<a:nat_warning:1062998119899484190> Warning: <a:nat_warning:1062998119899484190>",
 		                value=f"{event_manager_error}", inline=False)
@@ -65,14 +81,67 @@ class Dank_Pool_Panel(discord.ui.View):
 		super().__init__(timeout=180)
 		self.interaction = interaction
 		self.message = None #req for disabling buttons after timeout
+
 	
-	@discord.ui.button(label="Whitelist User", style=discord.ButtonStyle.gray, emoji="<:tgk_addPerson:1073899206026199070>",row=1)
+	@discord.ui.button(label='toggle_button_label' ,row=1)
+	async def toggle(self, interaction: discord.Interaction, button: discord.ui.Button):
+		data = await interaction.client.dankSecurity.find(interaction.guild.id)
+		if data['enable_logging']:
+			data['enable_logging'] = False
+			await interaction.client.dankSecurity.upsert(data)
+			await update_pool_embed(interaction, data)
+			button.style = discord.ButtonStyle.red
+			button.label = 'Logging Disabled'
+			button.emoji = "<:tgk_deactivated:1082676877468119110>"
+			await interaction.response.edit_message(view=self)
+		else:
+			data['enable_logging'] = True
+			await interaction.client.dankSecurity.upsert(data)
+			await update_pool_embed(interaction, data)
+			button.style = discord.ButtonStyle.green
+			button.label = 'Logging Enabled'
+			button.emoji = "<:tgk_active:1082676793342951475>"
+			await interaction.response.edit_message(view=self)
+	
+	@discord.ui.button(label="Logging Channel", style=discord.ButtonStyle.gray, emoji="<:tgk_channel:1073908465405268029>",row=1)
+	async def add_logs(self, interaction: discord.Interaction, button: discord.ui.Button):
+		data = await interaction.client.dankSecurity.find(interaction.guild.id)
+		view = Dropdown_Channel(interaction)
+		await interaction.response.send_message(view=view, ephemeral=True)
+		await view.wait()
+		if view.value is None:
+			embed = await get_warning_embed(f'Dropdown timed out, please retry.')
+			return await interaction.edit_original_response(
+				content = None, embed = embed, view = None
+			)
+		else:
+			channel = data['logs_channel']
+			if channel is None:
+				channel = f"**`None`**"
+			else:
+				channel = f'<#{channel}>'
+			if data['logs_channel'] is None or data['logs_channel'] != view.value.id:
+				data['logs_channel'] = view.value.id
+				await interaction.client.dankSecurity.upsert(data)
+				embed = await get_success_embed(f'Logging Chaneel changed from {channel} to {view.value.mention}')
+				await interaction.edit_original_response(
+					content = None, embed = embed, view = None
+				)
+				await update_pool_embed(self.interaction, data)
+			else:
+				embed = await get_error_embed(f"Logging Chaneel was already set to {channel}")
+				return await interaction.edit_original_response(
+					content = None, embed = embed, view = None
+				)
+
+
+	@discord.ui.button(label="Whitelist User", style=discord.ButtonStyle.gray, emoji="<:tgk_addPerson:1073899206026199070>",row=2)
 	async def whitelist_user(self, interaction: discord.Interaction, button: discord.ui.Button):
 		view = Dank_Pool_Whitelist_User(self.interaction)
 		await interaction.response.send_message(ephemeral=True, view=view)
 		view.message = await interaction.original_response()
 
-	@discord.ui.button(label="Unwhitelist User", style=discord.ButtonStyle.gray, emoji="<:tgk_removePerson:1073899271197298738>",row=1)
+	@discord.ui.button(label="Unwhitelist User", style=discord.ButtonStyle.gray, emoji="<:tgk_removePerson:1073899271197298738>",row=2)
 	async def delete_user(self, interaction: discord.Interaction, button: discord.ui.Button):
 		data = await interaction.client.dankSecurity.find(interaction.guild.id)
 		users = [interaction.guild.get_member(int(user_id)) for user_id in data['whitelist']]
@@ -93,11 +162,11 @@ class Dank_Pool_Panel(discord.ui.View):
 		await interaction.response.send_message(view=view_select, ephemeral=True)
 		select.message = await interaction.original_response()
 
-	@discord.ui.button(label="Event Manager", style=discord.ButtonStyle.gray, emoji="<:tgk_role:1073908306713780284>",row=2)
+	@discord.ui.button(label="Event Manager", style=discord.ButtonStyle.gray, emoji="<:tgk_role:1073908306713780284>",row=3)
 	async def modify_role(self, interaction: discord.Interaction, button: discord.ui.Button):
 		await interaction.response.send_message(content="*Open `Events Manager` from <@270904126974590976>'s </serversettings:1011560371041095691> command to automatically modify it.*",ephemeral=True)
 
-	@discord.ui.button(label="Quarantine Role", style=discord.ButtonStyle.gray, emoji="<:tgk_role:1073908306713780284>",row=2)
+	@discord.ui.button(label="Quarantine Role", style=discord.ButtonStyle.gray, emoji="<:tgk_role:1073908306713780284>",row=3)
 	async def modify_quarantine(self, interaction: discord.Interaction, button: discord.ui.Button):
 		view = Dank_Pool_Quarantine_Role(self.interaction)
 		await interaction.response.send_message(ephemeral=True, view=view)

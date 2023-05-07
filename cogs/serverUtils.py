@@ -93,7 +93,14 @@ class Serversettings_Dropdown(discord.ui.Select):
 
 			data = await interaction.client.dankSecurity.find(interaction.guild.id)
 			if data is None:
-				data = {"_id": interaction.guild.id, "event_manager": None, "whitelist": [], "quarantine": None}
+				data = { 
+					"_id": interaction.guild.id, 
+					"event_manager": None, 
+					"whitelist": [], 
+					"quarantine": None, 
+					"enable_logging":False, 
+					"logs_channel": None
+				}
 				await interaction.client.dankSecurity.upsert(data)
 
 			users = f""
@@ -110,7 +117,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 						await interaction.client.dankSecurity.upsert(data)
 						pass
 			event_manager = data['event_manager']
-
+			
 			event_manager_error = ''
 			if event_manager is None:
 				event_manager = f"**`None`**"
@@ -139,6 +146,19 @@ class Serversettings_Dropdown(discord.ui.Select):
 					await interaction.client.dankSecurity.upsert(data)
 					quarantine = f"**`None`**"
 			
+			channel = data['logs_channel']
+
+			if channel is None:
+				channel = f"**`None`**"
+			else:
+				channel = interaction.guild.get_channel(int(channel))
+				if channel is not None:
+					channel = f"**{channel.mention} (`{channel.name}`)**"
+				else:
+					data['logs_channel'] = None
+					await interaction.client.mafiaConfig.upsert(data)
+					channel = f"**`None`**"
+
 			embed = discord.Embed(
 				color=3092790,
 				title="Dank Pool Access"
@@ -146,11 +166,23 @@ class Serversettings_Dropdown(discord.ui.Select):
 			embed.add_field(name="Following users are whitelisted:", value=f"{users}", inline=False)
 			embed.add_field(name="Event Manager Role:", value=f"{event_manager}", inline=False)
 			embed.add_field(name="Quarantine Role:", value=f"{quarantine}", inline=False)
+			embed.add_field(name="Logging Channel:", value=f"{channel}", inline=False)
 			if event_manager_error != '':
 				embed.add_field(name="<a:nat_warning:1062998119899484190> Warning: <a:nat_warning:1062998119899484190>", value=f"{event_manager_error}", inline=False)
 
 			self.view.stop()
 			dank_pool_view =  Dank_Pool_Panel(interaction)
+
+			# Initialize the button
+			if data['enable_logging']:
+				dank_pool_view.children[0].style = discord.ButtonStyle.green
+				dank_pool_view.children[0].label = 'Logging Enabled'
+				dank_pool_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
+			else:
+				dank_pool_view.children[0].style = discord.ButtonStyle.red
+				dank_pool_view.children[0].label = 'Logging Disabled'
+				dank_pool_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
+
 			dank_pool_view.add_item(Serversettings_Dropdown(0))
 			
 			await interaction.response.edit_message(embed=embed, view=dank_pool_view)
