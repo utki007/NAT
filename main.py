@@ -212,6 +212,48 @@ async def on_message_edit(before, after):
 # 				except:
 # 					pass
 
+@bot.event
+async def on_audit_log_entry_create(entry):
+	match entry.action:
+		case discord.AuditLogAction.member_role_update:
+			if entry.changes.after.roles:
+				added_to = entry.target
+				added_by = entry.user
+				roles = entry.changes.after.roles
+				member = entry.target
+
+				# check if dank manager role is added
+				data = await bot.dankSecurity.find(entry.target.guild.id)
+
+				if data:
+					event_manager = member.guild.get_role(data['event_manager'])
+					if event_manager is not None and event_manager in roles and member.id not in data['whitelist'] and member.id != member.guild.owner.id: 
+						try:
+							await member.remove_roles(member.guild.get_role(data['event_manager']), reason="Member is not a authorized Dank Manager.")
+						except:
+							pass
+						role = None
+						if data['quarantine'] is not None:					
+							role = member.guild.get_role(data['quarantine'])
+						quarantined = await quarantineUser(bot, member, role, f"{member.name}#{member.discriminator} (ID: {member.id}) has made an unauthorized attempt to get Dank Manager role.")					
+						if quarantined:
+							securityLog = bot.get_channel(1089973828215644241)
+							if securityLog is not None:
+								webhooks = await securityLog.webhooks()
+								webhook = discord.utils.get(webhooks, name=bot.user.name)
+								if webhook is None:
+									webhook = await securityLog.create_webhook(name=bot.user.name, reason="Dank Pool Logs", avatar=await bot.user.avatar.read())
+								embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to get **Dank Manager role**!")	
+								await webhook.send(
+									embed=embed,
+									username=member.guild.name,
+									avatar_url=member.guild.icon.url
+								)
+							embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to get Dank Manager role in {member.guild.name}")
+							try:
+								await member.guild.owner.send(embed = embed)
+							except:
+								pass
 
 # @bot.event
 # async def on_guild_join(guild):
