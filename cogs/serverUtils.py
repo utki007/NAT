@@ -176,11 +176,11 @@ class Serversettings_Dropdown(discord.ui.Select):
 			# Initialize the button
 			if data['enable_logging']:
 				dank_pool_view.children[0].style = discord.ButtonStyle.green
-				dank_pool_view.children[0].label = 'Logging Enabled'
+				dank_pool_view.children[0].label = 'Logs Enabled'
 				dank_pool_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
 			else:
 				dank_pool_view.children[0].style = discord.ButtonStyle.red
-				dank_pool_view.children[0].label = 'Logging Disabled'
+				dank_pool_view.children[0].label = 'Logs Disabled'
 				dank_pool_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
 
 			dank_pool_view.add_item(Serversettings_Dropdown(0))

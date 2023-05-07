@@ -91,7 +91,7 @@ class Dank_Pool_Panel(discord.ui.View):
 			await interaction.client.dankSecurity.upsert(data)
 			await update_pool_embed(interaction, data)
 			button.style = discord.ButtonStyle.red
-			button.label = 'Logging Disabled'
+			button.label = 'Logs Disabled'
 			button.emoji = "<:tgk_deactivated:1082676877468119110>"
 			await interaction.response.edit_message(view=self)
 		else:
@@ -99,7 +99,7 @@ class Dank_Pool_Panel(discord.ui.View):
 			await interaction.client.dankSecurity.upsert(data)
 			await update_pool_embed(interaction, data)
 			button.style = discord.ButtonStyle.green
-			button.label = 'Logging Enabled'
+			button.label = 'Logs Enabled'
 			button.emoji = "<:tgk_active:1082676793342951475>"
 			await interaction.response.edit_message(view=self)
 	
