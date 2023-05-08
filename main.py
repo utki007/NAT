@@ -114,70 +114,70 @@ async def on_message(message):
 				link_view.add_item(discord.ui.Button(emoji="<:nat_mafia:1102305100527042622>",label="Mafia Evidence", style=discord.ButtonStyle.link, url=f"https://mahto.id/chat-exporter?url={link_msg.attachments[0].url}"))
 				await link_msg.edit(view=link_view)
 
-	# pool logging for dank memer
-	if message.author.id == 270904126974590976 and len(message.embeds)>0:
-		if message.interaction is not None:
-			if 'serverevents' in message.interaction.name:
-				bl_list = ['serverevents payout', 'serverevents run serverbankrob', 'serverevents run raffle', 'serverevents run splitorsteal']
-				if message.interaction.name in bl_list:
-					data = await bot.dankSecurity.find(message.guild.id)
-					member = message.interaction.user
-					if data:
-						if member.id not in data['whitelist'] and member.id != member.guild.owner.id: 
-							await message.delete()
-							try:
-								await member.remove_roles(message.guild.get_role(data['event_manager']), reason="Member is not a authorized Dank Manager.")
-							except:
-								pass
-							role = None
-							if data['quarantine'] is not None:					
-								role = message.guild.get_role(data['quarantine'])
-							quarantined = await quarantineUser(bot, member, role, f"{member.name}#{member.discriminator} (ID: {member.id}) {member.mention} has made an unsucessful attempt to run `/{message.interaction.name}`!")					
-							if quarantined:
-								securityLog = bot.get_channel(1089973828215644241)
-								loggingChannel = bot.get_channel(data['logs_channel'])
-								isLogEnabled = data['enable_logging']
-								if securityLog is not None:
-									webhooks = await securityLog.webhooks()
-									webhook = discord.utils.get(webhooks, name=bot.user.name)
-									if webhook is None:
-										webhook = await securityLog.create_webhook(name=bot.user.name, reason="Dank Pool Logs", avatar=await bot.user.avatar.read())
-									embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to run `/{message.interaction.name}`!")	
-									view = discord.ui.View()
-									view.add_item(discord.ui.Button(emoji = '<:tgk_link:1105189183523401828>',label=f'Used at', url=f"{message.jump_url}"))
-									await webhook.send(
-										embed=embed,
-										username=message.guild.name,
-										avatar_url=message.guild.icon.url,
-										view=view
-									)
-									if loggingChannel is not None and isLogEnabled is True:
-										webhooks = await loggingChannel.webhooks()
-										webhook = discord.utils.get(webhooks, name=bot.user.name)
-										if webhook is None:
-											webhook = await loggingChannel.create_webhook(name=bot.user.name, reason="Dank Pool Logs", avatar=await bot.user.avatar.read())
+	# # pool logging for dank memer
+	# if message.author.id == 270904126974590976 and len(message.embeds)>0:
+	# 	if message.interaction is not None:
+	# 		if 'serverevents' in message.interaction.name:
+	# 			bl_list = ['serverevents payout', 'serverevents run serverbankrob', 'serverevents run raffle', 'serverevents run splitorsteal']
+	# 			if message.interaction.name in bl_list:
+	# 				data = await bot.dankSecurity.find(message.guild.id)
+	# 				member = message.interaction.user
+	# 				if data:
+	# 					if member.id not in data['whitelist'] and member.id != member.guild.owner.id: 
+	# 						await message.delete()
+	# 						try:
+	# 							await member.remove_roles(message.guild.get_role(data['event_manager']), reason="Member is not a authorized Dank Manager.")
+	# 						except:
+	# 							pass
+	# 						role = None
+	# 						if data['quarantine'] is not None:					
+	# 							role = message.guild.get_role(data['quarantine'])
+	# 						quarantined = await quarantineUser(bot, member, role, f"{member.name}#{member.discriminator} (ID: {member.id}) {member.mention} has made an unsucessful attempt to run `/{message.interaction.name}`!")					
+	# 						if quarantined:
+	# 							securityLog = bot.get_channel(1089973828215644241)
+	# 							loggingChannel = bot.get_channel(data['logs_channel'])
+	# 							isLogEnabled = data['enable_logging']
+	# 							if securityLog is not None:
+	# 								webhooks = await securityLog.webhooks()
+	# 								webhook = discord.utils.get(webhooks, name=bot.user.name)
+	# 								if webhook is None:
+	# 									webhook = await securityLog.create_webhook(name=bot.user.name, reason="Dank Pool Logs", avatar=await bot.user.avatar.read())
+	# 								embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to run `/{message.interaction.name}`!")	
+	# 								view = discord.ui.View()
+	# 								view.add_item(discord.ui.Button(emoji = '<:tgk_link:1105189183523401828>',label=f'Used at', url=f"{message.jump_url}"))
+	# 								await webhook.send(
+	# 									embed=embed,
+	# 									username=message.guild.name,
+	# 									avatar_url=message.guild.icon.url,
+	# 									view=view
+	# 								)
+	# 								if loggingChannel is not None and isLogEnabled is True:
+	# 									webhooks = await loggingChannel.webhooks()
+	# 									webhook = discord.utils.get(webhooks, name=bot.user.name)
+	# 									if webhook is None:
+	# 										webhook = await loggingChannel.create_webhook(name=bot.user.name, reason="Dank Pool Logs", avatar=await bot.user.avatar.read())
 
-										embed = discord.Embed(
-											title = f"Security Breach!",
-											description=
-											f"` - `   **Command:** `/{message.interaction.name}`\n"
-											f"` - `   **Used by:** {member.mention}\n",
-											color=discord.Color.random()
-										)
+	# 									embed = discord.Embed(
+	# 										title = f"Security Breach!",
+	# 										description=
+	# 										f"` - `   **Command:** `/{message.interaction.name}`\n"
+	# 										f"` - `   **Used by:** {member.mention}\n",
+	# 										color=discord.Color.random()
+	# 									)
 
-										await webhook.send(
-											embed=embed,
-											username=member.name,
-											avatar_url=str(member.avatar.url),
-											view=view
-										)
-								embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to run `/{message.interaction.name}`!")
-								try:
-									view = discord.ui.View()
-									view.add_item(discord.ui.Button(label=f'Used at', url=f"{message.jump_url}"))
-									await message.guild.owner.send(embed = embed, view=view)
-								except:
-									pass
+	# 									await webhook.send(
+	# 										embed=embed,
+	# 										username=member.name,
+	# 										avatar_url=str(member.avatar.url),
+	# 										view=view
+	# 									)
+	# 							embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to run `/{message.interaction.name}`!")
+	# 							try:
+	# 								view = discord.ui.View()
+	# 								view.add_item(discord.ui.Button(label=f'Used at', url=f"{message.jump_url}"))
+	# 								await message.guild.owner.send(embed = embed, view=view)
+	# 							except:
+	# 								pass
 				
 
 	# payout logging
