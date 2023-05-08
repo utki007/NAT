@@ -27,16 +27,17 @@ class serverUtils(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 
-	@app_commands.command(name="ping", description="Ping pong! 🏓", extras={'example': '/ping'})
-	@app_commands.checks.cooldown(1, 30, key=lambda i: (i.guild_id, i.user.id))
-	async def ping(self, interaction:  discord.Interaction):
-		await interaction.response.send_message("Pong! 🏓")
+	@commands.hybrid_command(name='ping', description='Check the bot\'s latency! 🏓')
+	@commands.cooldown(1, 10, commands.BucketType.user)
+	@app_commands.guild_only()
+	async def ping(self, ctx):
+		msg = await ctx.send("Pong! 🏓")
 
-		await interaction.edit_original_response(
-			content=f"Pong! **`{round(self.bot.latency * 1000)}ms`**",
+		await msg.edit(
+			content=f"Pong! **`{round(self.bot.latency * 1000)}ms`**"			
 		)
 
-	@app_commands.command(name="calculate", description="Do math! 🧮", extras={'example': '/calculate query: 2m+40k'})
+	@commands.hybrid_command(name="calculate", description="Do math! 🧮", extras={'example': '/calculate query: 2m+40k'} )
 	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 2, key=lambda i: (i.guild_id, i.user.id))
 	@app_commands.describe(query = "5 Mil -> 5e6 or 5m", hidden = "Nobody knows how you calculated so accurately 🥂")
