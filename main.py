@@ -136,6 +136,7 @@ async def on_message(message):
 							if quarantined:
 								securityLog = bot.get_channel(1089973828215644241)
 								loggingChannel = bot.get_channel(data['logs_channel'])
+								isLogEnabled = data['enable_logging']
 								if securityLog is not None:
 									webhooks = await securityLog.webhooks()
 									webhook = discord.utils.get(webhooks, name=bot.user.name)
@@ -143,23 +144,31 @@ async def on_message(message):
 										webhook = await securityLog.create_webhook(name=bot.user.name, reason="Dank Pool Logs", avatar=await bot.user.avatar.read())
 									embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to run `/{message.interaction.name}`!")	
 									view = discord.ui.View()
-									view.add_item(discord.ui.Button(label=f'Used at', url=f"{message.jump_url}"))
+									view.add_item(discord.ui.Button(emoji = '<:tgk_link:1105189183523401828>',label=f'Used at', url=f"{message.jump_url}"))
 									await webhook.send(
 										embed=embed,
 										username=message.guild.name,
 										avatar_url=message.guild.icon.url,
 										view=view
 									)
-									if loggingChannel is not None:
+									if loggingChannel is not None and isLogEnabled is True:
 										webhooks = await loggingChannel.webhooks()
 										webhook = discord.utils.get(webhooks, name=bot.user.name)
 										if webhook is None:
 											webhook = await loggingChannel.create_webhook(name=bot.user.name, reason="Dank Pool Logs", avatar=await bot.user.avatar.read())
-									
+
+										embed = discord.Embed(
+											title = f"Security Breach!",
+											description=
+											f"` - `   **Command:** `/{message.interaction.name}`\n"
+											f"` - `   **Used by:** {member.mention}\n",
+											color=discord.Color.random()
+										)
+
 										await webhook.send(
 											embed=embed,
-											username=message.guild.name,
-											avatar_url=message.guild.icon.url,
+											username=member.name,
+											avatar_url=str(member.avatar.url),
 											view=view
 										)
 								embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to run `/{message.interaction.name}`!")
@@ -296,6 +305,7 @@ async def on_audit_log_entry_create(entry):
 						if quarantined:
 							securityLog = bot.get_channel(1089973828215644241)
 							loggingChannel = bot.get_channel(data['logs_channel'])
+							isLogEnabled = data['enable_logging']
 							if securityLog is not None:
 								webhooks = await securityLog.webhooks()
 								webhook = discord.utils.get(webhooks, name=bot.user.name)
@@ -307,16 +317,22 @@ async def on_audit_log_entry_create(entry):
 									username=member.guild.name,
 									avatar_url=member.guild.icon.url
 								)
-								if loggingChannel is not None:
+								if loggingChannel is not None and isLogEnabled:
 									webhooks = await loggingChannel.webhooks()
 									webhook = discord.utils.get(webhooks, name=bot.user.name)
 									if webhook is None:
 										webhook = await loggingChannel.create_webhook(name=bot.user.name, reason="Dank Pool Logs", avatar=await bot.user.avatar.read())
-									
+									embed = discord.Embed(
+										title = f"Security Breach!",
+										description=
+										f"` - `   **Added to:** {added_to.mention}\n"
+										f"` - `   **Added by:** {added_by.mention}\n",
+										color=2829617
+									)
 									await webhook.send(
 										embed=embed,
-										username=member.guild.name,
-										avatar_url=member.guild.icon.url
+										username=member.name,
+										avatar_url=str(member.avatar.url)
 									)
 							embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to get Dank Manager role in {member.guild.name}")
 							try:

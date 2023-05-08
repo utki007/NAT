@@ -54,7 +54,7 @@ class events(commands.Cog):
 			message = await interaction.original_response()
 
 			view = discord.ui.View()
-			view.add_item(discord.ui.Button(label=f'Used at', url=f"{message.jump_url}"))
+			view.add_item(discord.ui.Button(emoji="<:tgk_link:1105189183523401828>",label=f'Used at', url=f"{message.jump_url}"))
 			await log_channel.send(embed=logg, view=view)
 			# await interaction.response.send_message(f"You are missing the required permissions to use this command!", ephemeral=True)
 		elif isinstance(error, app_commands.CheckFailure):
@@ -100,7 +100,7 @@ class events(commands.Cog):
 			message = await interaction.original_response()
 
 			view = discord.ui.View()
-			view.add_item(discord.ui.Button(label=f'Used at', url=f"{message.jump_url}"))
+			view.add_item(discord.ui.Button(emoji="<:tgk_link:1105189183523401828>",label=f'Used at', url=f"{message.jump_url}"))
 			await log_channel.send(embed=logg, view=view)
 			# await interaction.response.send_message("You are missing the required role to use this command!", ephemeral=True)
 		elif isinstance(error, app_commands.MissingAnyRole):
