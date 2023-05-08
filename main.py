@@ -38,8 +38,8 @@ class MyBot(commands.Bot):
 			case_insensitive=True,
 			owner_ids=[488614633670967307, 301657045248114690],
 			intents=intents,
-			application_id=951019275844460565, # for nat
-			# application_id=1010883367119638658 # for natasha
+			# application_id=951019275844460565, # for nat
+			application_id=1010883367119638658 # for natasha
 		)
 
 	async def setup_hook(self):
@@ -114,70 +114,73 @@ async def on_message(message):
 				link_view.add_item(discord.ui.Button(emoji="<:nat_mafia:1102305100527042622>",label="Mafia Evidence", style=discord.ButtonStyle.link, url=f"https://mahto.id/chat-exporter?url={link_msg.attachments[0].url}"))
 				await link_msg.edit(view=link_view)
 
-	# # pool logging for dank memer
-	# if message.author.id == 270904126974590976 and len(message.embeds)>0:
-	# 	if message.interaction is not None:
-	# 		if 'serverevents' in message.interaction.name:
-	# 			bl_list = ['serverevents payout', 'serverevents run serverbankrob', 'serverevents run raffle', 'serverevents run splitorsteal']
-	# 			if message.interaction.name in bl_list:
-	# 				data = await bot.dankSecurity.find(message.guild.id)
-	# 				member = message.interaction.user
-	# 				if data:
-	# 					if member.id not in data['whitelist'] and member.id != member.guild.owner.id: 
-	# 						await message.delete()
-	# 						try:
-	# 							await member.remove_roles(message.guild.get_role(data['event_manager']), reason="Member is not a authorized Dank Manager.")
-	# 						except:
-	# 							pass
-	# 						role = None
-	# 						if data['quarantine'] is not None:					
-	# 							role = message.guild.get_role(data['quarantine'])
-	# 						quarantined = await quarantineUser(bot, member, role, f"{member.name}#{member.discriminator} (ID: {member.id}) {member.mention} has made an unsucessful attempt to run `/{message.interaction.name}`!")					
-	# 						if quarantined:
-	# 							securityLog = bot.get_channel(1089973828215644241)
-	# 							loggingChannel = bot.get_channel(data['logs_channel'])
-	# 							isLogEnabled = data['enable_logging']
-	# 							if securityLog is not None:
-	# 								webhooks = await securityLog.webhooks()
-	# 								webhook = discord.utils.get(webhooks, name=bot.user.name)
-	# 								if webhook is None:
-	# 									webhook = await securityLog.create_webhook(name=bot.user.name, reason="Dank Pool Logs", avatar=await bot.user.avatar.read())
-	# 								embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to run `/{message.interaction.name}`!")	
-	# 								view = discord.ui.View()
-	# 								view.add_item(discord.ui.Button(emoji = '<:tgk_link:1105189183523401828>',label=f'Used at', url=f"{message.jump_url}"))
-	# 								await webhook.send(
-	# 									embed=embed,
-	# 									username=message.guild.name,
-	# 									avatar_url=message.guild.icon.url,
-	# 									view=view
-	# 								)
-	# 								if loggingChannel is not None and isLogEnabled is True:
-	# 									webhooks = await loggingChannel.webhooks()
-	# 									webhook = discord.utils.get(webhooks, name=bot.user.name)
-	# 									if webhook is None:
-	# 										webhook = await loggingChannel.create_webhook(name=bot.user.name, reason="Dank Pool Logs", avatar=await bot.user.avatar.read())
+	# pool logging for dank memer
+	if message.author.id == 270904126974590976 and len(message.embeds)>0:
+		if message.interaction is not None:
+			if 'serverevents' in message.interaction.name:
+				bl_list = ['serverevents payout', 'serverevents run serverbankrob', 'serverevents run raffle', 'serverevents run splitorsteal']
+				if message.interaction.name in bl_list:
+					data = await bot.dankSecurity.find(message.guild.id)
+					member = message.interaction.user
+					if data:
+						if member.id not in data['whitelist'] and member.id != member.guild.owner.id: 
+							await message.delete()
+							try:
+								await member.remove_roles(message.guild.get_role(data['event_manager']), reason="Member is not a authorized Dank Manager.")
+							except:
+								pass
+							role = None
+							if data['quarantine'] is not None:					
+								role = message.guild.get_role(data['quarantine'])
+							try:
+								await quarantineUser(bot, member, role, f"{member.name} (ID: {member.id}) {member.mention} has made an unsucessful attempt to run `/{message.interaction.name}`!")					
+							except:
+								pass
+							
+							securityLog = bot.get_channel(1089973828215644241)
+							loggingChannel = bot.get_channel(data['logs_channel'])
+							isLogEnabled = data['enable_logging']
+							if securityLog is not None:
+								webhooks = await securityLog.webhooks()
+								webhook = discord.utils.get(webhooks, name=bot.user.name)
+								if webhook is None:
+									webhook = await securityLog.create_webhook(name=bot.user.name, reason="Dank Pool Logs", avatar=await bot.user.avatar.read())
+								embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to run `/{message.interaction.name}`!")	
+								view = discord.ui.View()
+								view.add_item(discord.ui.Button(emoji = '<:tgk_link:1105189183523401828>',label=f'Used at', url=f"{message.jump_url}"))
+								await webhook.send(
+									embed=embed,
+									username=message.guild.name,
+									avatar_url=message.guild.icon.url,
+									view=view
+								)
+								if loggingChannel is not None and isLogEnabled is True:
+									webhooks = await loggingChannel.webhooks()
+									webhook = discord.utils.get(webhooks, name=bot.user.name)
+									if webhook is None:
+										webhook = await loggingChannel.create_webhook(name=bot.user.name, reason="Dank Pool Logs", avatar=await bot.user.avatar.read())
 
-	# 									embed = discord.Embed(
-	# 										title = f"Security Breach!",
-	# 										description=
-	# 										f"` - `   **Command:** `/{message.interaction.name}`\n"
-	# 										f"` - `   **Used by:** {member.mention}\n",
-	# 										color=discord.Color.random()
-	# 									)
+									embed = discord.Embed(
+										title = f"Security Breach!",
+										description=
+										f"` - `   **Command:** `/{message.interaction.name}`\n"
+										f"` - `   **Used by:** {member.mention}\n",
+										color=discord.Color.random()
+									)
 
-	# 									await webhook.send(
-	# 										embed=embed,
-	# 										username=member.name,
-	# 										avatar_url=str(member.avatar.url),
-	# 										view=view
-	# 									)
-	# 							embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to run `/{message.interaction.name}`!")
-	# 							try:
-	# 								view = discord.ui.View()
-	# 								view.add_item(discord.ui.Button(label=f'Used at', url=f"{message.jump_url}"))
-	# 								await message.guild.owner.send(embed = embed, view=view)
-	# 							except:
-	# 								pass
+									await webhook.send(
+										embed=embed,
+										username=member.name,
+										avatar_url=str(member.avatar.url),
+										view=view
+									)
+							embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to run `/{message.interaction.name}`!")
+							try:
+								view = discord.ui.View()
+								view.add_item(discord.ui.Button(label=f'Used at', url=f"{message.jump_url}"))
+								await message.guild.owner.send(embed = embed, view=view)
+							except:
+								pass
 				
 
 	# payout logging
@@ -250,34 +253,6 @@ async def on_message_edit(before, after):
 	if message.author.bot:
 		return
 
-# @bot.event
-# async def on_member_update(before, after):
-# 	member = after
-
-# 	roles = [role.id for role in after.roles]
-	
-# 	data = await bot.dankSecurity.find(member.guild.id)
-# 	if data:
-# 		event_manager = member.guild.get_role(data['event_manager'])
-# 		if event_manager is not None and event_manager in member.roles and member.id not in data['whitelist'] and member.id != member.guild.owner.id: 
-# 			try:
-# 				await member.remove_roles(member.guild.get_role(data['event_manager']), reason="Member is not a authorized Dank Manager.")
-# 			except:
-# 				pass
-# 			role = None
-# 			if data['quarantine'] is not None:					
-# 				role = member.guild.get_role(data['quarantine'])
-# 			quarantined = await quarantineUser(bot, member, role, f"{member.name}#{member.discriminator} (ID: {member.id}) has made an unauthorized attempt to get Dank Manager role.")					
-# 			if quarantined:
-# 				try:
-# 					securityLog = bot.get_channel(1089973828215644241)
-# 					if securityLog is not None:
-# 						await securityLog.send(f"{member.mention} has made an unauthorized attempt to get **Dank Manager role** in {member.guild.name}.")
-# 					embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to get Dank Manager role in {member.guild.name}")
-# 					await member.guild.owner.send(embed = embed)
-# 				except:
-# 					pass
-
 @bot.event
 async def on_audit_log_entry_create(entry):
 	match entry.action:
@@ -301,44 +276,49 @@ async def on_audit_log_entry_create(entry):
 						role = None
 						if data['quarantine'] is not None:					
 							role = member.guild.get_role(data['quarantine'])
-						quarantined = await quarantineUser(bot, member, role, f"{member.name}#{member.discriminator} (ID: {member.id}) has made an unauthorized attempt to get Dank Manager role.")					
-						if quarantined:
-							securityLog = bot.get_channel(1089973828215644241)
-							loggingChannel = bot.get_channel(data['logs_channel'])
-							isLogEnabled = data['enable_logging']
-							if securityLog is not None:
-								webhooks = await securityLog.webhooks()
+						try:
+							await quarantineUser(bot, member, role, f"{member.name}(ID: {member.id}) has made an unauthorized attempt to get Dank Manager role.")	
+							await quarantineUser(bot, added_by, role, f"{added_by.name}(ID: {added_by.id}) has made an unauthorized attempt to give Dank Manager role to {member.name} (ID: {member.id}).")					
+						except:
+							pass
+						
+						securityLog = bot.get_channel(1089973828215644241)
+						loggingChannel = bot.get_channel(data['logs_channel'])
+						isLogEnabled = data['enable_logging']
+						if securityLog is not None:
+							webhooks = await securityLog.webhooks()
+							webhook = discord.utils.get(webhooks, name=bot.user.name)
+							if webhook is None:
+								webhook = await securityLog.create_webhook(name=bot.user.name, reason="Dank Pool Logs", avatar=await bot.user.avatar.read())
+							embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to get **Dank Manager role**!")	
+							await webhook.send(
+								embed=embed,
+								username=member.guild.name,
+								avatar_url=member.guild.icon.url
+							)
+							if loggingChannel is not None and isLogEnabled:
+								webhooks = await loggingChannel.webhooks()
 								webhook = discord.utils.get(webhooks, name=bot.user.name)
 								if webhook is None:
-									webhook = await securityLog.create_webhook(name=bot.user.name, reason="Dank Pool Logs", avatar=await bot.user.avatar.read())
-								embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to get **Dank Manager role**!")	
+									webhook = await loggingChannel.create_webhook(name=bot.user.name, reason="Dank Pool Logs", avatar=await bot.user.avatar.read())
+								embed = discord.Embed(
+									title=f'Unauthorized attempt to get Dank Manager role!',
+									description=
+									f"` - `   **Added to:** {added_to.mention}\n"
+									f"` - `   **Added by:** {added_by.mention}\n"
+									f"` - `   **Added at:** <t:{int(datetime.datetime.timestamp(datetime.datetime.now()))}>\n",
+									color=2829617
+								)
 								await webhook.send(
 									embed=embed,
-									username=member.guild.name,
-									avatar_url=member.guild.icon.url
+									username=member.name,
+									avatar_url=str(member.avatar.url)
 								)
-								if loggingChannel is not None and isLogEnabled:
-									webhooks = await loggingChannel.webhooks()
-									webhook = discord.utils.get(webhooks, name=bot.user.name)
-									if webhook is None:
-										webhook = await loggingChannel.create_webhook(name=bot.user.name, reason="Dank Pool Logs", avatar=await bot.user.avatar.read())
-									embed = discord.Embed(
-										title = f"Security Breach!",
-										description=
-										f"` - `   **Added to:** {added_to.mention}\n"
-										f"` - `   **Added by:** {added_by.mention}\n",
-										color=2829617
-									)
-									await webhook.send(
-										embed=embed,
-										username=member.name,
-										avatar_url=str(member.avatar.url)
-									)
-							embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to get Dank Manager role in {member.guild.name}")
-							try:
-								await member.guild.owner.send(embed = embed)
-							except:
-								pass
+						embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to get Dank Manager role in {member.guild.name}")
+						try:
+							await member.guild.owner.send(embed = embed)
+						except:
+							pass
 
 # @bot.event
 # async def on_guild_join(guild):
