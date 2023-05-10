@@ -35,9 +35,9 @@ class Button(discord.ui.View):
 
 		button.label = str(len(timer_data['members'])) 
 		await interaction.response.edit_message(view=self)
-		embed = await get_success_embed(f"I will remind you once timer ends!")
-		await asyncio.sleep(1)
-		await interaction.followup.send(embed = embed, ephemeral=True)
+		# embed = await get_success_embed(f"I will remind you once timer ends!")
+		# await asyncio.sleep(1)
+		# await interaction.followup.send(embed = embed, ephemeral=True)
 		self.timer = timer_data
 
 	async def on_timeout(self):
