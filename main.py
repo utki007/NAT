@@ -38,8 +38,8 @@ class MyBot(commands.Bot):
 			case_insensitive=True,
 			owner_ids=[488614633670967307, 301657045248114690],
 			intents=intents,
-			# application_id=951019275844460565, # for nat
-			application_id=1010883367119638658 # for natasha
+			application_id=951019275844460565, # for nat
+			# application_id=1010883367119638658 # for natasha
 		)
 
 	async def setup_hook(self):
@@ -154,26 +154,26 @@ async def on_message(message):
 									avatar_url=message.guild.icon.url,
 									view=view
 								)
-								if loggingChannel is not None and isLogEnabled is True:
-									webhooks = await loggingChannel.webhooks()
-									webhook = discord.utils.get(webhooks, name=bot.user.name)
-									if webhook is None:
-										webhook = await loggingChannel.create_webhook(name=bot.user.name, reason="Dank Pool Logs", avatar=await bot.user.avatar.read())
+								# if loggingChannel is not None and isLogEnabled is True:
+								# 	webhooks = await loggingChannel.webhooks()
+								# 	webhook = discord.utils.get(webhooks, name=bot.user.name)
+								# 	if webhook is None:
+								# 		webhook = await loggingChannel.create_webhook(name=bot.user.name, reason="Dank Pool Logs", avatar=await bot.user.avatar.read())
 
-									embed = discord.Embed(
-										title = f"Security Breach!",
-										description=
-										f"` - `   **Command:** `/{message.interaction.name}`\n"
-										f"` - `   **Used by:** {member.mention}\n",
-										color=discord.Color.random()
-									)
+								# 	embed = discord.Embed(
+								# 		title = f"Security Breach!",
+								# 		description=
+								# 		f"` - `   **Command:** `/{message.interaction.name}`\n"
+								# 		f"` - `   **Used by:** {member.mention}\n",
+								# 		color=discord.Color.random()
+								# 	)
 
-									await webhook.send(
-										embed=embed,
-										username=member.name,
-										avatar_url=str(member.avatar.url),
-										view=view
-									)
+								# 	await webhook.send(
+								# 		embed=embed,
+								# 		username=member.name,
+								# 		avatar_url=str(member.avatar.url),
+								# 		view=view
+								# 	)
 							embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to run `/{message.interaction.name}`!")
 							try:
 								view = discord.ui.View()
@@ -296,24 +296,24 @@ async def on_audit_log_entry_create(entry):
 								username=member.guild.name,
 								avatar_url=member.guild.icon.url
 							)
-							if loggingChannel is not None and isLogEnabled:
-								webhooks = await loggingChannel.webhooks()
-								webhook = discord.utils.get(webhooks, name=bot.user.name)
-								if webhook is None:
-									webhook = await loggingChannel.create_webhook(name=bot.user.name, reason="Dank Pool Logs", avatar=await bot.user.avatar.read())
-								embed = discord.Embed(
-									title=f'Unauthorized attempt to get Dank Manager role!',
-									description=
-									f"` - `   **Added to:** {added_to.mention}\n"
-									f"` - `   **Added by:** {added_by.mention}\n"
-									f"` - `   **Added at:** <t:{int(datetime.datetime.timestamp(datetime.datetime.now()))}>\n",
-									color=2829617
-								)
-								await webhook.send(
-									embed=embed,
-									username=member.name,
-									avatar_url=str(member.avatar.url)
-								)
+							# if loggingChannel is not None and isLogEnabled:
+							# 	webhooks = await loggingChannel.webhooks()
+							# 	webhook = discord.utils.get(webhooks, name=bot.user.name)
+							# 	if webhook is None:
+							# 		webhook = await loggingChannel.create_webhook(name=bot.user.name, reason="Dank Pool Logs", avatar=await bot.user.avatar.read())
+							# 	embed = discord.Embed(
+							# 		title=f'Unauthorized attempt to get Dank Manager role!',
+							# 		description=
+							# 		f"` - `   **Added to:** {added_to.mention}\n"
+							# 		f"` - `   **Added by:** {added_by.mention}\n"
+							# 		f"` - `   **Added at:** <t:{int(datetime.datetime.timestamp(datetime.datetime.now()))}>\n",
+							# 		color=2829617
+							# 	)
+							# 	await webhook.send(
+							# 		embed=embed,
+							# 		username=member.name,
+							# 		avatar_url=str(member.avatar.url)
+							# 	)
 						embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to get Dank Manager role in {member.guild.name}")
 						try:
 							await member.guild.owner.send(embed = embed)
@@ -336,13 +336,13 @@ if os.path.exists(os.getcwd()+"./properties/tokens.json"):
 	# loading from tokens.py
 	with open("./properties/tokens.json") as file_data:
 		configData = json.load(file_data)
-	bot.botToken = configData["BOT_TOKEN_Natasha"]
+	bot.botToken = configData["BOT_TOKEN_Nat"]
 	bot.connection_url = configData["MongoConnectionUrl"]
 	bot.amari = configData["amari"]
 	bot.dankHelper = configData["dankHelper"]
 else:
 	# for heroku
-	bot.botToken = os.environ['BOT_TOKEN_Natasha']
+	bot.botToken = os.environ['BOT_TOKEN']
 	bot.connection_url = os.environ['MongoConnectionUrl']
 	bot.amari = os.environ["amari"]
 	bot.dankHelper = os.environ["dankHelper"]
