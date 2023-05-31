@@ -336,7 +336,7 @@ if os.path.exists(os.getcwd()+"./properties/tokens.json"):
 	# loading from tokens.py
 	with open("./properties/tokens.json") as file_data:
 		configData = json.load(file_data)
-	bot.botToken = configData["BOT_TOKEN_Nat"]
+	bot.botToken = configData["BOT_TOKEN"]
 	bot.connection_url = configData["MongoConnectionUrl"]
 	bot.amari = configData["amari"]
 	bot.dankHelper = configData["dankHelper"]
