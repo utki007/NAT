@@ -14,12 +14,12 @@ class Lockdown_Profile_Panel(discord.ui.View):
 		self.interaction = interaction
 		self.message = None 
 	
-	@discord.ui.button(label="Add Profile", style=discord.ButtonStyle.gray, emoji="<:add_friend:1069597360491081880>",row=1)
+	@discord.ui.button(label="Create", style=discord.ButtonStyle.gray, emoji="<:tgk_add:1073902485959352362>",row=1)
 	async def whitelist_profile(self, interaction: discord.Interaction, button: discord.ui.Button):
 		await interaction.response.send_modal(Lockdown_Profile_Add())
 
 
-	@discord.ui.button(label="Configure Profile", style=discord.ButtonStyle.gray, emoji="✏",row=1)
+	@discord.ui.button(label="Edit", style=discord.ButtonStyle.gray, emoji="<:tgk_edit:1073902428224757850>",row=1)
 	async def modify_profile(self, interaction: discord.Interaction, button: discord.ui.Button):
 		data = await interaction.client.lockdown.find(interaction.guild.id)
 		options = []
@@ -27,11 +27,11 @@ class Lockdown_Profile_Panel(discord.ui.View):
 			options.append(discord.SelectOption(
 				label=f"{profile.title()}", description=f"Configure {profile.title()}", emoji='<:nat_profile:1073644967492337786>', value=f"{profile}"))
 		if len(options) == 0:
-			embed = await get_warning_embed(interaction, "This server has no profiles yet! Add one using the `Add Profile` button.")
+			embed = await get_warning_embed(interaction, "This server has no lockdown protocols yet! Create one using the **Create** button.")
 			return await interaction.response.send_message(embed=embed, ephemeral=True)
 		
 		view = discord.ui.View()
-		view.profile = Dropdown_Default(interaction, options, placeholder="Select a profile to configure ...")
+		view.profile = Dropdown_Default(interaction, options, placeholder="Select a lockdown protocol to configure ...")
 		view.add_item(view.profile)
 		await interaction.response.send_message(view=view, ephemeral=True)
 		await view.wait()
@@ -46,7 +46,7 @@ class Lockdown_Profile_Panel(discord.ui.View):
 		if profile_name not in data['lockdown_profiles']:
 			warning = discord.Embed(
 				color=0xffd300,
-				title=f"> The profile named **`{profile_name}`** does not exist. Are you trying to Create a profile? \n> Use </lockdown create:1062965049913778296> .")
+				title=f"> The protocol named **`{profile_name}`** does not exist. Are you trying to Create a profile? \n> Use </lockdown create:1062965049913778296> .")
 			warning.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/845404773360205854.gif?size=128&quality=lossless")
 			return await interaction.response.send_message(embed=warning, ephemeral=True)
 		try:
@@ -54,11 +54,11 @@ class Lockdown_Profile_Panel(discord.ui.View):
 		except KeyError:
 			warning = discord.Embed(
 				color=0xffd300,
-				title=f"> The profile named **`{profile_name}`** does not exist. Are you trying to Create a profile? \n> Use </lockdown create:1062965049913778296> .")
+				title=f"> The protocol named **`{profile_name}`** does not exist. Are you trying to Create a profile? \n> Use </lockdown create:1062965049913778296> .")
 			warning.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/845404773360205854.gif?size=128&quality=lossless")
 			return await interaction.response.send_message(embed=warning, ephemeral=True)
 
-		embed = discord.Embed(title=f"Lockdown Settings for Profile: {profile_name}", color=discord.Color.blurple())
+		embed = discord.Embed(title=f"Lockdown Settings for Protocol: {profile_name}", color=discord.Color.blurple())
 		
 		lockdown_config = ""
 		if len(panel['channel_and_role']) > 0:
@@ -68,7 +68,7 @@ class Lockdown_Profile_Panel(discord.ui.View):
 				roleIds = [discord.utils.get(interaction.guild.roles, id=id) for id in roleIds]
 				role = [role for role in roleIds if role != None]
 				if channel:
-					lockdown_config += f'{channel.mention} **|** {" + ".join([role.mention for role in role])}\n'
+					lockdown_config += f'{channel.mention} **|** {" + ".join([role.mention if role != interaction.guild.default_role else str(role) for role in role])}\n'
 			if lockdown_config == "":
 				lockdown_config = "None"
 		else:
@@ -94,7 +94,7 @@ class Lockdown_Profile_Panel(discord.ui.View):
 		view.message = confirm_message
 		await interaction.delete_original_response()
 
-	@discord.ui.button(label="Delete Profile", style=discord.ButtonStyle.gray, emoji="<:nat_delete:1063067661602402314>",row=1)
+	@discord.ui.button(label="Delete", style=discord.ButtonStyle.gray, emoji="<:tgk_delete:1113517803203461222>",row=1)
 	async def delete_profile(self, interaction: discord.Interaction, button: discord.ui.Button):
 		data = await interaction.client.lockdown.find(interaction.guild.id)
 		options = []
@@ -102,11 +102,11 @@ class Lockdown_Profile_Panel(discord.ui.View):
 			options.append(discord.SelectOption(
 				label=f"{profile.title()}", description=f"Delete {profile.title()}", emoji='<:nat_profile:1073644967492337786>', value=f"{profile}"))
 		if len(options) == 0:
-			embed = await get_warning_embed(interaction, "This server has no profiles yet! Add one using the `Add Profile` button.")
+			embed = await get_warning_embed(interaction, "This server has no lockdown protocols yet.")
 			return await interaction.response.send_message(embed=embed, ephemeral=True)
 
 		view = discord.ui.View()
-		view.profile = Dropdown_Default(interaction, options, placeholder="Select a profile to delete ...")
+		view.profile = Dropdown_Default(interaction, options, placeholder="Select a protocol to delete ...")
 		view.add_item(view.profile)
 		await interaction.response.send_message(view=view, ephemeral=True, delete_after=190)
 		await view.wait()
@@ -121,7 +121,7 @@ class Lockdown_Profile_Panel(discord.ui.View):
 		confirmation_view = Confirm(interaction.user)
 		embed = discord.Embed(
 			color=3092790,
-			description=f"This will delete the profile `{profile_name.title()}`. Are you sure?"
+			description=f"Protocol **`{profile_name.title()}`** will be deleted. Are you sure?"
 		)
 		confirm_message = await interaction.followup.send(embed=embed, view=confirmation_view, wait=True, ephemeral=True)
 		await interaction.delete_original_response()
@@ -129,11 +129,11 @@ class Lockdown_Profile_Panel(discord.ui.View):
 		if confirmation_view.value:
 			data['lockdown_profiles'].remove(view.profile.values[0])
 			await interaction.client.lockdown.upsert(data)
-			embed = await get_success_embed(f"Deleted profile `{view.profile.values[0].title()}`")
+			embed = await get_success_embed(f"Protocol **`{view.profile.values[0].title()}`** has been deleted.")
 			await update_lockdown_embed(interaction, data)
 			await confirm_message.edit(embed=embed, view=None)
 		elif confirmation_view.value == False:
-			embed = await get_error_embed("Cancelled profile deletion.")
+			embed = await get_error_embed("Cancelled protocol deletion.")
 			await confirm_message.edit(embed=embed, view=None)
 
 	async def interaction_check(self, interaction: discord.Interaction):
@@ -146,12 +146,15 @@ class Lockdown_Profile_Panel(discord.ui.View):
 		for button in self.children:
 			button.disabled = True
 		
-		await self.message.edit(view=self)
+		try:
+			await self.message.edit(view=self)
+		except:
+			pass
 
 async def update_lockdown_embed(interaction: Interaction, data: dict):
 
 	if data['lockdown_profiles'] is None or len(data['lockdown_profiles']) == 0:
-		profiles = f"` - ` **Add profiles when?**\n"
+		profiles = f"` - ` **Add protocols when?**\n"
 	else:
 		profiles = ""
 		for profile in data['lockdown_profiles']:
@@ -159,9 +162,9 @@ async def update_lockdown_embed(interaction: Interaction, data: dict):
 
 	embed = discord.Embed(
 		color=3092790,
-		title="Server Lockdown <:tgk_lock:1072851190213259375>"
+		title="Configure Server Lockdown"
 	)
-	embed.add_field(name="Lockdown Profiles:", value=f"{profiles}", inline=False)
+	embed.add_field(name="Declared protocols are:", value=f"{profiles}", inline=False)
 	
 	await interaction.message.edit(embed=embed)
 
@@ -222,11 +225,11 @@ async def update_embed(interaction: Interaction, data: dict, name:str , failed:b
 	if len(panel['channel_and_role']) > 0:
 		for channel_id in panel['channel_and_role']:
 			channel = interaction.guild.get_channel(int(channel_id))
-			roleIds = [int(role_ids) for role_ids in panel['channel_and_role'][channel_id].split(" ") if role_ids != '' and role_ids not in ["everyone"]]
+			roleIds = [int(role_ids) for role_ids in panel['channel_and_role'][channel_id].split(" ") if role_ids != '']
 			roleIds = [discord.utils.get(interaction.guild.roles, id=id) for id in roleIds]
 			role = [role for role in roleIds if role != None]
 			if channel:
-				lockdown_config += f'{channel.mention} **|** {" + ".join([role.mention for role in role])}\n'
+				lockdown_config += f'{channel.mention} **|** {" + ".join([role.mention if role != interaction.guild.default_role else str(role) for role in role])}\n'
 	else:
 		lockdown_config = "None"
 
@@ -255,13 +258,14 @@ class Lockdown_Config_Panel(discord.ui.View):
 		self.message = message
 		self.name = name
 	
-	@discord.ui.button(label="Add/Edit Channel", style=discord.ButtonStyle.gray, emoji="<:channel:1017378607863181322>", custom_id="LOCKDOWN:ADD:CHANNEL", row = 0)
+	@discord.ui.button(label="Modify Channels", style=discord.ButtonStyle.gray, emoji="<:tgk_channel:1073908465405268029>", custom_id="LOCKDOWN:ADD:CHANNEL", row = 0)
 	async def add_channel(self, interaction: discord.Interaction, button: discord.ui.Button):
-		view = Select_channel_roles(interaction, self.data, self.name, self.message)
-		await interaction.response.send_message(content="Please choose from below dropdowns...", view=view, ephemeral=True)
+		view = Channel_modify_panel(interaction, self.data, self.name, self.message)
+		embed = await get_invisible_embed(f'Do you want to lock/unlock channel for @everyone role or for a custom role?')
+		await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 		await view.wait()
 	
-	@discord.ui.button(label="Delete Channel", style=discord.ButtonStyle.gray, emoji="<:nat_delete:1063067661602402314>", custom_id="LOCKDOWN:DELETE:CHANNEL", row=0)
+	@discord.ui.button(label="Delete Channel", style=discord.ButtonStyle.gray, emoji="<:tgk_delete:1113517803203461222>", custom_id="LOCKDOWN:DELETE:CHANNEL", row=0)
 	async def delete_channel(self, interaction: discord.Interaction, button: discord.ui.Button):
 				
 		channels = [interaction.guild.get_channel(int(channel_id)) for channel_id in self.data[self.name]['channel_and_role'].keys()]
@@ -269,7 +273,8 @@ class Lockdown_Config_Panel(discord.ui.View):
 
 		for channel in channels:
 			role = interaction.guild.get_role(int(self.data[self.name]['channel_and_role'][str(channel.id)]))
-			options.append(discord.SelectOption(label=channel.name, value=str(channel.id), emoji="<:channel:1017378607863181322>", description=f"{role.name} 🧑 {len(role.members)}"))
+			if role is not None:
+				options.append(discord.SelectOption(label=channel.name, value=str(channel.id), emoji="<:tgk_channel:1073908465405268029>", description=f"{role.name} 🧑 {len(role.members)}"))
 		# create ui.Select instance and add it to a new view
 		select = Delete_channel(interaction, self.data, self.name, options, self.message)
 		view_select = discord.ui.View()
@@ -278,7 +283,7 @@ class Lockdown_Config_Panel(discord.ui.View):
 		# edit the message with the new view
 		await interaction.response.send_message(content="Select channel to remove.", view=view_select, ephemeral=True)
 
-	@discord.ui.button(label="Lockdown Message", style=discord.ButtonStyle.gray, emoji="<a:nat_message:1063077628036272158>", custom_id="LOCKDOWN:MODIFY:LOCK:MSG", row = 1)
+	@discord.ui.button(label="Lockdown Message", style=discord.ButtonStyle.gray, emoji="<:tgk_message:1113527047373979668>", custom_id="LOCKDOWN:MODIFY:LOCK:MSG", row = 1)
 	async def lockdown_msg(self, interaction: discord.Interaction, button: discord.ui.Button):
 		modal = Lockdown_Add_Channel(interaction,self.name, self.data, self.message)
 
@@ -316,7 +321,7 @@ class Lockdown_Config_Panel(discord.ui.View):
 
 		await interaction.response.send_modal(modal)
 
-	@discord.ui.button(label="Unlockdown Message", style=discord.ButtonStyle.gray, emoji="<a:nat_message:1063077628036272158>", custom_id="UNLOCKDOWN:MODIFY:LOCK:MSG", row = 1)
+	@discord.ui.button(label="Unlockdown Message", style=discord.ButtonStyle.gray, emoji="<:tgk_message:1113527047373979668>", custom_id="UNLOCKDOWN:MODIFY:LOCK:MSG", row = 1)
 	async def unlockdown_msg(self, interaction: discord.Interaction, button: discord.ui.Button):
 		modal = Lockdown_Add_Channel(interaction,self.name, self.data, self.message)
 
@@ -363,7 +368,10 @@ class Lockdown_Config_Panel(discord.ui.View):
 	async def on_timeout(self):
 		for button in self.children:
 			button.disabled = True
+		try:
 			await self.message.edit(view=self)
+		except:
+			pass
 
 class Lockdown_Add_Channel(discord.ui.Modal):
 	def __init__(self, interaction: Interaction, name: str, data: dict, message: discord.Message):
@@ -549,3 +557,59 @@ class Delete_channel(discord.ui.Select):
 			content = None, embed = embed, view = None, 
 			allowed_mentions=discord.AllowedMentions(users=False, roles=False, everyone=False)
 		)
+
+class Channel_modify_panel(discord.ui.View):
+	def __init__(self, interaction: discord.Interaction, data: dict, name: str, message: discord.Message):
+		super().__init__()
+		self.interaction = interaction
+		self.message = None 
+		self.data = data
+		self.name = name
+		self.message = message
+		self.selected_channel = None
+		self.selected_role = None
+	
+	@discord.ui.button(label="Default Role", style=discord.ButtonStyle.gray, emoji="<:tgk_role:1073908306713780284>")
+	async def default_role(self, interaction: discord.Interaction, button: discord.ui.Button):
+		data = await interaction.client.lockdown.find(interaction.guild.id)
+		view = Dropdown_Channel(interaction)
+		await interaction.response.send_message(view=view, ephemeral=True)
+		await self.interaction.delete_original_response()
+		await view.wait()
+		if view.value is None:
+			embed = await get_warning_embed(f'Dropdown timed out, please retry.')
+			return await interaction.edit_original_response(
+				content = None, embed = embed, view = None
+			)
+		else:
+			channel_id = view.value.id
+			self.data[self.name]['channel_and_role'][str(channel_id)] = str(self.interaction.guild.default_role.id)
+			await interaction.client.lockdown.update(self.data)
+			await update_embed(self.interaction, self.data, self.name, False, self.message)
+			embed = await get_success_embed(f'Channel {view.value.mention} will be locked/unlocked for {interaction.guild.default_role} role.')
+			await interaction.edit_original_response(
+				content = None, embed = embed, view = None
+			)
+
+
+	@discord.ui.button(label="Custom Role", style=discord.ButtonStyle.gray, emoji="<:tgk_role:1073908306713780284>")
+	async def custom_role(self, interaction: discord.Interaction, button: discord.ui.Button):
+		view = Select_channel_roles(interaction, self.data, self.name, self.message)
+		await interaction.response.send_message(content="Please choose from below dropdowns...", view=view, ephemeral=True)
+		await self.interaction.delete_original_response()
+		await view.wait()
+
+	async def interaction_check(self, interaction: discord.Interaction):
+		if interaction.user.id != self.interaction.user.id:
+			warning = await get_invisible_embed(f"This is not for you")
+			return await interaction.response.send_message(embed=warning, ephemeral=True)	
+		return True
+
+	async def on_timeout(self):
+		for button in self.children:
+			button.disabled = True
+		
+		try:
+			await self.message.edit(view=self)
+		except:
+			pass

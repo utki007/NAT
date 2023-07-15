@@ -12,6 +12,7 @@ import discord
 import motor.motor_asyncio
 from discord.ext import commands
 
+from dotenv import load_dotenv
 from utils.db import Document
 from utils.embeds import *
 from utils.functions import *
@@ -28,6 +29,7 @@ formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', 
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
+load_dotenv()
 intents = discord.Intents.all()
 intents.presences = False
 class MyBot(commands.Bot):
@@ -38,6 +40,7 @@ class MyBot(commands.Bot):
 			case_insensitive=True,
 			owner_ids=[488614633670967307, 301657045248114690],
 			intents=intents,
+			help_command=None,
 			application_id=951019275844460565, # for nat
 			# application_id=1010883367119638658 # for natasha
 		)

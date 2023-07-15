@@ -40,9 +40,8 @@ class serverUtils(commands.Cog):
 	@commands.hybrid_command(name="calculate", description="Do math! 🧮", extras={'example': '/calculate query: 2m+40k'} )
 	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 2, key=lambda i: (i.guild_id, i.user.id))
-	@app_commands.describe(query = "5 Mil -> 5e6 or 5m", hidden = "Nobody knows how you calculated so accurately 🥂")
-	async def calculate(self, interaction:  discord.Interaction, query: str , hidden: bool = False):
-		await interaction.response.defer(ephemeral=hidden)
+	@app_commands.describe(query = "5 Mil -> 5e6 or 5m")
+	async def calculate(self, ctx, query: str):
 
 		start = t.time()
 		query = await convert_to_numeral(query)
@@ -55,10 +54,10 @@ class serverUtils(commands.Cog):
 		)
 		url = f"https://fakeimg.pl/150x40/9e3bff/000000/?retina=1&text={'%20'.join((await millify(output)).split(' '))}&font=lobster&font_size=28"
 		calc_embed.set_image(url=url)
-		calc_embed.set_footer(text=f"{interaction.guild.name} • Calculated in: {round((end - start) * 1000, 2)} ms",icon_url=interaction.guild.icon)
-		calc_embed.set_author(name=f"{interaction.user.display_name}'s calculation ...", icon_url=interaction.user.avatar)
+		calc_embed.set_footer(text=f"{ctx.guild.name} • Calculated in: {round((end - start) * 1000, 2)} ms",icon_url=ctx.guild.icon)
+		calc_embed.set_author(name=f"{ctx.author.display_name}'s calculation ...", icon_url=ctx.author.avatar)
 
-		await interaction.edit_original_response(
+		await ctx.send(
 			embed=calc_embed
 		)
 
@@ -82,7 +81,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 		options = [
 			discord.SelectOption(label='Dank Pool Access', description="Who all can access Server's Donation Pool", emoji='<:tgk_bank:1073920882130558987>'),
 			discord.SelectOption(label='Mafia Logs Setup', description='Configure Lockdown Profiles', emoji='<:tgk_amongUs:1103542462628253726>'),
-			# discord.SelectOption(label='Server Lockdown', description='Configure Lockdown Profiles', emoji='<:tgk_lock:1072851190213259375>'),
+			discord.SelectOption(label='Server Lockdown', description='Configure Lockdown Profiles', emoji='<:tgk_lock:1072851190213259375>'),
 		]
 		if default != -1:
 			options[default].default = True
@@ -242,7 +241,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 				await interaction.client.lockdown.upsert(data)
 
 			if data['lockdown_profiles'] is None or len(data['lockdown_profiles']) == 0:
-				profiles = f"` - ` **Add profiles when?**\n"
+				profiles = f"` - ` **Add lockdown protocols when?**\n"
 			else:
 				profiles = ""
 				for profile in data['lockdown_profiles']:
@@ -250,9 +249,9 @@ class Serversettings_Dropdown(discord.ui.Select):
 
 			embed = discord.Embed(
 				color=3092790,
-				title="Server Lockdown <:tgk_lock:1072851190213259375>"
+				title="Configure Server Lockdown"
 			)
-			embed.add_field(name="Lockdown Profiles:", value=f"{profiles}", inline=False)
+			embed.add_field(name="Declared protocols are:", value=f"{profiles}", inline=False)
 			
 			self.view.stop()
 			lockdown_profile_view =  Lockdown_Profile_Panel(interaction)			
@@ -261,7 +260,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 			lockdown_profile_view.message = await interaction.original_response()
 
 			await interaction.message.edit(embed=embed, view=lockdown_profile_view)
-
+			lockdown_profile_view.message = await interaction.original_response()
 		else:
 			await interaction.response.send_message(f'Invaid Interaction',ephemeral=True)
 

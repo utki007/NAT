@@ -123,7 +123,7 @@ class Dank_Pool_Panel(discord.ui.View):
 			if data['logs_channel'] is None or data['logs_channel'] != view.value.id:
 				data['logs_channel'] = view.value.id
 				await interaction.client.dankSecurity.upsert(data)
-				embed = await get_success_embed(f'Logging Chaneel changed from {channel} to {view.value.mention}')
+				embed = await get_success_embed(f'Logging Channel changed from {channel} to {view.value.mention}')
 				await interaction.edit_original_response(
 					content = None, embed = embed, view = None
 				)
