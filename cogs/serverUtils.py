@@ -80,7 +80,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 
 		options = [
 			discord.SelectOption(label='Dank Pool Access', description="Who all can access Server's Donation Pool", emoji='<:tgk_bank:1073920882130558987>'),
-			discord.SelectOption(label='Mafia Logs Setup', description='Configure Lockdown Profiles', emoji='<:tgk_amongUs:1103542462628253726>'),
+			discord.SelectOption(label='Mafia Logs Setup', description='Log entire game', emoji='<:tgk_amongUs:1103542462628253726>'),
 			discord.SelectOption(label='Server Lockdown', description='Configure Lockdown Profiles', emoji='<:tgk_lock:1072851190213259375>'),
 		]
 		if default != -1:
