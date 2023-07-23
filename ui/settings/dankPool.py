@@ -135,20 +135,20 @@ class Dank_Pool_Panel(discord.ui.View):
 				)
 
 
-	@discord.ui.button(label="Whitelist User", style=discord.ButtonStyle.gray, emoji="<:tgk_addPerson:1073899206026199070>",row=2)
+	@discord.ui.button(label="Whitelist User", style=discord.ButtonStyle.gray, emoji="<:tgk_addPerson:1132590758831079454>",row=2)
 	async def whitelist_user(self, interaction: discord.Interaction, button: discord.ui.Button):
 		view = Dank_Pool_Whitelist_User(self.interaction)
 		await interaction.response.send_message(ephemeral=True, view=view)
 		view.message = await interaction.original_response()
 
-	@discord.ui.button(label="Unwhitelist User", style=discord.ButtonStyle.gray, emoji="<:tgk_removePerson:1073899271197298738>",row=2)
+	@discord.ui.button(label="Unwhitelist User", style=discord.ButtonStyle.gray, emoji="<:tgk_removePerson:1132593125588733983>",row=2)
 	async def delete_user(self, interaction: discord.Interaction, button: discord.ui.Button):
 		data = await interaction.client.dankSecurity.find(interaction.guild.id)
 		users = [interaction.guild.get_member(int(user_id)) for user_id in data['whitelist']]
 		options = []
 
 		for user in users:
-			options.append(discord.SelectOption(label=f"{user.name} {user.name}#{user.discriminator}", value=user.id, emoji="<:tgk_removePerson:1073899271197298738>"))
+			options.append(discord.SelectOption(label=f"{user.name} {user.name}#{user.discriminator}", value=user.id, emoji="<:tgk_removePerson:1132593125588733983>"))
 		# create ui.Select instance and add it to a new view
 
 		if len(options) == 0:
