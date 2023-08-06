@@ -241,7 +241,7 @@ async def on_message_edit(before, after):
 		if message.interaction is not None and message.interaction.name == 'serversettings':
 			if message.embeds[0].to_dict()['title'] == 'Events Manager':
 				managerRole = None
-				description = message.embeds[0].to_dict()['description']
+				description = message.embeds[0].to_dict()['fields'][0]['value']
 				idList = re.findall("(\d{18,19})", description)
 				if len(idList) > 0:
 					managerRole = int(idList[0])
