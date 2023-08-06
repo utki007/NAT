@@ -182,6 +182,15 @@ async def on_message(message):
 								view = discord.ui.View()
 								view.add_item(discord.ui.Button(label=f'Used at', url=f"{message.jump_url}"))
 								await message.guild.owner.send(embed = embed, view=view)
+								if loggingChannel is not None and isLogEnabled is True:
+									embed = discord.Embed(
+										title = f"Security Breach!",
+										description=
+										f"` - `   **Command:** `/{message.interaction.name}`\n"
+										f"` - `   **Used by:** {member.mention}\n",
+										color=discord.Color.random()
+									)
+									await loggingChannel.send(embed=embed, view=view)
 							except:
 								pass
 				
