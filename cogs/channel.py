@@ -24,6 +24,7 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 	
 	@app_commands.command(name="slowmode", description="Set cooldown for chat ⏰")
 	@app_commands.describe(time="Enter time. Ex: '1h5m4s'")
+	@app_commands.checks.has_permissions(manage_messages=True)
 	async def slowmode(self, interaction: discord.Interaction, time: str="0s"):
 		await interaction.response.defer(ephemeral = False)
 		
