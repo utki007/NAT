@@ -74,7 +74,8 @@ class Lockdown_Profile_Panel(discord.ui.View):
 		else:
 			lockdown_config = "None"
 
-		embed.add_field(name="Channel Settings", value=f"{lockdown_config}", inline=False)
+		embed.description = f"**Channel Settings**\n{lockdown_config}\n\n"
+		# embed.add_field(name="Channel Settings", value=f"{lockdown_config}", inline=False)
 
 		lockmsg_config = f"**Title:** {panel['lock_embed']['title']}\n"
 		lockmsg_config += f"**Thumbnail:** [**Click here**]({panel['lock_embed']['thumbnail']})\n" 
@@ -187,6 +188,10 @@ class Lockdown_Profile_Add(discord.ui.Modal, title='Add Lockdown Profile'):
 		if not data:
 			data = {"_id": interaction.guild.id, "lockdown_profiles": []}
 
+		length = len(data['lockdown_profiles'])
+		if length >= 5 and interaction.user.id not in self.bot.owner_ids:
+			embed = await get_warning_embed(f"You can't create more than 5 lockdown protocols.")
+			return await interaction.response.send_message(embed=embed, ephemeral=True)
 		data['lockdown_profiles'].append(name)
 		data[name] = {
 			'creator': interaction.user.id, 
@@ -233,7 +238,8 @@ async def update_embed(interaction: Interaction, data: dict, name:str , failed:b
 	else:
 		lockdown_config = "None"
 
-	embed.add_field(name="Channel Settings", value=f"{lockdown_config}", inline=False)
+	embed.description = f"**Channel Settings**\n{lockdown_config}\n\n"
+	# embed.add_field(name="Channel Settings", value=f"{lockdown_config}", inline=False)
 
 	lockmsg_config = f"**Title:** {panel['lock_embed']['title']}\n"
 	lockmsg_config += f"**Thumbnail:** [**Click here**]({panel['lock_embed']['thumbnail']})\n"
@@ -582,7 +588,13 @@ class Channel_modify_panel(discord.ui.View):
 				content = None, embed = embed, view = None
 			)
 		else:
-			channel_id = view.value.id
+			channel_id = view.value.id			
+			if (len(self.data[self.name]['channel_and_role'].keys())>=25):
+				warning = discord.Embed(
+					color=0xDA2A2A,
+					description=f"<a:nat_cross:1010969491347357717> **|** Can't add more than 25 channels, please consider deleting some!")
+				return await interaction.edit_original_response(view=None, content=None, embed=warning)
+		
 			self.data[self.name]['channel_and_role'][str(channel_id)] = str(self.interaction.guild.default_role.id)
 			await interaction.client.lockdown.update(self.data)
 			await update_embed(self.interaction, self.data, self.name, False, self.message)
