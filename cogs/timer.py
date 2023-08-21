@@ -241,7 +241,7 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 		try:
 			ping_group = list(chunk(member_list,50))
 			for members in ping_group:
-				await channel.send(f"{', '.join(f'<@{id}>' for id in members)}",delete_after=0)
+				await channel.send(f"{', '.join(f'<@{id}>' for id in members)}",delete_after=1)
 		except:
 			pass
 
