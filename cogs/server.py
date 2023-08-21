@@ -29,6 +29,7 @@ class server(commands.GroupCog, name="server", description="Run server based com
 	@lockdown_command.command(name="start", description="Begin lockdown", extras={'example': '/'})
 	@app_commands.autocomplete(name=lockdown_profiles_list)
 	@app_commands.describe(name = "Which Lockdown Protocol to start?")
+	@app_commands.checks.has_permissions(manage_messages=True)
 	async def lockdown_start(self, interaction:  discord.Interaction, name: str):
 		# progress = await get_invisible_embed(content = f"<:tgk_activeDevelopment:1088434070666612806> **|** This command is under development...")
 		# return await interaction.response.send_message(embed=progress, ephemeral=False)
@@ -85,6 +86,7 @@ class server(commands.GroupCog, name="server", description="Run server based com
 	@lockdown_command.command(name="end", description="end lockdown", extras={'example': '/'})
 	@app_commands.autocomplete(name=lockdown_profiles_list)
 	@app_commands.describe(name = "Which Lockdown Protocol to end?")
+	@app_commands.checks.has_permissions(manage_messages=True)
 	async def lockdown_end(self, interaction:  discord.Interaction, name: str):
 		# progress = await get_invisible_embed(content = f"<:tgk_activeDevelopment:1088434070666612806> **|** This command is under development...")
 		# return await interaction.response.send_message(embed=progress, ephemeral=False)
@@ -143,6 +145,6 @@ class server(commands.GroupCog, name="server", description="Run server based com
 async def setup(bot):
 	await bot.add_cog(
 		server(bot),
-		guilds=[discord.Object(999551299286732871)]
+		# guilds=[discord.Object(999551299286732871)]
 	)
 	print(f"loaded server cog")
