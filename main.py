@@ -81,7 +81,7 @@ class MyBot(commands.Bot):
 		members_list = [len(guild.members) for guild in  bot.guilds]
 		total_members = sum(members_list)
 
-		await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.watching, name=f"Beta Version 2.0.2!"))
+		await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.watching, name=f"Beta Version 2.0.3!"))
 
 bot = MyBot()
 
