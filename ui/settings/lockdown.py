@@ -27,7 +27,7 @@ class Lockdown_Profile_Panel(discord.ui.View):
 			options.append(discord.SelectOption(
 				label=f"{profile.title()}", description=f"Configure {profile.title()}", emoji='<:nat_profile:1073644967492337786>', value=f"{profile}"))
 		if len(options) == 0:
-			embed = await get_warning_embed(interaction, "This server has no lockdown protocols yet! Create one using the **Create** button.")
+			embed = await get_warning_embed("This server has no lockdown protocols yet! Create one using the **Create** button.")
 			return await interaction.response.send_message(embed=embed, ephemeral=True)
 		
 		view = discord.ui.View()
