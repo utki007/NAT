@@ -41,8 +41,8 @@ class MyBot(commands.Bot):
 			owner_ids=[488614633670967307, 301657045248114690],
 			intents=intents,
 			help_command=None,
-			# application_id=951019275844460565, # for nat
-			application_id=1010883367119638658 # for natasha
+			application_id=951019275844460565, # for nat
+			# application_id=1010883367119638658 # for natasha
 		)
 
 	async def setup_hook(self):
