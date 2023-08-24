@@ -41,8 +41,8 @@ class MyBot(commands.Bot):
 			owner_ids=[488614633670967307, 301657045248114690],
 			intents=intents,
 			help_command=None,
-			application_id=951019275844460565, # for nat
-			# application_id=1010883367119638658 # for natasha
+			# application_id=951019275844460565, # for nat
+			application_id=1010883367119638658 # for natasha
 		)
 
 	async def setup_hook(self):
@@ -54,8 +54,9 @@ class MyBot(commands.Bot):
 		bot.lockdown = Document(bot.db, "lockdown")
 		bot.dankSecurity = Document(bot.db, "dankSecurity")
 		bot.quarantinedUsers = Document(bot.db, "quarantinedUsers")
-		bot.mafiaConfig = Document(bot.db, "mafiaConfig")
-		
+		bot.mafiaConfig = Document(bot.db, "mafiaConfig")	
+		bot.dankAdventureStats = Document(bot.db, "dankAdventureStats")
+
 		# Octane DB
 		bot.octane = motor.motor_asyncio.AsyncIOMotorClient(str(bot.dankHelper))
 		bot.db2 = bot.octane["Dank_Data"]
@@ -264,6 +265,121 @@ async def on_message_edit(before, after):
 	# return if message is from bot
 	if message.author.bot:
 		return
+
+@bot.event
+async def on_raw_message_edit(payload: discord.RawMessageUpdateEvent):
+	
+	message = payload.cached_message
+	if message is None:
+		channel = bot.get_channel(payload.channel_id)
+		if channel is None:
+			return
+		try:
+			message = await channel.fetch_message(payload.message_id)
+		except discord.NotFound:
+			return
+
+	if message.author.id == 270904126974590976 and len(message.embeds)>0:
+
+		# For adventure stats
+		if message.interaction is not None and message.interaction.name == 'adventure':
+			
+			if message.guild.id not in [785839283847954433, 1072079211419938856, 999551299286732871]:
+				return
+
+			if message.embeds[0].to_dict()['author']['name'] != 'Adventure Summary':
+				return
+						
+			user = message.interaction.user
+			today = datetime.date.today()
+			data = await bot.dankAdventureStats.find(user.id)
+			if data is None:
+				data = {
+					"_id": user.id,
+					"rewards": {
+						today : {
+							"total_adv": 0,
+							"reward_adv": 0,
+							"dmc_from_adv": 0,
+							"frags": 0,
+							"dmc": {},
+							"items": {},
+							"luck": {},
+							"xp": {}
+						}
+					}
+				}
+			else:
+				if today not in data['rewards'].keys():
+					if len(data['rewards']) >= 3:
+						del data['rewards'][list(data['rewards'].keys())[0]]
+					data['rewards'][today] = {
+						"total_adv": 0,
+						"reward_adv": 0,
+						"dmc_from_adv": 0,
+						"frags": 0,
+						"dmc": {},
+						"items": {},
+						"luck": {},
+						"xp": {}
+					}
+
+			rewards = next((item for item in message.embeds[0].to_dict()['fields'] if item["name"] == "Rewards"), None)
+			if rewards is None:
+				data['rewards'][today]['total_adv'] += 1
+				return await bot.dankAdventureStats.upsert(data)
+			else:
+				data['rewards'][today]['reward_adv'] += 1
+				rewards = rewards['value'].replace('-','',100).split('\n')
+				rewards = [rewards.strip() for rewards in rewards]
+				
+				# parse rewards
+				for items in rewards:
+					item_list = items.split(" ")
+
+					# for dmc
+					if item_list[0] == '⏣':
+						data['rewards'][today]['dmc_from_adv'] += int(item_list[1].replace(',','',100))
+
+						key = item_list[1].replace(',','',100)
+						if key in data['rewards'][today]['dmc']:
+							data['rewards'][today]['dmc'][key] += 1
+						else:
+							data['rewards'][today]['dmc'][key] = 1
+
+					# for items
+					elif items[0].isdigit():
+
+						# remove emojis from item name
+						emojis = list(set(re.findall(":\w*:\d*", items)))
+						for emoji in emojis:
+							items = items.replace(emoji,"",100)
+						items = items.replace("<>","",100)
+						items = items.replace("<a>","",100)
+						items = items.replace("  "," ",100)
+
+						if '.' in items:
+							key = " ".join(item_list[0:1])
+							if key in data['rewards'][today]['xp'] :
+								data['rewards'][today]['xp'][key] += 1
+							else:
+								data['rewards'][today]['xp'][key] = 1
+						elif 'Skin Fragments' in items:
+							data['rewards'][today]['frags'] += int(item_list[0][:-1])
+						else:
+							quantity = int(item_list[0][:-1])
+							key = (" ".join(items.split(" ")[1:])).strip()
+							if key in data['rewards'][today]['items']:
+								data['rewards'][today]['items'][key] += quantity
+							else:
+								data['rewards'][today]['items'][key] = quantity
+					else:
+						if 'Luck Multiplier' in items:
+							key = int(item_list[0][1:-1])
+							if key in data['rewards'][today]['luck']:
+								data['rewards'][today]['luck'][key] += 1
+							else:
+								data['rewards'][today]['luck'][key] = 1
 
 @bot.event
 async def on_audit_log_entry_create(entry):
