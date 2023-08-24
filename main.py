@@ -261,37 +261,24 @@ async def on_message_edit(before, after):
 					if data['event_manager'] != managerRole:
 						data['event_manager'] = managerRole
 						await bot.dankSecurity.upsert(data)
-
-	# return if message is from bot
-	if message.author.bot:
-		return
-
-@bot.event
-async def on_raw_message_edit(payload: discord.RawMessageUpdateEvent):
-	
-	message = payload.cached_message
-	if message is None:
-		channel = bot.get_channel(payload.channel_id)
-		if channel is None:
-			return
-		try:
-			message = await channel.fetch_message(payload.message_id)
-		except discord.NotFound:
-			return
-
-	if message.author.id == 270904126974590976 and len(message.embeds)>0:
-
+		
 		# For adventure stats
 		if message.interaction is not None and message.interaction.name == 'adventure':
 			
 			if message.guild.id not in [785839283847954433, 1072079211419938856, 999551299286732871]:
 				return
+			
+			if 'author' not in message.embeds[0].to_dict().keys():
+				return
+			
+			if 'name' not in message.embeds[0].to_dict()['author'].keys():
+				return
 
 			if message.embeds[0].to_dict()['author']['name'] != 'Adventure Summary':
 				return
-						
+					
 			user = message.interaction.user
-			today = datetime.date.today()
+			today = str(datetime.date.today())
 			data = await bot.dankAdventureStats.find(user.id)
 			if data is None:
 				data = {
@@ -380,6 +367,12 @@ async def on_raw_message_edit(payload: discord.RawMessageUpdateEvent):
 								data['rewards'][today]['luck'][key] += 1
 							else:
 								data['rewards'][today]['luck'][key] = 1
+				
+				return await bot.dankAdventureStats.upsert(data)
+
+	# return if message is from bot
+	if message.author.bot:
+		return
 
 @bot.event
 async def on_audit_log_entry_create(entry):
