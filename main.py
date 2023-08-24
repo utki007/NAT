@@ -316,6 +316,7 @@ async def on_message_edit(before, after):
 				data['rewards'][today]['total_adv'] += 1
 				return await bot.dankAdventureStats.upsert(data)
 			else:
+				data['rewards'][today]['total_adv'] += 1
 				data['rewards'][today]['reward_adv'] += 1
 				rewards = rewards['value'].replace('-','',100).split('\n')
 				rewards = [rewards.strip() for rewards in rewards]
