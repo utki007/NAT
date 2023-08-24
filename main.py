@@ -361,15 +361,16 @@ async def on_message_edit(before, after):
 								data['rewards'][today]['items'][key] += quantity
 							else:
 								data['rewards'][today]['items'][key] = quantity
+								
 					else:
 						if 'Luck Multiplier' in items:
-							key = int(item_list[0][1:-1])
+							key = item_list[0][1:-1]
 							if key in data['rewards'][today]['luck']:
 								data['rewards'][today]['luck'][key] += 1
 							else:
 								data['rewards'][today]['luck'][key] = 1
 				
-				return await bot.dankAdventureStats.upsert(data)
+			return await bot.dankAdventureStats.upsert(data)
 
 	# return if message is from bot
 	if message.author.bot:
