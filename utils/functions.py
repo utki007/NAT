@@ -10,6 +10,8 @@ def clean_code(content):
 
 async def quarantineUser(bot, user: discord.Member, quarantineRole: discord.Role = None, reason: str = None):
     
+    if user.id == user.guild.me.id:
+        return 
     top_role = user.guild.me.top_role
     top_role_position = top_role.position
     
