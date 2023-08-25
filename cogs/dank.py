@@ -60,31 +60,38 @@ class stats(commands.GroupCog, name="stats", description="Run server based comma
 		bullet = '<:ace_replycont:1082575852061073508>'
 		last_bullet = '<:ace_reply:1082575762856620093>'
 
-		list_of_items = []
-		dict = data['items']
+		if len(data['items']) > 0:
+			
+			list_of_items = []
+			dict = data['items']
 
-		for key in dict.keys():
-			item_price = int((await interaction.client.dankItems.find(key))['price'])
-			amount = round(dict[key] * item_price)
-			temp_dict = {"Name": key , "Quantity":str(dict[key]),"Amount": f'{amount:,}', "dummy":amount}
-			list_of_items.append(temp_dict)
+			for key in dict.keys():
+				item_price = int((await interaction.client.dankItems.find(key))['price'])
+				amount = round(dict[key] * item_price)
+				temp_dict = {"Name": key , "Quantity":str(dict[key]),"Amount": f'{amount:,}', "dummy":amount}
+				list_of_items.append(temp_dict)
+			
+			df = pd.DataFrame(list_of_items)
+			df = df.sort_values(by=['dummy'],ascending=False)
+			df.reset_index(inplace = True, drop = True)
+			total_earn = df['dummy'].sum()
+			df.drop(['dummy'], axis=1,inplace=True)
+			df["Item"] = df[['Quantity', 'Name']].agg('x '.join, axis=1)
+			# df["Net Amount"] = f'[0;37m' + df["Amount"] + f'[0;0m'
+			# df["Item"] = f'[1;36m' + df["Item"] + f'[0;0m'
+			df["Net Amount"] =  df["Amount"] 
+			df["Item"] =  df["Item"] 
+			df.drop(['Name'], axis=1,inplace=True)
+			df.drop(['Quantity'], axis=1,inplace=True)
+			df.drop(['Amount'], axis=1,inplace=True)
+			df.index += 1 
+			# item_str = f'```fix\n{tabulate(df.head(),["[4;34mItems[0;0m","[4;34mAmount[0;0m"], showindex=False, tablefmt="rounded_outline")}\n```'
+			item_str = f'```fix\n{tabulate(df.head(),["Items","Amount"], showindex=False, tablefmt="rounded_outline")}\n```'
 		
-		df = pd.DataFrame(list_of_items)
-		df = df.sort_values(by=['dummy'],ascending=False)
-		df.reset_index(inplace = True, drop = True)
-		total_earn = df['dummy'].sum()
-		df.drop(['dummy'], axis=1,inplace=True)
-		df["Item"] = df[['Quantity', 'Name']].agg('x '.join, axis=1)
-		# df["Net Amount"] = f'[0;37m' + df["Amount"] + f'[0;0m'
-		# df["Item"] = f'[1;36m' + df["Item"] + f'[0;0m'
-		df["Net Amount"] =  df["Amount"] 
-		df["Item"] =  df["Item"] 
-		df.drop(['Name'], axis=1,inplace=True)
-		df.drop(['Quantity'], axis=1,inplace=True)
-		df.drop(['Amount'], axis=1,inplace=True)
-		df.index += 1 
-		# item_str = f'```fix\n{tabulate(df.head(),["[4;34mItems[0;0m","[4;34mAmount[0;0m"], showindex=False, tablefmt="rounded_outline")}\n```'
-		item_str = f'```fix\n{tabulate(df.head(),["Items","Amount"], showindex=False, tablefmt="rounded_outline")}\n```'
+		else:
+			total_earn = 0
+			item_str = '```fix\nNo Items Grinded Yet!\n```'
+
 		# Overall Statistics
 		ostats = f'{bullet} **Grinded:** ⏣ {data["dmc_from_adv"]+total_earn:,}\n'
 		if data['frags'] > 0:
