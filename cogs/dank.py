@@ -51,9 +51,9 @@ class stats(commands.GroupCog, name="stats", description="Run server based comma
 		start = t.time()
 		data = await interaction.client.dankAdventureStats.find(user.id)
 		if data is None:
-			return await interaction.edit_original_response(embed=get_invisible_embed(f'You have not played any adventure yet!'))
+			return await interaction.edit_original_response(embed= await get_invisible_embed(f'You have not played any adventure yet!'))
 		if today not in data['rewards'].keys():
-			return await interaction.edit_original_response(embed=get_invisible_embed(f'You have not played adventure today!'))
+			return await interaction.edit_original_response(embed= await get_invisible_embed(f'You have not played adventure today!'))
 		
 		data = data['rewards'][today]		
 
