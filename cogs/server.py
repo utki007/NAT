@@ -34,6 +34,10 @@ class server(commands.GroupCog, name="server", description="Run server based com
 		# progress = await get_invisible_embed(content = f"<:tgk_activeDevelopment:1088434070666612806> **|** This command is under development...")
 		# return await interaction.response.send_message(embed=progress, ephemeral=False)
 		data = await self.bot.lockdown.find(interaction.guild.id)
+
+		if data is None:
+			return await interaction.response.send_message(embed=await get_invisible_embed(f'You have not created any lockdown profiles yet!'), ephemeral=True)
+
 		if not data and name not in data['lockdown_profiles']:
 			warning = discord.Embed(
 				color=0xffd300,
