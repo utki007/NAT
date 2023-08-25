@@ -8,7 +8,7 @@ from discord.ext import commands
 
 from utils.embeds import get_invisible_embed
 
-
+@app_commands.guild_only()
 class server(commands.GroupCog, name="server", description="Run server based commands"):
 	def __init__(self, bot):
 		self.bot = bot
