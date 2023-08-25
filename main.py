@@ -289,7 +289,8 @@ async def on_message_edit(before, after):
 							"dmc": {},
 							"items": {},
 							"luck": {},
-							"xp": {}
+							"xp": {},
+							"coins":	{}
 						}
 					}
 				}
@@ -305,7 +306,8 @@ async def on_message_edit(before, after):
 						"dmc": {},
 						"items": {},
 						"luck": {},
-						"xp": {}
+						"xp": {},
+						"coins":	{}
 					}
 
 			rewards = next((item for item in message.embeds[0].to_dict()['fields'] if item["name"] == "Rewards"), None)
@@ -366,6 +368,12 @@ async def on_message_edit(before, after):
 								data['rewards'][today]['luck'][key] += 1
 							else:
 								data['rewards'][today]['luck'][key] = 1
+						elif ' Coin Multiplier' in items:
+							key = item_list[0][1:-1]
+							if key in data['rewards'][today]['coins']:
+								data['rewards'][today]['coins'][key] += 1
+							else:
+								data['rewards'][today]['coins'][key] = 1
 				
 			return await bot.dankAdventureStats.upsert(data)
 
