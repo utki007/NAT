@@ -264,10 +264,7 @@ async def on_message_edit(before, after):
 		
 		# For adventure stats
 		if message.interaction is not None and message.interaction.name == 'adventure':
-			
-			if message.guild.id not in [785839283847954433, 1072079211419938856, 999551299286732871]:
-				return
-			
+						
 			if 'author' not in message.embeds[0].to_dict().keys():
 				return
 			
