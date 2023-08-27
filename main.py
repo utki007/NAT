@@ -453,7 +453,7 @@ async def on_audit_log_entry_create(entry):
 						except:
 							pass
 
-@bot.tree.event
+@bot.tree.error
 async def on_app_command_error(interaction: discord.Interaction, error: Exception):
 	if isinstance(error, app_commands.errors.CommandOnCooldown):
 			return await interaction.response.send_message(
@@ -491,16 +491,10 @@ async def on_app_command_error(interaction: discord.Interaction, error: Exceptio
 							avatar_url=interaction.client.user.avatar.url if interaction.client.user.avatar else interaction.client.user.default_avatar,
 							username=f"{interaction.client.user.name}'s Error Logger", file=file)
 
-# @bot.event
-# async def on_guild_join(guild):
-# 	embed = await get_invisible_embed(f'Unable to stay in **{guild.name}**.\n > Dm utki007#0690 to whitelist your server.')
-# 	whitelistedServer = [815849745327194153, 947525009247707157, 999551299286732871, 1069994776977494146, 991711295139233834, 785839283847954433]
-# 	if guild.id not in whitelistedServer:
-# 		try:
-# 			await guild.owner.send(embed=embed)
-# 		except:
-# 			pass
-# 		await guild.leave()
+@bot.event
+async def on_guild_join(guild: discord.Guild):
+	channel = bot.get_channel(1145314908599222342)
+	await channel.send(f"Joined **{guild.name}** (ID: {guild.id})\nOwner: {guild.owner.mention} (ID: {guild.owner.id})\nMembers: {guild.member_count}")
 
 # loading enviroment variables
 if os.path.exists(os.getcwd()+"./properties/tokens.json"):
