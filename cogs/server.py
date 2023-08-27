@@ -64,8 +64,12 @@ class server(commands.GroupCog, name="server", description="Run server based com
 				color=0xDA2A2A,
 				timestamp=datetime.datetime.utcnow()
 		)
-		lockdown_embed.set_footer(text=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
-		lockdown_embed.set_thumbnail(url=embed['thumbnail'])
+		if interaction.guild.icon:
+			lockdown_embed.set_footer(text=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
+		else:
+			lockdown_embed.set_thumbnail(text=f"{interaction.guild.name}")
+		if embed['thumbnail']:
+			lockdown_embed.set_thumbnail(url=embed['thumbnail'])
 			
 		for channel_id in channel_and_role:
 			channel = interaction.guild.get_channel(int(channel_id))
@@ -121,8 +125,12 @@ class server(commands.GroupCog, name="server", description="Run server based com
 				color=0x78AB46,
 				timestamp=datetime.datetime.utcnow()
 		)
-		lockdown_embed.set_footer(text=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
-		lockdown_embed.set_thumbnail(url=embed['thumbnail'])
+		if interaction.guild.icon:
+			lockdown_embed.set_footer(text=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
+		else:
+			lockdown_embed.set_thumbnail(text=f"{interaction.guild.name}")
+		if embed['thumbnail']:
+			lockdown_embed.set_thumbnail(url=embed['thumbnail'])
 			
 		for channel_id in channel_and_role:
 			channel = interaction.guild.get_channel(int(channel_id))
