@@ -5,17 +5,22 @@ import logging
 import logging.handlers
 import os
 import re
+import traceback
+import aiohttp
 from ast import literal_eval
 
 import chat_exporter
 import discord
 import motor.motor_asyncio
 from discord.ext import commands
+from discord import app_commands
 
 from dotenv import load_dotenv
 from utils.db import Document
 from utils.embeds import *
 from utils.functions import *
+from utils.convertor import dict_to_tree
+from io import BytesIO
 
 logger = logging.getLogger('discord')
 handler = logging.handlers.RotatingFileHandler(
@@ -447,6 +452,44 @@ async def on_audit_log_entry_create(entry):
 							await member.guild.owner.send(embed = embed)
 						except:
 							pass
+
+@bot.tree.event
+async def on_app_command_error(interaction: discord.Interaction, error: Exception):
+	if isinstance(error, app_commands.errors.CommandOnCooldown):
+			return await interaction.response.send_message(
+            f"Please wait {error.retry_after:.2f} seconds before trying again.", ephemeral=True, delete_after=10)
+	else:
+		embed = discord.Embed(description=f"```\n{error}\n```", color=bot.default_color)
+		try:
+			await interaction.response.send_message(embed=embed, ephemeral=False)
+		except discord.InteractionResponded:
+			await interaction.followup.send(embed=embed, ephemeral=False)
+	
+	tree_format = interaction.data.copy()
+	tree_format = dict_to_tree(tree_format)
+	message = await interaction.original_response()
+
+	embed = discord.Embed(title="Error", color=bot.default_color, description="")
+	embed.description += f"**Interaction Data Tree**\n```yaml\n{tree_format}\n```"
+	embed.add_field(name="Channel", value=f"{interaction.channel.mention} | {interaction.channel.id}", inline=False)
+	embed.add_field(name="Guild", value=f"{interaction.guild.name} | {interaction.guild.id}", inline=False)
+	embed.add_field(name="Author", value=f"{interaction.user.mention} | {interaction.user.id}", inline=False)
+	embed.add_field(name="Command", value=f"{interaction.command.name if interaction.command else 'None'}",
+					inline=False)
+	embed.add_field(name="Message", value=f"[Jump]({message.jump_url})", inline=False)
+
+	error_traceback = "".join(traceback.format_exception(type(error), error, error.__traceback__, 4))
+	buffer = BytesIO(error_traceback.encode('utf-8'))
+	file = discord.File(buffer, filename=f"Error-{interaction.command.name}.log")
+	buffer.close()
+
+	url = "https://canary.discord.com/api/webhooks/1145313909109174292/cFcaeWMF6inKN_DRZVZx0c1WExDUq0VvNtUiYd_GiBLzemMUyuGyq0P7eHWRpMExBjLY"
+
+	async with aiohttp.ClientSession() as session:
+		webhook = discord.Webhook.from_url(url, session=session)
+		await webhook.send(embed=embed,
+							avatar_url=interaction.client.user.avatar.url if interaction.client.user.avatar else interaction.client.user.default_avatar,
+							username=f"{interaction.client.user.name}'s Error Logger", file=file)
 
 # @bot.event
 # async def on_guild_join(guild):
