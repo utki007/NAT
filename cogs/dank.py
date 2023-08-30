@@ -302,7 +302,7 @@ class stats(commands.GroupCog, name="stats", description="Run server based comma
 	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
 	async def adventure_Stats(self, interaction:  discord.Interaction):
 		embed = await get_invisible_embed(f'You have not played any adventure yet!')
-		embed.description = f'## Adventure Stats has been moved!!\n- </dank adventure stats:1146314513688309790>\n- </dank adventure leaderboard:1146314513688309790>'
+		embed.description = f'## Adventure Stats has been moved!!\n- </dank adventure stats:1146318807984513096>\n- </dank adventure leaderboard:1146318807984513096>'
 		return await interaction.response.send_message(embed = embed, ephemeral=False)
 
 
