@@ -9,12 +9,11 @@ import discord
 import pandas as pd
 from discord import Interaction, app_commands
 from discord.ext import commands
+from PIL import Image, ImageChops, ImageDraw, ImageFont, ImageOps
 from tabulate import tabulate
 
-import time as t
-
 from utils.embeds import get_invisible_embed
-from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageChops
+
 
 class Historical_Data(enum.Enum):
 	Today = 1
@@ -105,7 +104,6 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 		return template
 	
 	@adventure_group.command(name="stats", description="Get adventure related statistics 📊")
-	# @app_commands.describe(historical_data = "Which Day's Data to See?")
 	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
 	async def adventure_stats(self, interaction:  discord.Interaction, user: discord.Member = None):
 		await interaction.response.defer(ephemeral = False)
@@ -119,7 +117,11 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 			color=2829617,
 			# description=f"<a:nat_timer:1010824320672604260> **|** Fetching your stats...",
 		)
-		stats_embed.set_author(name=f"{user.display_name}'s Adventure Stats", icon_url=user.avatar.url)
+		if user.avatar is None:
+			icon_url = user.default_avatar.url
+		else:
+			icon_url = user.avatar.url
+		stats_embed.set_author(name=f"{user.display_name}'s Adventure Stats", icon_url=icon_url)
 		stats_embed.set_footer(text = f'{guild.name}', icon_url=guild.icon.url)
 		# stats_embed.set_image(url='https://cdn.discordapp.com/attachments/999555672733663285/1144576365430059048/calculation-math.gif')
 
@@ -255,13 +257,14 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 		for user_record in data:
 			list_of_items = []
 			items = user_record['rewards'][today]['items']
+			dmc = user_record['rewards'][today]['dmc_from_adv']
 			if len(items) == 0:
 				continue
 			
 			for item in items.keys():
 				item_price = item_price_dict[item]
 				amount = round(items[item] * item_price)
-				temp_dict = {"Name": item , "Quantity":str(items[item]),"Amount": amount}
+				temp_dict = {"Name": item , "Quantity":str(items[item]),"Amount": amount+dmc}
 				list_of_items.append(temp_dict)				
 			df = pd.DataFrame(list_of_items)
 			df = df.sort_values(by=['Amount'],ascending=False)
