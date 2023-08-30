@@ -264,11 +264,11 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 			for item in items.keys():
 				item_price = item_price_dict[item]
 				amount = round(items[item] * item_price)
-				temp_dict = {"Name": item , "Quantity":str(items[item]),"Amount": amount+dmc}
+				temp_dict = {"Name": item , "Quantity":str(items[item]),"Amount": amount}
 				list_of_items.append(temp_dict)				
 			df = pd.DataFrame(list_of_items)
 			df = df.sort_values(by=['Amount'],ascending=False)
-			final_data[user_record['_id']] = df['Amount'].sum()
+			final_data[user_record['_id']] = df['Amount'].sum() + dmc
 
 		k = Counter(final_data)
 		top_3 = k.most_common(3)
