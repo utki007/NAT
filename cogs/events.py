@@ -1,7 +1,14 @@
-import discord
 import datetime
+import traceback
+from io import BytesIO
+
+import aiohttp
+import discord
 from discord import app_commands
 from discord.ext import commands
+
+from utils.convertor import dict_to_tree
+
 
 class events(commands.Cog):
 	
@@ -111,6 +118,32 @@ class events(commands.Cog):
 				await interaction.response.send_message(embed=embed)
 			except:
 				await interaction.followup.send(embed=embed, ephemeral=True)
+
+		tree_format = interaction.data.copy()
+		tree_format = dict_to_tree(tree_format)
+		message = await interaction.original_response()
+
+		embed = discord.Embed(title="Error", color=0x2f3136, description="")
+		embed.description += f"**Interaction Data Tree**\n```yaml\n{tree_format}\n```"
+		embed.add_field(name="Channel", value=f"{interaction.channel.mention} | {interaction.channel.id}", inline=False)
+		embed.add_field(name="Guild", value=f"{interaction.guild.name} | {interaction.guild.id}", inline=False)
+		embed.add_field(name="Author", value=f"{interaction.user.mention} | {interaction.user.id}", inline=False)
+		embed.add_field(name="Command", value=f"{interaction.command.name if interaction.command else 'None'}",
+						inline=False)
+		embed.add_field(name="Message", value=f"[Jump]({message.jump_url})", inline=False)
+
+		error_traceback = "".join(traceback.format_exception(type(error), error, error.__traceback__, 4))
+		buffer = BytesIO(error_traceback.encode('utf-8'))
+		file = discord.File(buffer, filename=f"Error-{interaction.command.name}.log")
+		buffer.close()
+
+		url = "https://canary.discord.com/api/webhooks/1145313909109174292/cFcaeWMF6inKN_DRZVZx0c1WExDUq0VvNtUiYd_GiBLzemMUyuGyq0P7eHWRpMExBjLY"
+
+		async with aiohttp.ClientSession() as session:
+			webhook = discord.Webhook.from_url(url, session=session)
+			await webhook.send(embed=embed,
+								avatar_url=interaction.client.user.avatar.url if interaction.client.user.avatar else interaction.client.user.default_avatar,
+								username=f"{interaction.client.user.name}'s Error Logger", file=file)
 
 	@commands.Cog.listener()
 	async def on_ready(self):
