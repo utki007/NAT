@@ -122,7 +122,7 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 		else:
 			icon_url = user.avatar.url
 		stats_embed.set_author(name=f"{user.display_name}'s Adventure Stats", icon_url=icon_url)
-		stats_embed.set_footer(text = f'{guild.name}', icon_url=guild.icon.url)
+		stats_embed.set_footer(text = f'{guild.name}', icon_url=guild.icon.url if guild.icon != None else None)
 		# stats_embed.set_image(url='https://cdn.discordapp.com/attachments/999555672733663285/1144576365430059048/calculation-math.gif')
 
 		# await interaction.response.send_message(embed = stats_embed, ephemeral=False)
