@@ -206,6 +206,9 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 			await asyncio.sleep(time_diff)
 			timer_data = await self.bot.timer.find({'_id':timer_data['_id']})
 
+		if timer_data == None:
+			return
+
 		channel = self.bot.get_channel(timer_data['channel_id'])
 		if channel == None:
 			# self.bot.remove_view(Button(timer_data))
