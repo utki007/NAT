@@ -227,6 +227,10 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 
 		stats_embed.add_field(name="Top 5 Items Grinded:", value=f"{item_str}", inline=False)
 		# stats_embed.set_thumbnail(url='https://cdn.discordapp.com/emojis/1114280462131666967.webp?size=56&quality=lossless')
+		if guild.icon is None:
+			icon_url = guild.default_avatar.url
+		else:
+			icon_url = guild.icon.url
 
 		# stats_embed.set_image(url=None)
 		# stats_embed.description = None
