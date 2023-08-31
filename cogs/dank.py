@@ -105,8 +105,7 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 		image = Image.open('./assets/item_leaderboard.png')
 
 		draw = ImageDraw.Draw(image)
-		winner_name_font = ImageFont.truetype('./assets/fonts/Lobster.ttf', 14)
-		winner_exp_font = ImageFont.truetype('./assets/fonts/Lobster.ttf', 11)
+		footer_font = ImageFont.truetype('./assets/fonts/Symbola.ttf', 52)
 		top_line = ImageFont.truetype("./assets/fonts/DejaVuSans.ttf", 66)
 		multi_white = ImageFont.truetype("./assets/fonts/DejaVuSans.ttf", 52)
 		item_font = ImageFont.truetype("./assets/fonts/DejaVuSans.ttf", 52)
@@ -135,7 +134,7 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 			draw.text(xy=(1017, 1329+(int(item)*100)), text=f"⏣ {data['items'][item]['worth']}", fill=(255, 255, 255), font=item_font, align="left", stroke_width=1)
 
 		# for footer
-		draw.text(xy=(245, 2048), text=f'Dank Adventure stats by: {self.bot.user}', fill=(80, 200, 120), font=item_font, align="right", stroke_width=2)
+		draw.text(xy=(245, 2048), text=f'Dank Adventure stats by: {self.bot.user}', fill=(80, 200, 120), font=footer_font, align="right", stroke_width=1)
 		
 		return image
 	
@@ -156,8 +155,7 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 			icon_url = user.default_avatar.url
 		else:
 			icon_url = user.avatar.url
-		stats_embed.set_author(name=f"{user.display_name}'s Adventure Stats", icon_url=icon_url)
-		# stats_embed.set_footer(text = f'{guild.name}', icon_url=guild.icon.url if guild.icon != None else None)
+		stats_embed.set_author(name=f"Adventure Stats", icon_url=icon_url)
 	
 		data = await interaction.client.dankAdventureStats.find(user.id)
 		if data is None:
@@ -166,12 +164,6 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 			return await interaction.edit_original_response(embed= await get_invisible_embed(f'You have not played adventure today!'))
 		
 		data = data['rewards'][today]		
-
-		# bullet = '<:ace_replycont:1082575852061073508>'
-		# last_bullet = '<:ace_reply:1082575762856620093>'
-		bullet = '<:nat_replycont:1146496789361479741>'
-		last_bullet = '<:nat_reply:1146498277068517386>'
-
 
 		if len(data['items']) > 0:
 			
@@ -221,7 +213,10 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 				leaderboard['xp'] = {'qty': '0x' , 'rate': '0'}
 
 			for index in df.index:
+				#  for quantity
 				quantity = f'{df["Quantity"][index]}' if int(df["Quantity"][index]) >= 10 else f'  {df["Quantity"][index]}'
+				
+				# for worth
 				amt = df["Amount"][index].split(" ")[0]
 				if float(amt) >= 100.0:
 					worth = f'{df["Amount"][index]}'
@@ -229,69 +224,20 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 					worth = f'  {df["Amount"][index]}'
 				else:
 					worth = f'    {df["Amount"][index]}'
-				leaderboard['items'][str(index)]  = {'name': df['Name'][index],'qty': quantity,'worth': worth}
+
+				# for item name
+				item_name = df['Name'][index] 
+				if len(item_name) > 15:
+					item_name = item_name[:12] + '...'
+
+				leaderboard['items'][str(index)]  = {'name': item_name,'qty': quantity,'worth': worth}
 			
 			image = await self.create_item_lb(interaction.guild, leaderboard)
 
 		else:
 			total_earn = 0
+			image = None
 			item_str = '```fix\nNo Items Grinded Yet!\n```'
-
-		# Overall Statistics
-		ostats = f'{bullet} **Grinded:** ⏣ {total_earn:,}\n'
-		if data['frags'] > 0:
-			ostats += f'{bullet} **Skin Fragments:**  __{data["frags"]}__\n'
-		ostats += f'{bullet} **Played:** __{data["total_adv"]}__ adventures\n'
-		ostats += f'{last_bullet} **Won:** __{data["reward_adv"]}__ adventures\n'
-		# stats_embed.add_field(name='Overall Statistics', value=ostats, inline=False)
-
-		# Luck Multipliers
-		luck_dict = data['luck']
-		# if len(luck_dict) > 0:
-
-		# 	if len(luck_dict) == 1:
-		# 		stats_embed.add_field(name='Luck Multipliers', value=f'{last_bullet} {list(luck_dict.values())[0]}x +{list(luck_dict.keys())[0]}%', inline=True)
-
-		# 	elif len(luck_dict) > 1:
-		# 		luck_str = ''
-		# 		for item_name, value in luck_dict.items():
-		# 			if item_name == list(luck_dict.keys())[-1]:
-		# 				luck_str += f'{last_bullet} {value}x +{item_name}%'
-		# 			else:
-		# 				luck_str += f'{bullet} {value}x +{item_name}%\n'
-				# stats_embed.add_field(name='Luck Multipliers', value=luck_str, inline=True)
-		
-		# XP Multipliers
-		# xp_dict = data['xp']
-		# if len(xp_dict) > 0:
-
-		# 	if len(xp_dict) == 1:
-		# 		stats_embed.add_field(name='XP Multipliers', value=f'{last_bullet} {list(xp_dict.values())[0]}x {list(xp_dict.keys())[0]} XP', inline=True)
-
-		# 	elif len(xp_dict) > 1:
-		# 		xp_str = ''
-		# 		for item_name, value in xp_dict.items():
-		# 			if item_name == list(xp_dict.keys())[-1]:
-		# 				xp_str += f'{last_bullet} {value}x {item_name} XP'
-		# 			else:
-		# 				xp_str += f'{bullet} {value}x {item_name} XP\n'
-				# stats_embed.add_field(name='XP Multipliers', value=xp_str, inline=True)
-
-		# Coins Multipliers
-		# coins_dict = data['coins']
-		# if len(coins_dict) > 0:
-
-		# 	if len(coins_dict) == 1:
-		# 		stats_embed.add_field(name='Coins Multipliers', value=f'{last_bullet} {list(coins_dict.values())[0]}x +{list(coins_dict.keys())[0]}%', inline=True)
-			
-		# 	elif len(coins_dict) > 1:
-		# 		coins_str = ''
-		# 		for item_name, value in coins_dict.items():
-		# 			if item_name == list(coins_dict.keys())[-1]:
-		# 				coins_str += f'{last_bullet} {value}x +{item_name}%'
-		# 			else:
-		# 				coins_str += f'{bullet} {value}x +{item_name}%\n'
-				# stats_embed.add_field(name='Coins Multipliers', value=coins_str, inline=True)
 
 		if item_str != '':
 			stats_embed.add_field(name="Top 5 Items Grinded:", value=f"{item_str}", inline=False)
@@ -300,9 +246,10 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 			icon_url = guild.default_avatar.url
 		else:
 			icon_url = guild.icon.url
-		# stats_embed.set_footer(text=f"{guild.name} • Time Taken: {round(t.time()-start,2)}s", icon_url=icon_url)
-		stats_embed.set_footer(text=f"Time Taken: {round(t.time()-start,2)}s")
-		# return await interaction.edit_original_response(embed=stats_embed)
+		
+		if image is None:
+			stats_embed.set_footer(text=f"{guild.name} • Time Taken: {round(t.time()-start,2)}s", icon_url=icon_url)
+			return await interaction.edit_original_response(embed=stats_embed)
 
 		with BytesIO() as image_binary:
 			image.save(image_binary, 'PNG')
@@ -310,6 +257,7 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 			file=discord.File(fp=image_binary, filename=f'item_leaderboard.png')
 			stats_embed.description = None
 			stats_embed.set_image(url=f'attachment://item_leaderboard.png')
+			stats_embed.remove_footer()
 			await interaction.edit_original_response(embed=stats_embed, attachments=[file])
 			image_binary.close()
 
