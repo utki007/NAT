@@ -45,7 +45,6 @@ async def millify(n):
     millidx = max(0,min(len(millnames)-1,
                         int(math.floor(0 if n == 0 else math.log10(abs(n))/3))))
 
-    # return '{:.1f}{}'.format(n / 10**(3 * millidx), millnames[millidx])
     return f'{round(n / 10**(3 * millidx),1):,}{millnames[millidx]}'
 
 async def convert_to_human_time(seconds):

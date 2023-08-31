@@ -11,6 +11,7 @@ from discord import Interaction, app_commands
 from discord.ext import commands
 from PIL import Image, ImageChops, ImageDraw, ImageFont, ImageOps
 from tabulate import tabulate
+from utils.convertor import millify
 
 from utils.embeds import get_invisible_embed
 
@@ -40,6 +41,26 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 		pfp = BytesIO(await pfp.read())
 		pfp = Image.open(pfp)
 		pfp = pfp.resize((80, 80), Image.Resampling.LANCZOS).convert('RGBA')
+
+		bigzise = (pfp.size[0] * 3, pfp.size[1] * 3)
+		mask = Image.new('L', bigzise, 0)
+		draw = ImageDraw.Draw(mask)
+		draw.ellipse((0, 0) + bigzise, fill=255)
+		mask = mask.resize(pfp.size, Image.Resampling.LANCZOS)
+		mask = ImageChops.darker(mask, pfp.split()[-1])
+		pfp.putalpha(mask)
+
+		return pfp
+
+	async def round_pfp_4_itemlb(self, pfp: discord.User | discord.Member | discord.Guild):
+		if pfp.avatar is None:
+			pfp = pfp.default_avatar.with_format('png')
+		else:
+			pfp = pfp.avatar.with_format('png')
+
+		pfp = BytesIO(await pfp.read())
+		pfp = Image.open(pfp)
+		pfp = pfp.resize((100, 100), Image.Resampling.LANCZOS).convert('RGBA')
 
 		bigzise = (pfp.size[0] * 3, pfp.size[1] * 3)
 		mask = Image.new('L', bigzise, 0)
@@ -81,27 +102,42 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 		return template
 	
 	async def create_item_lb(self, guild: discord.Guild, data: list):
-		template = Image.open('./assets/item_lb_1.png')
+		image = Image.open('./assets/item_leaderboard.png')
 
-		draw = ImageDraw.Draw(template)
+		draw = ImageDraw.Draw(image)
 		winner_name_font = ImageFont.truetype('./assets/fonts/Lobster.ttf', 14)
 		winner_exp_font = ImageFont.truetype('./assets/fonts/Lobster.ttf', 11)
+		top_line = ImageFont.truetype("./assets/fonts/DejaVuSans.ttf", 66)
+		multi_white = ImageFont.truetype("./assets/fonts/DejaVuSans.ttf", 52)
+		item_font = ImageFont.truetype("./assets/fonts/DejaVuSans.ttf", 52)
 
-		item_lb_positions = {
-			# postions of the winners, pfp and name and donation
-			0: {'item': (50, 40), 'amount': (207, 45)},
-			1: {'item': (50, 72), 'amount': (207, 78)},
-			2: {'item': (50, 105), 'amount': (207, 111)},
-			3: {'item': (50, 137), 'amount': (207, 145)}, 
-			4: {'item': (50, 170), 'amount': (207, 180)}
-		}
+		guild_icon = await self.round_pfp_4_itemlb(self.bot.user)
+		image.paste(guild_icon, (100, 2025), guild_icon)
+		
+		# Grinded, Played, Won
+		draw.text(xy=(130, 400), text=f'{data["grinded"]}', fill=(255, 211, 63), font=top_line, align="right", stroke_width=2)
+		draw.text(xy=(730, 400), text=f'{data["played"]}', fill=(255, 211, 63), font=top_line, align="right", stroke_width=2)
+		draw.text(xy=(1205, 400), text=str(data["won"]), fill=(255, 211, 63), font=top_line, align="right", stroke_width=2)
 
-		for i in data:
-			index = data.index(i)
-			draw.text(item_lb_positions[index]['item'], f"{i['item']}", font=winner_name_font, fill="#ffffff")
-			draw.text(item_lb_positions[index]['amount'], f"⏣ {i['amount']:,}", font=winner_exp_font, fill="#ffffff")
+		# Luck, XP
+		draw.text(xy=(410, 850), text=f'Luck', fill=(80, 200, 120), font=item_font, align="right", stroke_width=2)
+		draw.text(xy=(360, 960), text=f'{data["luck"]["qty"]}', fill=(255, 211, 63), font=multi_white, align="right", stroke_width=2)
+		draw.text(xy=(460, 960), text=f' {data["luck"]["rate"]}', fill=(255, 255, 255), font=multi_white, align="right", stroke_width=1)
+		
+		draw.text(xy=(960, 850), text=f'XP', fill=(80, 200, 120), font=item_font, align="right", stroke_width=2)
+		draw.text(xy=(910, 960), text=f'{data["xp"]["qty"]}', fill=(255, 211, 63), font=multi_white, align="right", stroke_width=2)
+		draw.text(xy=(1010, 960), text=f'{data["xp"]["rate"]}', fill=(255, 255, 255), font=multi_white, align="right", stroke_width=1)
+		
+		# Items
+		for item in data["items"].keys():
+			draw.text(xy=(142, 1329+(int(item)*100)), text=f"{data['items'][item]['qty']}x ", fill=(255, 211, 63), font=item_font, align="right", stroke_width=2)
+			draw.text(xy=(458, 1329+(int(item)*100)), text=f"{data['items'][item]['name']} ", fill=(255, 255, 255), font=item_font, align="right", stroke_width=1)
+			draw.text(xy=(1017, 1329+(int(item)*100)), text=f"⏣ {data['items'][item]['worth']}", fill=(255, 255, 255), font=item_font, align="left", stroke_width=1)
 
-		return template
+		# for footer
+		draw.text(xy=(245, 2048), text=f'Dank Adventure stats by: {self.bot.user}', fill=(80, 200, 120), font=item_font, align="right", stroke_width=2)
+		
+		return image
 	
 	@adventure_group.command(name="stats", description="Get adventure related statistics 📊")
 	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
@@ -121,10 +157,7 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 		else:
 			icon_url = user.avatar.url
 		stats_embed.set_author(name=f"{user.display_name}'s Adventure Stats", icon_url=icon_url)
-		stats_embed.set_footer(text = f'{guild.name}', icon_url=guild.icon.url if guild.icon != None else None)
-		# stats_embed.set_image(url='https://cdn.discordapp.com/attachments/999555672733663285/1144576365430059048/calculation-math.gif')
-
-		# await interaction.response.send_message(embed = stats_embed, ephemeral=False)
+		# stats_embed.set_footer(text = f'{guild.name}', icon_url=guild.icon.url if guild.icon != None else None)
 	
 		data = await interaction.client.dankAdventureStats.find(user.id)
 		if data is None:
@@ -134,108 +167,151 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 		
 		data = data['rewards'][today]		
 
-		bullet = '<:ace_replycont:1082575852061073508>'
-		last_bullet = '<:ace_reply:1082575762856620093>'
+		# bullet = '<:ace_replycont:1082575852061073508>'
+		# last_bullet = '<:ace_reply:1082575762856620093>'
+		bullet = '<:nat_replycont:1146496789361479741>'
+		last_bullet = '<:nat_reply:1146498277068517386>'
+
 
 		if len(data['items']) > 0:
 			
+			item_str = f''
 			list_of_items = []
 			dict = data['items']
 
-			for key in dict.keys():
-				item_price = int((await interaction.client.dankItems.find(key))['price'])
-				amount = round(dict[key] * item_price)
-				temp_dict = {"Name": key , "Quantity":str(dict[key]),"Amount": f'{amount:,}', "dummy":amount}
+			for item_name in dict.keys():
+				item_price = int((await interaction.client.dankItems.find(item_name))['price'])
+				amount = round(dict[item_name] * item_price)
+				temp_dict = {"Name": item_name , "Quantity":str(dict[item_name]),"Amount": await millify(amount), "dummy":amount}
 				list_of_items.append(temp_dict)
 			
 			df = pd.DataFrame(list_of_items)
 			df = df.sort_values(by=['dummy'],ascending=False)
 			df.reset_index(inplace = True, drop = True)
-			total_earn = df['dummy'].sum()
+			total_earn = data["dmc_from_adv"] + df['dummy'].sum()
 			df.drop(['dummy'], axis=1,inplace=True)
-			df["Item"] = df[['Quantity', 'Name']].agg('x '.join, axis=1)
-			# df["Net Amount"] = f'[0;37m' + df["Amount"] + f'[0;0m'
-			# df["Item"] = f'[1;36m' + df["Item"] + f'[0;0m'
-			df["Net Amount"] =  df["Amount"] 
-			df["Item"] =  df["Item"] 
-			df.drop(['Name'], axis=1,inplace=True)
-			df.drop(['Quantity'], axis=1,inplace=True)
-			df.drop(['Amount'], axis=1,inplace=True)
 			df.index += 1 
-			# item_str = f'```fix\n{tabulate(df.head(),["[4;34mItems[0;0m","[4;34mAmount[0;0m"], showindex=False, tablefmt="rounded_outline")}\n```'
-			item_str = f'```fix\n{tabulate(df.head(),["Items","Amount"], showindex=False, tablefmt="rounded_outline")}\n```'
-		
+			df = df.head(5)
+
+			leaderboard = {
+				"grinded": await millify(total_earn),
+				"played": data["total_adv"],
+				"won": data["reward_adv"],
+				"luck": data["luck"],
+				"xp": data["xp"],
+				"items": {}
+			}
+
+			# get higest luck from leaderboard['luck']
+			luck_dict = leaderboard['luck']
+			if len(luck_dict) > 0:
+				luck_keys = list(luck_dict.keys())
+				luck_keys.sort(reverse=True)
+				leaderboard['luck'] = {'qty': f"{luck_dict[luck_keys[0]]}x" , 'rate': f'+{luck_keys[0]}%'}
+			else:
+				leaderboard['luck'] = {'qty': '0x' , 'rate': '+0%'}
+			
+			# get higest xp from leaderboard['xp']
+			xp_dict = leaderboard['xp']
+			if len(xp_dict) > 0:
+				xp_keys = list(xp_dict.keys())
+				xp_keys.sort(reverse=True)
+				leaderboard['xp'] = {'qty': f"{xp_dict[xp_keys[0]]}x" , 'rate': f'{xp_keys[0]}'}
+			else:
+				leaderboard['xp'] = {'qty': '0x' , 'rate': '0'}
+
+			for index in df.index:
+				quantity = f'{df["Quantity"][index]}' if int(df["Quantity"][index]) >= 10 else f'  {df["Quantity"][index]}'
+				amt = df["Amount"][index].split(" ")[0]
+				if float(amt) >= 100.0:
+					worth = f'{df["Amount"][index]}'
+				elif float(amt) >= 10.0:
+					worth = f'  {df["Amount"][index]}'
+				else:
+					worth = f'    {df["Amount"][index]}'
+				leaderboard['items'][str(index)]  = {'name': df['Name'][index],'qty': quantity,'worth': worth}
+			
+			image = await self.create_item_lb(interaction.guild, leaderboard)
+
 		else:
 			total_earn = 0
 			item_str = '```fix\nNo Items Grinded Yet!\n```'
 
 		# Overall Statistics
-		ostats = f'{bullet} **Grinded:** ⏣ {data["dmc_from_adv"]+total_earn:,}\n'
+		ostats = f'{bullet} **Grinded:** ⏣ {total_earn:,}\n'
 		if data['frags'] > 0:
 			ostats += f'{bullet} **Skin Fragments:**  __{data["frags"]}__\n'
 		ostats += f'{bullet} **Played:** __{data["total_adv"]}__ adventures\n'
 		ostats += f'{last_bullet} **Won:** __{data["reward_adv"]}__ adventures\n'
-		stats_embed.add_field(name='Overall Statistics', value=ostats, inline=False)
+		# stats_embed.add_field(name='Overall Statistics', value=ostats, inline=False)
 
 		# Luck Multipliers
 		luck_dict = data['luck']
-		if len(luck_dict) > 0:
+		# if len(luck_dict) > 0:
 
-			if len(luck_dict) == 1:
-				stats_embed.add_field(name='Luck Multipliers', value=f'{last_bullet} {list(luck_dict.values())[0]}x +{list(luck_dict.keys())[0]}%', inline=True)
+		# 	if len(luck_dict) == 1:
+		# 		stats_embed.add_field(name='Luck Multipliers', value=f'{last_bullet} {list(luck_dict.values())[0]}x +{list(luck_dict.keys())[0]}%', inline=True)
 
-			elif len(luck_dict) > 1:
-				luck_str = ''
-				for key, value in luck_dict.items():
-					if key == list(luck_dict.keys())[-1]:
-						luck_str += f'{last_bullet} {value}x +{key}%'
-					else:
-						luck_str += f'{bullet} {value}x +{key}%\n'
-				stats_embed.add_field(name='Luck Multipliers', value=luck_str, inline=True)
+		# 	elif len(luck_dict) > 1:
+		# 		luck_str = ''
+		# 		for item_name, value in luck_dict.items():
+		# 			if item_name == list(luck_dict.keys())[-1]:
+		# 				luck_str += f'{last_bullet} {value}x +{item_name}%'
+		# 			else:
+		# 				luck_str += f'{bullet} {value}x +{item_name}%\n'
+				# stats_embed.add_field(name='Luck Multipliers', value=luck_str, inline=True)
 		
 		# XP Multipliers
-		xp_dict = data['xp']
-		if len(xp_dict) > 0:
+		# xp_dict = data['xp']
+		# if len(xp_dict) > 0:
 
-			if len(xp_dict) == 1:
-				stats_embed.add_field(name='XP Multipliers', value=f'{last_bullet} {list(xp_dict.values())[0]}x {list(xp_dict.keys())[0]} XP', inline=True)
+		# 	if len(xp_dict) == 1:
+		# 		stats_embed.add_field(name='XP Multipliers', value=f'{last_bullet} {list(xp_dict.values())[0]}x {list(xp_dict.keys())[0]} XP', inline=True)
 
-			elif len(xp_dict) > 1:
-				xp_str = ''
-				for key, value in xp_dict.items():
-					if key == list(xp_dict.keys())[-1]:
-						xp_str += f'{last_bullet} {value}x {key} XP'
-					else:
-						xp_str += f'{bullet} {value}x {key} XP\n'
-				stats_embed.add_field(name='XP Multipliers', value=xp_str, inline=True)
+		# 	elif len(xp_dict) > 1:
+		# 		xp_str = ''
+		# 		for item_name, value in xp_dict.items():
+		# 			if item_name == list(xp_dict.keys())[-1]:
+		# 				xp_str += f'{last_bullet} {value}x {item_name} XP'
+		# 			else:
+		# 				xp_str += f'{bullet} {value}x {item_name} XP\n'
+				# stats_embed.add_field(name='XP Multipliers', value=xp_str, inline=True)
 
 		# Coins Multipliers
-		coins_dict = data['coins']
-		if len(coins_dict) > 0:
+		# coins_dict = data['coins']
+		# if len(coins_dict) > 0:
 
-			if len(coins_dict) == 1:
-				stats_embed.add_field(name='Coins Multipliers', value=f'{last_bullet} {list(coins_dict.values())[0]}x +{list(coins_dict.keys())[0]}%', inline=True)
+		# 	if len(coins_dict) == 1:
+		# 		stats_embed.add_field(name='Coins Multipliers', value=f'{last_bullet} {list(coins_dict.values())[0]}x +{list(coins_dict.keys())[0]}%', inline=True)
 			
-			elif len(coins_dict) > 1:
-				coins_str = ''
-				for key, value in coins_dict.items():
-					if key == list(coins_dict.keys())[-1]:
-						coins_str += f'{last_bullet} {value}x +{key}%'
-					else:
-						coins_str += f'{bullet} {value}x +{key}%\n'
-				stats_embed.add_field(name='Coins Multipliers', value=coins_str, inline=True)
+		# 	elif len(coins_dict) > 1:
+		# 		coins_str = ''
+		# 		for item_name, value in coins_dict.items():
+		# 			if item_name == list(coins_dict.keys())[-1]:
+		# 				coins_str += f'{last_bullet} {value}x +{item_name}%'
+		# 			else:
+		# 				coins_str += f'{bullet} {value}x +{item_name}%\n'
+				# stats_embed.add_field(name='Coins Multipliers', value=coins_str, inline=True)
 
-		stats_embed.add_field(name="Top 5 Items Grinded:", value=f"{item_str}", inline=False)
-		# stats_embed.set_thumbnail(url='https://cdn.discordapp.com/emojis/1114280462131666967.webp?size=56&quality=lossless')
+		if item_str != '':
+			stats_embed.add_field(name="Top 5 Items Grinded:", value=f"{item_str}", inline=False)
+		
 		if guild.icon is None:
 			icon_url = guild.default_avatar.url
 		else:
 			icon_url = guild.icon.url
+		# stats_embed.set_footer(text=f"{guild.name} • Time Taken: {round(t.time()-start,2)}s", icon_url=icon_url)
+		stats_embed.set_footer(text=f"Time Taken: {round(t.time()-start,2)}s")
+		# return await interaction.edit_original_response(embed=stats_embed)
 
-		# stats_embed.set_image(url=None)
-		# stats_embed.description = None
-		stats_embed.set_footer(text=f"{guild.name} • Time Taken: {round(t.time()-start,2)}s", icon_url=guild.icon.url)
-		return await interaction.edit_original_response(embed=stats_embed)
+		with BytesIO() as image_binary:
+			image.save(image_binary, 'PNG')
+			image_binary.seek(0)
+			file=discord.File(fp=image_binary, filename=f'item_leaderboard.png')
+			stats_embed.description = None
+			stats_embed.set_image(url=f'attachment://item_leaderboard.png')
+			await interaction.edit_original_response(embed=stats_embed, attachments=[file])
+			image_binary.close()
 
 	@adventure_group.command(name="leaderboard", description="Get adventure leaderboard 📊")
 	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
