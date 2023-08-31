@@ -146,16 +146,6 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 		if user is None:
 			user = interaction.user
 		guild = interaction.guild
-
-		start = t.time()
-		stats_embed = discord.Embed(
-			color=2829617
-		)
-		if user.avatar is None:
-			icon_url = user.default_avatar.url
-		else:
-			icon_url = user.avatar.url
-		stats_embed.set_author(name=f"Adventure Stats", icon_url=icon_url)
 	
 		data = await interaction.client.dankAdventureStats.find(user.id)
 		if data is None:
@@ -164,7 +154,7 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 			return await interaction.edit_original_response(embed= await get_invisible_embed(f'You have not played adventure today!'))
 		
 		data = data['rewards'][today]		
-
+		grind = 0
 		if len(data['items']) > 0:
 			
 			item_str = f''
@@ -180,7 +170,7 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 			df = pd.DataFrame(list_of_items)
 			df = df.sort_values(by=['dummy'],ascending=False)
 			df.reset_index(inplace = True, drop = True)
-			total_earn = data["dmc_from_adv"] + df['dummy'].sum()
+			grind = total_earn = data["dmc_from_adv"] + df['dummy'].sum()
 			df.drop(['dummy'], axis=1,inplace=True)
 			df.index += 1 
 			df = df.head(5)
@@ -239,37 +229,25 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 			image = None
 			item_str = '```fix\nNo Items Grinded Yet!\n```'
 
-		if item_str != '':
-			stats_embed.add_field(name="Top 5 Items Grinded:", value=f"{item_str}", inline=False)
-		
 		if guild.icon is None:
 			icon_url = guild.default_avatar.url
 		else:
 			icon_url = guild.icon.url
 		
 		if image is None:
-			stats_embed.set_footer(text=f"{guild.name} • Time Taken: {round(t.time()-start,2)}s", icon_url=icon_url)
-			return await interaction.edit_original_response(embed=stats_embed)
+			return await interaction.edit_original_response(embed= await get_invisible_embed(f'Make sure to comeback after you have grinded more items!'))
 
 		with BytesIO() as image_binary:
 			image.save(image_binary, 'PNG')
 			image_binary.seek(0)
 			file=discord.File(fp=image_binary, filename=f'item_leaderboard.png')
-			stats_embed.description = None
-			stats_embed.set_image(url=f'attachment://item_leaderboard.png')
-			stats_embed.remove_footer()
-			await interaction.edit_original_response(embed=stats_embed, attachments=[file])
+			await interaction.edit_original_response(content= f'## Adventure Summary\n- **Showing For:** {user.mention} \n- **Total Grind:** ⏣ {grind:,}' ,attachments=[file], allowed_mentions=discord.AllowedMentions.none())
 			image_binary.close()
 
 	@adventure_group.command(name="leaderboard", description="Get adventure leaderboard 📊")
 	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
 	async def adventure_leaderboard(self, interaction:  discord.Interaction):
 		await interaction.response.defer(ephemeral = False)
-		stats_embed = discord.Embed(
-			color=2829617,
-			# description=f"<a:nat_timer:1010824320672604260> **|** Fetching adventure leaderboard...",
-		)
-		# await interaction.response.send_message(embed = stats_embed, ephemeral=False)
 
 		today = str(datetime.date.today())
 		data = await interaction.client.dankAdventureStats.get_all()
@@ -319,9 +297,7 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 			image.save(image_binary, 'PNG')
 			image_binary.seek(0)
 			file=discord.File(fp=image_binary, filename=f'adventure_leaderboard.png')
-			stats_embed.description = None
-			stats_embed.set_image(url=f'attachment://adventure_leaderboard.png')
-			await interaction.edit_original_response(embed=stats_embed, attachments=[file])
+			await interaction.edit_original_response( attachments=[file])
 			image_binary.close()
 
 
