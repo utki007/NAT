@@ -28,7 +28,7 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 	adventure_group = app_commands.Group(name="adventure", description="Get Fun Adventure Stats 📈")
 	
 				
-	async def round_pfp(self, pfp: discord.User | discord.Member | discord.Guild):
+	async def round_pfp_4_advtop3(self, pfp: discord.User | discord.Member | discord.Guild):
 		if isinstance(pfp, discord.Member) or isinstance(pfp, discord.User):
 			if pfp.avatar is None:
 				pfp = pfp.default_avatar.with_format('png')
@@ -51,9 +51,9 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 
 		return pfp
 
-	async def create_winner_card(self, guild: discord.Guild, event_name:str, data: list):
+	async def create_adv_top3(self, guild: discord.Guild, event_name:str, data: list):
 		template = Image.open('./assets/leaderboard_template.png')
-		guild_icon = await self.round_pfp(guild)
+		guild_icon = await self.round_pfp_4_advtop3(guild)
 		template.paste(guild_icon, (15, 16), guild_icon)
 
 		draw = ImageDraw.Draw(template)
@@ -73,7 +73,7 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 		for i in data[:3]:
 			user = i['user']
 			index = data.index(i)
-			user_icon = await self.round_pfp(user)
+			user_icon = await self.round_pfp_4_advtop3(user)
 			template.paste(user_icon, winne_postions[index]['icon'], user_icon)
 			draw.text(winne_postions[index]['name'], f"{i['name']}", font=winner_name_font, fill="#9A9BD5")
 			draw.text(winne_postions[index]['donated'], f"⏣ {i['donated']:,}", font=winner_exp_font, fill="#A8A8C8")
@@ -114,8 +114,7 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 
 		start = t.time()
 		stats_embed = discord.Embed(
-			color=2829617,
-			# description=f"<a:nat_timer:1010824320672604260> **|** Fetching your stats...",
+			color=2829617
 		)
 		if user.avatar is None:
 			icon_url = user.default_avatar.url
@@ -275,7 +274,9 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 
 		leaderboard = []
 		for user_record in top_3:
-			user = await interaction.client.fetch_user(user_record[0])
+			user = interaction.guild.get_member(user_record[0])
+			if user is None:
+				user = await interaction.client.fetch_user(user_record[0])
 			amount = user_record[1]
 			if len(user.display_name) > 18:
 				name = user.display_name[:15] + '...'
@@ -284,7 +285,7 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 			leaderboard.append({'user': user,'name': name,'donated': amount}) 
 
 		
-		image = await self.create_winner_card(interaction.guild, "🐸 Dank Memer 🐸", leaderboard)
+		image = await self.create_adv_top3(interaction.guild, "🐸 Dank Memer 🐸", leaderboard)
 
 		with BytesIO() as image_binary:
 			image.save(image_binary, 'PNG')
