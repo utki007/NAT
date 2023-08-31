@@ -21,13 +21,13 @@ class events(commands.Cog):
 			m, s = divmod(error.retry_after, 60)
 			h, m = divmod(m, 60)
 			if int(h) == 0 and int(m) == 0:
-				await interaction.response.send_message(f"The command is under a cooldown of **{int(s)} seconds** to prevent abuse!", ephemeral=True)
+				return await interaction.response.send_message(f"The command is under a cooldown of **{int(s)} seconds** to prevent abuse!", ephemeral=True)
 			elif int(h) == 0 and int(m) != 0:
-				await interaction.response.send_message(
+				return await interaction.response.send_message(
 					f"The command is under a cooldown of **{int(m)} minutes and {int(s)} seconds** to prevent abuse!", ephemeral=True,
 				)
 			else:
-				await interaction.response.send_message(
+				return await interaction.response.send_message(
 					f"The command is under a cooldown of **{int(h)} hours, {int(m)} minutes and {int(s)} seconds** to prevent abuse!", ephemeral=True,
 				)
 		elif isinstance(error, app_commands.MissingPermissions):
@@ -62,7 +62,7 @@ class events(commands.Cog):
 
 			view = discord.ui.View()
 			view.add_item(discord.ui.Button(emoji="<:tgk_link:1105189183523401828>",label=f'Used at', url=f"{message.jump_url}"))
-			await log_channel.send(embed=logg, view=view)
+			return await log_channel.send(embed=logg, view=view)
 			# await interaction.response.send_message(f"You are missing the required permissions to use this command!", ephemeral=True)
 		elif isinstance(error, app_commands.CheckFailure):
 			url = "https://cdn.discordapp.com/attachments/999555672733663285/1063392550192431134/access_Denied.png"
@@ -75,7 +75,7 @@ class events(commands.Cog):
 				warning.title = "Only Server Owners can use this!"
 			# else:
 			# 	embed.description = f"{error} Imagine trying though <a:nat_roflfr:1063393491549429801>"
-			await interaction.response.send_message(embed=warning, ephemeral=False)
+			return await interaction.response.send_message(embed=warning, ephemeral=False)
 		elif isinstance(error, app_commands.MissingRole):
 			url = "https://cdn.discordapp.com/attachments/999555672733663285/1063392550192431134/access_Denied.png"
 			warning = discord.Embed(
@@ -108,10 +108,10 @@ class events(commands.Cog):
 
 			view = discord.ui.View()
 			view.add_item(discord.ui.Button(emoji="<:tgk_link:1105189183523401828>",label=f'Used at', url=f"{message.jump_url}"))
-			await log_channel.send(embed=logg, view=view)
+			return await log_channel.send(embed=logg, view=view)
 			# await interaction.response.send_message("You are missing the required role to use this command!", ephemeral=True)
 		elif isinstance(error, app_commands.MissingAnyRole):
-			await interaction.response.send_message("You are missing the required role to use this command!", ephemeral=True)
+			return await interaction.response.send_message("You are missing the required role to use this command!", ephemeral=True)
 		else:
 			embed = discord.Embed(description="**Error:** {}".format(error), color=discord.Color.red())
 			try:
