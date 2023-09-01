@@ -214,6 +214,8 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 					worth = f'  {df["Amount"][index]}'
 				else:
 					worth = f'    {df["Amount"][index]}'
+				if 'K' in worth:
+					worth = f'  {worth}'
 
 				# for item name
 				item_name = df['Name'][index] 
