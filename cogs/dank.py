@@ -230,11 +230,6 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 			total_earn = 0
 			image = None
 			item_str = '```fix\nNo Items Grinded Yet!\n```'
-
-		if guild.icon is None:
-			icon_url = guild.default_avatar.url
-		else:
-			icon_url = guild.icon.url
 		
 		if image is None:
 			return await interaction.edit_original_response(embed= await get_invisible_embed(f'Make sure to comeback after you have grinded more items!'))
