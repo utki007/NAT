@@ -35,9 +35,15 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 				pfp = pfp.default_avatar.with_format('png')
 			else:
 				pfp = pfp.avatar.with_format('png')
-		else:
+		elif isinstance(pfp, discord.Guild):
+			if pfp.icon is None:
+				pfp = None
+			else:
 				pfp = pfp.icon.with_format('png')
 
+		if pfp is None:
+			return None
+				
 		pfp = BytesIO(await pfp.read())
 		pfp = Image.open(pfp)
 		pfp = pfp.resize((80, 80), Image.Resampling.LANCZOS).convert('RGBA')
@@ -53,10 +59,19 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 		return pfp
 
 	async def round_pfp_4_itemlb(self, pfp: discord.User | discord.Member | discord.Guild):
-		if pfp.avatar is None:
-			pfp = pfp.default_avatar.with_format('png')
-		else:
-			pfp = pfp.avatar.with_format('png')
+		if isinstance(pfp, discord.Member) or isinstance(pfp, discord.User):
+			if pfp.avatar:
+				pfp = pfp.avatar.with_format('png')
+			else:
+				pfp = pfp.default_avatar.with_format('png')
+		elif isinstance(pfp, discord.Guild):
+			if pfp.icon:
+				pfp = pfp.icon.with_format('png')
+			else:
+				pfp = None
+
+		if pfp is None:
+			return None		
 
 		pfp = BytesIO(await pfp.read())
 		pfp = Image.open(pfp)
@@ -75,7 +90,8 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 	async def create_adv_top3(self, guild: discord.Guild, event_name:str, data: list):
 		template = Image.open('./assets/leaderboard_template.png')
 		guild_icon = await self.round_pfp_4_advtop3(guild)
-		template.paste(guild_icon, (15, 16), guild_icon)
+		if guild_icon is not None:
+			template.paste(guild_icon, (15, 16), guild_icon)
 
 		draw = ImageDraw.Draw(template)
 		font = ImageFont.truetype('./assets/fonts/Symbola.ttf', 24)
@@ -95,7 +111,8 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 			user = i['user']
 			index = data.index(i)
 			user_icon = await self.round_pfp_4_advtop3(user)
-			template.paste(user_icon, winne_postions[index]['icon'], user_icon)
+			if user_icon is not None:
+				template.paste(user_icon, winne_postions[index]['icon'], user_icon)
 			draw.text(winne_postions[index]['name'], f"{i['name']}", font=winner_name_font, fill="#9A9BD5")
 			draw.text(winne_postions[index]['donated'], f"⏣ {i['donated']:,}", font=winner_exp_font, fill="#A8A8C8")
 
@@ -111,7 +128,8 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 		item_font = ImageFont.truetype("./assets/fonts/DejaVuSans.ttf", 52)
 
 		guild_icon = await self.round_pfp_4_itemlb(self.bot.user)
-		image.paste(guild_icon, (100, 2025), guild_icon)
+		if guild_icon is not None:
+			image.paste(guild_icon, (100, 2025), guild_icon)
 		
 		# Grinded, Played, Won
 		draw.text(xy=(130, 400), text=f'{data["grinded"]}', fill=(255, 211, 63), font=top_line, align="right", stroke_width=2)
@@ -232,7 +250,7 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 			item_str = '```fix\nNo Items Grinded Yet!\n```'
 
 		if guild.icon is None:
-			icon_url = guild.default_avatar.url
+			icon_url = None
 		else:
 			icon_url = guild.icon.url
 		
