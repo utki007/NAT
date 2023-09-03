@@ -36,6 +36,8 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 			else:
 				pfp = pfp.avatar.with_format('png')
 		else:
+				if pfp.icon is None:
+					return None
 				pfp = pfp.icon.with_format('png')
 
 		pfp = BytesIO(await pfp.read())
@@ -75,7 +77,8 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 	async def create_adv_top3(self, guild: discord.Guild, event_name:str, data: list):
 		template = Image.open('./assets/leaderboard_template.png')
 		guild_icon = await self.round_pfp_4_advtop3(guild)
-		template.paste(guild_icon, (15, 16), guild_icon)
+		if guild_icon is not None: 
+			template.paste(guild_icon, (15, 16), guild_icon)
 
 		draw = ImageDraw.Draw(template)
 		font = ImageFont.truetype('./assets/fonts/Symbola.ttf', 24)
