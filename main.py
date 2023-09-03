@@ -203,47 +203,6 @@ async def on_message(message):
 									await loggingChannel.send(embed=embed, view=view)
 							except:
 								pass
-				
-
-	# payout logging
-	# if message.author.id == 270904126974590976 and len(message.embeds)>0:
-	# 	embed = message.embeds[0]
-	# 	if embed.description is not None and embed.description.startswith('Successfully paid') and embed.description.endswith("from the server's pool!"):
-	# 		try:
-	# 			command_message = await message.channel.fetch_message(message.reference.message_id)
-	# 		except:
-	# 			command_message = None
-			
-	# 		if command_message is not None and command_message.interaction.name == "serverevents payout":
-	# 			payoutEmbed = command_message.embeds[0].to_dict()
-	# 			winner = re.findall(r"<@!?\d+>", payoutEmbed['description'])
-
-	# 			# get prize
-	# 			prize = re.findall(r"\*\*(.*?)\*\*", payoutEmbed['description'])[0]
-	# 			emojis = list(set(re.findall(":\w*:\d*", prize)))
-	# 			for emoji in emojis:
-	# 				prize = prize.replace(emoji,"",100)
-	# 				prize = prize.replace("<>","",100)
-	# 				prize = prize.replace("<a>","",100)
-	# 				prize = prize.replace("  "," ",100)
-	# 			prize = prize.strip()
-	# 			if "⏣" not in prize:
-	# 				number_of_item = prize.split(" ")[0][:-1]
-	# 				item = " ".join(prize.split(" ")[1:])
-	# 				item_prize = int((await bot.dankItems.find(item))['price'])
-	# 				prize = int(number_of_item)*item_prize
-	# 			else:
-	# 				prize = int(prize.split(" ")[1])
-
-	# 			user = command_message.interaction.user.id
-	# 			guild = message.guild.id
-	# 			time = datetime.datetime.utcnow()
-					
-
-
-	# 		payoutLog = bot.get_channel(1089973828215644241)
-	# 		if payoutLog is not None:
-	# 			await payoutLog.send(embed=embed)
 
 	# return if message is from bot
 	if message.author.bot:
