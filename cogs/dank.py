@@ -297,21 +297,6 @@ class dank(commands.GroupCog, name="dank", description="Run dank based commands"
 			await interaction.edit_original_response( attachments=[file])
 			image_binary.close()
 
-
-@app_commands.guild_only()
-class stats(commands.GroupCog, name="stats", description="Run server based commands"):
-	def __init__(self, bot):
-		self.bot = bot	
-
-	@app_commands.command(name="adventure", description="Get adventure related statistics 📊")
-	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
-	async def adventure_Stats(self, interaction:  discord.Interaction):
-		embed = await get_invisible_embed(f'You have not played any adventure yet!')
-		embed.description = f'## Adventure Stats has been moved!!\n- </dank adventure stats:1146318807984513096>\n- </dank adventure leaderboard:1146318807984513096>'
-		return await interaction.response.send_message(embed = embed, ephemeral=False)
-
-
 async def setup(bot):
 	await bot.add_cog(dank(bot))
-	await bot.add_cog(stats(bot))
 	print(f"loaded stats cog")
