@@ -38,7 +38,7 @@ load_dotenv()
 intents = discord.Intents.all()
 intents.presences = False
 class MyBot(commands.Bot):
-	def __init__(self):
+	def __init__(self, application_id):
 		
 		super().__init__(
 			command_prefix=["nat "],
@@ -46,8 +46,7 @@ class MyBot(commands.Bot):
 			owner_ids=[488614633670967307, 301657045248114690],
 			intents=intents,
 			help_command=None,
-			application_id=951019275844460565, # for nat
-			# application_id=1010883367119638658 # for natasha
+			application_id=application_id
 		)
 
 	async def setup_hook(self):
@@ -89,7 +88,12 @@ class MyBot(commands.Bot):
 
 		await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.watching, name=f"Beta Version 2.0.3!"))
 
-bot = MyBot()
+if os.path.exists(os.getcwd()+"./properties/tokens.json"):
+	application_id = 1010883367119638658
+else:
+	application_id = 951019275844460565
+
+bot = MyBot(application_id)
 
 @bot.event
 async def on_message(message):
@@ -477,7 +481,7 @@ if os.path.exists(os.getcwd()+"./properties/tokens.json"):
 	bot.amari = configData["amari"]
 	bot.dankHelper = configData["dankHelper"]
 else:
-	# for heroku
+	# for sparked
 	bot.botToken = os.environ['BOT_TOKEN']
 	bot.connection_url = os.environ['MongoConnectionUrl']
 	bot.amari = os.environ["amari"]
