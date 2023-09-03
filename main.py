@@ -456,7 +456,16 @@ async def on_audit_log_entry_create(entry):
 @bot.event
 async def on_guild_join(guild: discord.Guild):
 	channel = bot.get_channel(1145314908599222342)
-	await channel.send(f"Joined **{guild.name}** (ID: {guild.id})\nOwner: {guild.owner.mention} (ID: {guild.owner.id})\nMembers: {guild.member_count}")
+	await channel.send(
+		f"## ★｡ﾟ☆ﾟ{guild.name.title()}☆ﾟ｡★\n"
+		f'- **ID:** {guild.id}\n'
+		f'- **Owner:** {guild.owner.mention} (ID: `{guild.owner.id}`)\n'
+		f'- **Members:** {guild.member_count}\n'
+		f'- **Created At:** <t:{int(guild.created_at.timestamp())}>\n'
+		f'- **Joined At:** <t:{int(datetime.datetime.utcnow().timestamp())}>\n'
+		f'## ☆ﾟ｡★｡ﾟ☆ﾟ｡★｡ﾟ☆ﾟ｡★｡ﾟ☆ﾟ｡ﾟ☆ﾟ｡★｡ﾟ☆ﾟ\n**\n**',
+		allowed_mentions=discord.AllowedMentions.none()
+	)
 
 # loading enviroment variables
 if os.path.exists(os.getcwd()+"./properties/tokens.json"):
