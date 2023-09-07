@@ -16,8 +16,6 @@ def chunk(it, size):
 	return iter(lambda: tuple(islice(it, size)), ())
 
 @app_commands.guild_only()
-# @app_commands.default_permissions(manage_messages=True)
-# @app_commands.bot_has_permissions(manage_messages=True)
 class channel(commands.GroupCog, name="channel", description="Helps you manage channels #️⃣"):
 	def __init__(self, bot):
 		self.bot = bot
