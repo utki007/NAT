@@ -426,6 +426,7 @@ async def on_guild_join(guild: discord.Guild):
 		f'- **Members:** {guild.member_count}\n'
 		f'- **Created At:** <t:{int(guild.created_at.timestamp())}>\n'
 		f'- **Joined At:** <t:{int(datetime.datetime.utcnow().timestamp())}>\n'
+  		f'- **Bot is in:** {len(bot.guilds)} guilds.\n'
 		f'## ☆ﾟ｡★｡ﾟ☆ﾟ｡★｡ﾟ☆ﾟ｡★｡ﾟ☆ﾟ｡ﾟ☆ﾟ｡★｡ﾟ☆ﾟ\n**\n**',
 		allowed_mentions=discord.AllowedMentions.none()
 	)
