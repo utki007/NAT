@@ -220,7 +220,7 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 				await interaction.channel.send(embed=warning)
 
 	@app_commands.command(name="viewlock", description="viewloock channel 🙈", extras={'example': '/viewlock'})
-	@app_commands.checks.has_permissions(administrator=True)
+	@app_commands.checks.has_permissions(ban_members=True)
 	@app_commands.describe(role = "Provide role")
 	async def viewlock(self, interaction:  discord.Interaction, role: discord.Role = None):
 		
@@ -246,7 +246,7 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 			return await interaction.response.send_message(embed=warning, ephemeral=True)
 
 	@app_commands.command(name="unviewlock", description="Unviewlock channel 🗣️", extras={'example': '/unviewlock'})
-	@app_commands.checks.has_permissions(administrator=True)
+	@app_commands.checks.has_permissions(ban_members=True)
 	@app_commands.describe(role = "Provide role", state = "Input state.")
 	async def unviewlock(self, interaction:  discord.Interaction, state: bool = True, role: discord.Role = None):
 		
@@ -287,7 +287,7 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 			return await interaction.response.send_message(embed=warning, ephemeral=True)
 
 	@app_commands.command(name="sync", description="sync channel 🔄️", extras={'example': '/sync'})
-	@app_commands.checks.has_permissions(manage_messages=True)
+	@app_commands.checks.has_permissions(ban_members=True)
 	async def sync(self, interaction:  discord.Interaction):
 
 		if interaction.user.id == 685705841264820247:
