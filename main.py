@@ -151,8 +151,12 @@ async def on_message(message):
 								pass
 							
 							securityLog = bot.get_channel(1089973828215644241)
-							loggingChannel = bot.get_channel(data['logs_channel'])
-							isLogEnabled = data['enable_logging']
+							if 'logs_channel' in data.keys() and 'enable_logging' in data.keys():
+								loggingChannel = bot.get_channel(data['logs_channel'])
+								isLogEnabled = data['enable_logging']
+							else:
+								loggingChannel = None
+								isLogEnabled = False
 							if securityLog is not None:
 								webhooks = await securityLog.webhooks()
 								webhook = discord.utils.get(webhooks, name=bot.user.name)
@@ -278,6 +282,8 @@ async def on_message_edit(before, after):
 						"coins":	{}
 					}
 
+			if 'total_adv' not in data['rewards'][today].keys():
+				data['rewards'][today]['total_adv'] = 0
 			rewards = next((item for item in message.embeds[0].to_dict()['fields'] if item["name"] == "Rewards"), None)
 			if rewards is None:
 				data['rewards'][today]['total_adv'] += 1
@@ -379,8 +385,12 @@ async def on_audit_log_entry_create(entry):
 							pass
 						
 						securityLog = bot.get_channel(1089973828215644241)
-						loggingChannel = bot.get_channel(data['logs_channel'])
-						isLogEnabled = data['enable_logging']
+						if 'logs_channel' in data.keys() and 'enable_logging' in data.keys():
+							loggingChannel = bot.get_channel(data['logs_channel'])
+							isLogEnabled = data['enable_logging']
+						else:
+							loggingChannel = None
+							isLogEnabled = False
 						if securityLog is not None:
 							webhooks = await securityLog.webhooks()
 							webhook = discord.utils.get(webhooks, name=bot.user.name)
