@@ -30,5 +30,42 @@ class MultipleMember(app_commands.Transformer):
     async def transform(self, interaction: Interaction, value: str,):
         value = value.split(" ")
         value = [value.replace("<", "").replace(">", "").replace("@", "").replace("!", "") for value in value]
-        members = [interaction.guild.get_member(int(member)) for member in value if member is not None]
+        members = []
+        for i in value:
+            if i not in ["", " ", None, "None"]:
+                member = interaction.guild.get_member(int(i))
+                if member is not None:
+                    members.append(member)
+
         return members
+
+class MutipleChannel(app_commands.Transformer):
+    async def transform(self, interaction: Interaction, value: str,):
+        value = value.split(" ")
+        value = [value.replace("<", "").replace(">", "").replace("#", "") for value in value]
+        channels = []
+        for i in value:
+            if i not in ["", " ", None, "None"]:
+                channel = interaction.guild.get_channel(int(i))
+                if channel is not None:
+                    channels.append(channel)
+    
+        return channels
+
+
+class DMCConverter(app_commands.Transformer):
+    async def transform(self, interaction: Interaction, value: str):
+
+        value = value.lower()
+        value = value.replace("⏣", "").replace(",", "").replace("k", "e3").replace("m", "e6").replace(" mil", "e6").replace("mil", "e6").replace("b", "e9")
+        if 'e' not in value:
+            return int(value)
+        value = value.split("e")
+
+        if len(value) > 2: raise Exception(f"Invalid number format try using 1e3 or 1k: {value}")
+
+        price = value[0]
+        multi = int(value[1])
+        price = float(price) * (10 ** multi)
+
+        return int(price)
