@@ -39,7 +39,6 @@ intents = discord.Intents.all()
 intents.presences = False
 class MyBot(commands.Bot):
 	def __init__(self, application_id):
-		
 		super().__init__(
 			command_prefix=["nat "],
 			case_insensitive=True,
@@ -60,6 +59,7 @@ class MyBot(commands.Bot):
 		bot.quarantinedUsers = Document(bot.db, "quarantinedUsers")
 		bot.mafiaConfig = Document(bot.db, "mafiaConfig")	
 		bot.dankAdventureStats = Document(bot.db, "dankAdventureStats")
+		bot.premium = Document(bot.db, "premium")
 
 		# Octane DB
 		bot.octane = motor.motor_asyncio.AsyncIOMotorClient(str(bot.dankHelper))
