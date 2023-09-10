@@ -146,10 +146,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 					await interaction.client.dankSecurity.upsert(data)
 					quarantine = f"**`None`**"
 			
-			if 'log_channel' in data:
-				channel = data['logs_channel']
-			else:
-				channel = None
+			channel = data['logs_channel']
 
 			if channel is None:
 				channel = f"**`None`**"
