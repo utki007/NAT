@@ -25,7 +25,14 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
         self.claim_task_progress = False
     
     def cog_unload(self):
-        self.claim_task.cancel()    
+        self.claim_task.cancel()
+    
+    async def interaction_check(self, interaction: discord.Interaction):
+        if interaction.guild.member_count < 50:
+            return False
+        else:
+            return True
+            
 
     async def item_autocomplete(self, interaction: discord.Interaction, string: str) -> List[app_commands.Choice[str]]:
         choices = []
@@ -485,10 +492,10 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
         
     @app_commands.command(name="express", description="start doing payouts for the oldest payouts with the help of me")
     async def express_payout(self, interaction: discord.Interaction):
-        premium = await self.bot.premium.find(interaction.guild.id)
-        if premium is None: 
-            await interaction.response.send_message("This command is only available for premium servers.", ephemeral=True)
-            return
+        # premium = await self.bot.premium.find(interaction.guild.id)
+        # if premium is None: 
+        #     await interaction.response.send_message("This command is only available for premium servers.", ephemeral=True)
+        #     return
         
         config = await self.bot.payout_config.find(interaction.guild.id)
         if config is None: return
@@ -501,6 +508,9 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
             await interaction.response.send_message("There are no payouts pending", ephemeral=True)
             return
         payouts = payouts[:25]
+        if config['express'] is True:
+            await interaction.response.send_message("There is already a express payout in progress", ephemeral=True)
+            return
 
         await interaction.response.send_message("## Starting Payouts for oldest 25 payouts in queue", ephemeral=True)
         queue_channel = interaction.guild.get_channel(config['queue_channel'])
