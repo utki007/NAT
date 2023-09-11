@@ -23,16 +23,29 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
         self.claim_task = self.check_unclaim.start()
         self.bot.create_payout = self.create_payout
         self.claim_task_progress = False
+        self.bot.dank_items_cache = {}
     
     def cog_unload(self):
         self.claim_task.cancel()
     
     async def interaction_check(self, interaction: discord.Interaction):
         if interaction.guild.member_count < 50:
+            await interaction.response.send_message("This command is only available for servers with more than 50 members.", ephemeral=True)
             return False
         else:
-            return True
-            
+            data = await interaction.client.payout_config.find(interaction.guild.id)
+            if data is None or data is False:
+                await interaction.response.send_message("Payout system is not configured yet!", ephemeral=True)
+                return False
+            else:
+                if 'enable_payouts' not in data.keys():
+                    data['enable_payouts'] = False
+                    await interaction.client.payout_config.update(data)
+
+                if data['enable_payouts'] is False or data['enable_payouts'] is None:
+                    await interaction.response.send_message("Payout system is disabled!", ephemeral=True)
+                    return False                
+        return True
 
     async def item_autocomplete(self, interaction: discord.Interaction, string: str) -> List[app_commands.Choice[str]]:
         choices = []
@@ -153,6 +166,7 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
     async def on_ready(self):
         self.bot.add_view(Payout_Buttton())
         self.bot.add_view(Payout_claim())
+        for item in await self.bot.dankItems.get_all(): self.bot.dank_items_cache[item['_id']] = item
 
     
     @tasks.loop(seconds=10)
