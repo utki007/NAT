@@ -65,6 +65,8 @@ class events(commands.Cog):
 			return await log_channel.send(embed=logg, view=view)
 			# await interaction.response.send_message(f"You are missing the required permissions to use this command!", ephemeral=True)
 		elif isinstance(error, app_commands.CheckFailure):
+			if int(interaction.data['id']) == 1150390920433381406:
+				return
 			url = "https://cdn.discordapp.com/attachments/999555672733663285/1063392550192431134/access_Denied.png"
 			warning = discord.Embed(
 				color=0xffd300,
