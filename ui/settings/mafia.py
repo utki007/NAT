@@ -79,13 +79,13 @@ class Mafia_Panel(discord.ui.View):
 			if data['logs_channel'] is None or data['logs_channel'] != view.value.id:
 				data['logs_channel'] = view.value.id
 				await interaction.client.mafiaConfig.upsert(data)
-				embed = await get_success_embed(f'Logging Chaneel changed from {channel} to {view.value.mention}')
+				embed = await get_success_embed(f'Logging Channel changed from {channel} to {view.value.mention}')
 				await interaction.edit_original_response(
 					content = None, embed = embed, view = None
 				)
 				await update_mafia_embed(self.interaction, data)
 			else:
-				embed = await get_error_embed(f"Logging Chaneel was already set to {channel}")
+				embed = await get_error_embed(f"Logging Channel was already set to {channel}")
 				return await interaction.edit_original_response(
 					content = None, embed = embed, view = None
 				)
