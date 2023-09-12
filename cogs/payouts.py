@@ -296,7 +296,7 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
 
         await asyncio.sleep(2)
 
-        loading_embed.description += f"\n<:octane_yes:1019957051721535618> | Payout has been queued for total of `{len(winners)}` winners!"
+        loading_embed.description = f"\n<:octane_yes:1019957051721535618> | Payout has been queued for total of `{len(winners)}` winners!"
         await event_message.add_reaction(self.pending_emoji)
         await interaction.edit_original_response(embed=loading_embed)
 
