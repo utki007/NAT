@@ -106,7 +106,7 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
         claim_message = await claim_channel.send(embed=embed, view=Payout_claim(), content=f"{winner.mention} Your prize has been queued for payout. Please claim it within <t:{claim_time_timestamp}:R> or it will rerolled.")
         queue_data['_id'] = claim_message.id
         await self.bot.payout_queue.insert(queue_data)
-        await message.add_reaction(self.pending_emoji)
+        await message.add_reaction("<a:loading:998834454292344842>")
         return claim_message
     
     async def expire_payout(self, data: dict):
@@ -166,7 +166,7 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
     @commands.Cog.listener()
     async def on_ready(self):
         self.pending_emoji = self.bot.get_emoji(998834454292344842)
-        self.paid_emoji = self.bot.get_emoji(998834454292344842)
+        self.paid_emoji = self.bot.get_emoji(1071752278794575932)
         self.bot.add_view(Payout_Buttton())
         self.bot.add_view(Payout_claim())
         for item in await self.bot.dankItems.get_all(): self.bot.dank_items_cache[item['_id']] = item

@@ -372,10 +372,9 @@ class Payout_claim(discord.ui.View):
         current_embed_description[5] = f"~~{current_embed_description[5]}~~"
 
 
-        await interaction.edit_original_response(embed=discord.Embed(description="<:octane_yes:1019957051721535618> | Sucessfully claimed payout, you will be paid in 24hrs", color=interaction.client.default_color))
+        await interaction.edit_original_response(embed=discord.Embed(description="<:octane_yes:1019957051721535618> | Sucessfully claimed payout, you will be paid in 24hrs", color=0x2b2d31))
 
         view = Payout_Buttton()
-        view.remove_item(view.children[0])
         msg = await queue_channel.send(embed=queue_embed, view=view)
         pending_data = data
         pending_data['_id'] = msg.id
@@ -450,7 +449,7 @@ class Payout_Buttton(discord.ui.View):
         edit_view = discord.ui.View()
         edit_view.add_item(discord.ui.Button(label=f'Payout Denied', style=discord.ButtonStyle.gray, disabled=True, emoji="<a:nat_cross:1010969491347357717>"))
 
-        await view.interaction.response.edit_message(embed=discord.Embed(description="<:octane_yes:1019957051721535618> | Payout Rejected Successfully!", color=interaction.client.default_color), view=None)
+        await view.interaction.response.edit_message(embed=discord.Embed(description="<:octane_yes:1019957051721535618> | Payout Rejected Successfully!", color=0x2b2d31), view=None)
         await interaction.message.edit(view=edit_view, embed=embed, content=None)
         await interaction.client.payout_pending.delete(data['_id'])
     
