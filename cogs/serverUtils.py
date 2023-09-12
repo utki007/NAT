@@ -4,7 +4,9 @@ import datetime
 import discord
 from discord import app_commands, Interaction
 from discord.ext import commands
+import humanfriendly
 from ui.settings.mafia import Mafia_Panel
+from ui.settings.payouts import Payouts_Panel
 from utils.embeds import *
 from utils.convertor import *
 from utils.checks import App_commands_Checks
@@ -81,7 +83,8 @@ class Serversettings_Dropdown(discord.ui.Select):
 		options = [
 			discord.SelectOption(label='Dank Pool Access', description="Who all can access Server's Donation Pool", emoji='<:tgk_bank:1073920882130558987>'),
 			discord.SelectOption(label='Mafia Logs Setup', description='Log entire game', emoji='<:tgk_amongUs:1103542462628253726>'),
-			discord.SelectOption(label='Server Lockdown', description='Configure Lockdown Profiles', emoji='<:tgk_lock:1072851190213259375>'),
+			discord.SelectOption(label='Dank Payout Management', description='Manage Dank Payouts', emoji='<:tgk_cc:1150394902585290854>'),
+   			discord.SelectOption(label='Server Lockdown', description='Configure Lockdown Profiles', emoji='<:tgk_lock:1072851190213259375>'),
 		]
 		if default != -1:
 			options[default].default = True
@@ -232,7 +235,90 @@ class Serversettings_Dropdown(discord.ui.Select):
 			await interaction.response.edit_message(embed=embed, view=mafia_view)
 			mafia_view.message = await interaction.original_response()
 
-		
+		elif self.values[0] == "Dank Payout Management":
+			data = await interaction.client.payout_config.find(interaction.guild.id)
+   			
+			if data is None:
+				data = {
+						'_id': interaction.guild.id,
+						'queue_channel': None,
+						'pending_channel': None,
+						'payout_channel': None,
+						'manager_roles': [],
+						'event_manager_roles': [],
+						'log_channel': None,
+						'default_claim_time': 3600,
+						'express': False,
+						'enable_payouts': False,
+					}
+				await interaction.client.payout_config.insert(data)
+
+			embed = discord.Embed(title="Dank Payout Management", color=3092790)
+			
+			channel = interaction.guild.get_channel(data['pending_channel'])
+			if channel is None:
+				channel = f"`None`"
+			else:
+				channel = f"{channel.mention}"
+			embed.add_field(name="Claim Channel:", value=f"> {channel}", inline=True)
+
+			channel = interaction.guild.get_channel(data['queue_channel'])
+			if channel is None:
+				channel = f"`None`"
+			else:
+				channel = f"{channel.mention}"
+			embed.add_field(name="Queue Channel:", value=f"> {channel}", inline=True)
+
+			channel = interaction.guild.get_channel(data['payout_channel'])
+			if channel is None:
+				channel = f"`None`"
+			else:
+				channel = f"{channel.mention}"
+			embed.add_field(name="Payouts Channel:", value=f"> {channel}", inline=True)
+
+			channel = interaction.guild.get_channel(data['log_channel'])
+			if channel is None:
+				channel = f"`None`"
+			else:
+				channel = f"{channel.mention}"
+			embed.add_field(name="Log Channel:", value=f"> {channel}", inline=True)
+
+			embed.add_field(name="Claim Time:", value=f"> **{humanfriendly.format_timespan(data['default_claim_time'])}**", inline=True)
+
+			roles = data['manager_roles']
+			roles = [interaction.guild.get_role(role) for role in roles if interaction.guild.get_role(role) is not None]
+			roles = [role.mention for role in roles]
+			role = ", ".join(roles)
+			if len(roles) == 0 :
+				role = f"`None`"
+			embed.add_field(name="Payout Managers (Admin):", value=f"> {role}", inline=False)
+
+			roles = data['event_manager_roles']
+			roles = [interaction.guild.get_role(role) for role in roles if interaction.guild.get_role(role) is not None]
+			roles = [role.mention for role in roles]
+			role = ", ".join(roles)
+			if len(roles) == 0:
+				role = f"`None`"
+			embed.add_field(name="Staff Roles (Queue Payouts):", value=f"> {role}", inline=False)
+			
+			self.view.stop()
+			payouts_view = Payouts_Panel(interaction , data)
+
+			# Initialize the button
+			if data['enable_payouts']:
+				payouts_view.children[0].style = discord.ButtonStyle.green
+				payouts_view.children[0].label = 'Module Enabled'
+				payouts_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
+			else:
+				payouts_view.children[0].style = discord.ButtonStyle.red
+				payouts_view.children[0].label = 'Module Disabled'
+				payouts_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
+
+			payouts_view.add_item(Serversettings_Dropdown(2))
+
+			await interaction.response.edit_message(embed=embed, view=payouts_view)
+			payouts_view.message = await interaction.original_response()
+  
 		elif self.values[0] == "Server Lockdown":
 
 			data = await interaction.client.lockdown.find(interaction.guild.id)
@@ -255,7 +341,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 			
 			self.view.stop()
 			lockdown_profile_view =  Lockdown_Profile_Panel(interaction)			
-			lockdown_profile_view.add_item(Serversettings_Dropdown(2))
+			lockdown_profile_view.add_item(Serversettings_Dropdown(3))
 			await interaction.response.edit_message(embed=embed, view=lockdown_profile_view)
 			lockdown_profile_view.message = await interaction.original_response()
 

@@ -114,7 +114,28 @@ class owner(commands.Cog):
                         error = "".join(format_exception(e,e,e.__traceback__))
                         embed.add_field(name=f"{module}", value=f"Failure **|** {error[:100]}", inline=True)
                         await interaction.edit_original_response(embed=embed)
-        
+    
+
+    @app_commands.command(name="sync", description="Syncs a guild/gobal command")
+    async def sync(self, interaction: discord.Interaction, guild_id: str=None):
+        if interaction.user.id not in self.bot.owner_ids:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+        if guild_id is None:
+            await interaction.response.send_message(embed=discord.Embed(description="Syncing global commands...", color=interaction.client.default_color))
+            await interaction.client.tree.sync()
+            await interaction.edit_original_response(embed=discord.Embed(description="Successfully synced global commands", color=interaction.client.default_color))
+        else:
+            if guild_id == "*":
+                guild = interaction.guild
+            else:
+                guild = await interaction.client.fetch_guild(int(guild_id))
+                if guild is None:
+                    return await interaction.response.send_message(embed=discord.Embed(description="Invalid guild id", color=interaction.client.default_color))
+            await interaction.response.send_message(embed=discord.Embed(description=f"Syncing guild commands for `{guild.name}`...", color=interaction.client.default_color))
+            await interaction.client.tree.sync(guild=guild)
+            await interaction.edit_original_response(embed=discord.Embed(description=f"Successfully synced guild commands for `{guild.name}`", color=interaction.client.default_color))
+
 async def setup(bot):
     await bot.add_cog(
         owner(bot),

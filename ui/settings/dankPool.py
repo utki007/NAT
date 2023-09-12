@@ -129,7 +129,7 @@ class Dank_Pool_Panel(discord.ui.View):
 				)
 				await update_pool_embed(self.interaction, data)
 			else:
-				embed = await get_error_embed(f"Logging Chaneel was already set to {channel}")
+				embed = await get_error_embed(f"Logging Channel was already set to {channel}")
 				return await interaction.edit_original_response(
 					content = None, embed = embed, view = None
 				)
