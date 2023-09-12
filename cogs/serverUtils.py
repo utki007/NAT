@@ -255,14 +255,14 @@ class Serversettings_Dropdown(discord.ui.Select):
 
 			embed = discord.Embed(title="Dank Payout Management", color=3092790)
 			
-			channel = interaction.guild.get_channel(data['queue_channel'])
+			channel = interaction.guild.get_channel(data['pending_channel'])
 			if channel is None:
 				channel = f"`None`"
 			else:
 				channel = f"{channel.mention}"
 			embed.add_field(name="Claim Channel:", value=f"> {channel}", inline=True)
 
-			channel = interaction.guild.get_channel(data['pending_channel'])
+			channel = interaction.guild.get_channel(data['queue_channel'])
 			if channel is None:
 				channel = f"`None`"
 			else:
