@@ -63,7 +63,7 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
             return choices[:24]
     
     async def create_pending_embed(self, event: str, winner: discord.Member, prize: str, channel: discord.TextChannel, message: discord.Message, claim_time: int, host: discord.Member, item_data: dict) -> discord.Embed:
-        embed = discord.Embed(title="Payout Queue", timestamp=datetime.datetime.now(), description="", color=self.bot.default_color)
+        embed = discord.Embed(title="Payout Queue", timestamp=datetime.datetime.now(), description="", color=0x2b2d31)
         embed.description += f"**Event:** {event}\n"
         embed.description += f"**Winner:** {winner.mention}\n"
         if item_data != None:
@@ -245,7 +245,7 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
         await view.wait()
 
         if view.value is None or view.value is False:
-            return await interaction.edit_original_message(content="Payout cancelled!")
+            return await interaction.edit_original_response(content="Payout creation has been cancelled.", view=None)
         
         loading_embed = discord.Embed(description=f"<a:loading:998834454292344842> | Setting up the payout for total of `{len(winners)}` winners!")
         loading_embed.set_footer(text="This might take a while depending on the number of winners.")
