@@ -224,7 +224,7 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
         confrim_embed.description += f"**Event:** {event}\n"
         confrim_embed.description += f"**Winners:** {', '.join([winner.mention for winner in winners])}\n"
         if item:
-            item_data = await interaction.client.dank_items.find(item)
+            item_data = await interaction.client.dankItems.find(item)
             if not item_data:
                 return await interaction.response.send_message("Error: Item not found! Please make sure you have the correct item name.", ephemeral=True)
             confrim_embed.description += f"**Prize:** {quantity} x {item}\n"
