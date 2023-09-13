@@ -34,19 +34,19 @@ class owner(commands.Cog):
             await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
             return
         if guild_id is None:
-            await interaction.response.send_message(embed=discord.Embed(description="Syncing global commands...", color=interaction.client.default_color))
+            await interaction.response.send_message(embed=discord.Embed(description="Syncing global commands...", color=2829617))
             await interaction.client.tree.sync()
-            await interaction.edit_original_response(embed=discord.Embed(description="Successfully synced global commands", color=interaction.client.default_color))
+            await interaction.edit_original_response(embed=discord.Embed(description="Successfully synced global commands", color=2829617))
         else:
             if guild_id == "*":
                 guild = interaction.guild
             else:
                 guild = await interaction.client.fetch_guild(int(guild_id))
                 if guild is None:
-                    return await interaction.response.send_message(embed=discord.Embed(description="Invalid guild id", color=interaction.client.default_color))
-            await interaction.response.send_message(embed=discord.Embed(description=f"Syncing guild commands for `{guild.name}`...", color=interaction.client.default_color))
+                    return await interaction.response.send_message(embed=discord.Embed(description="Invalid guild id", color=2829617))
+            await interaction.response.send_message(embed=discord.Embed(description=f"Syncing guild commands for `{guild.name}`...", color=2829617))
             await interaction.client.tree.sync(guild=guild)
-            await interaction.edit_original_response(embed=discord.Embed(description=f"Successfully synced guild commands for `{guild.name}`", color=interaction.client.default_color))
+            await interaction.edit_original_response(embed=discord.Embed(description=f"Successfully synced guild commands for `{guild.name}`", color=2829617))
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -143,19 +143,19 @@ class owner(commands.Cog):
             await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
             return
         if guild_id is None:
-            await interaction.response.send_message(embed=discord.Embed(description="Syncing global commands...", color=interaction.client.default_color))
+            await interaction.response.send_message(embed=discord.Embed(description="Syncing global commands...", color=2829617))
             await interaction.client.tree.sync()
-            await interaction.edit_original_response(embed=discord.Embed(description="Successfully synced global commands", color=interaction.client.default_color))
+            await interaction.edit_original_response(embed=discord.Embed(description="Successfully synced global commands", color=2829617))
         else:
             if guild_id == "*":
                 guild = interaction.guild
             else:
                 guild = await interaction.client.fetch_guild(int(guild_id))
                 if guild is None:
-                    return await interaction.response.send_message(embed=discord.Embed(description="Invalid guild id", color=interaction.client.default_color))
-            await interaction.response.send_message(embed=discord.Embed(description=f"Syncing guild commands for `{guild.name}`...", color=interaction.client.default_color))
+                    return await interaction.response.send_message(embed=discord.Embed(description="Invalid guild id", color=2829617))
+            await interaction.response.send_message(embed=discord.Embed(description=f"Syncing guild commands for `{guild.name}`...", color=2829617))
             await interaction.client.tree.sync(guild=guild)
-            await interaction.edit_original_response(embed=discord.Embed(description=f"Successfully synced guild commands for `{guild.name}`", color=interaction.client.default_color))
+            await interaction.edit_original_response(embed=discord.Embed(description=f"Successfully synced guild commands for `{guild.name}`", color=2829617))
 
 async def setup(bot):
     await bot.add_cog(
