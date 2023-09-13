@@ -94,29 +94,30 @@ class Serversettings_Dropdown(discord.ui.Select):
 	async def callback(self, interaction: discord.Interaction):
 		
 		if self.values[0] == "Dank Pool Access":
-
-			if interaction.user.id != interaction.guild.owner_id:
+			
+			data = await interaction.client.dankSecurity.find(interaction.guild.id)
+			if data is None:
+				data = { 
+					"_id": interaction.guild.id, 
+					"event_manager": None, 
+					"whitelist": [], 
+					"quarantine": None, 
+					"enable_logging":False, 
+					"logs_channel": None
+				}
+				await interaction.client.dankSecurity.upsert(data)
+			if not (interaction.user.id == interaction.guild.owner.id or interaction.user.id in interaction.client.owner_ids):
 				embed = discord.Embed(
 					color=3092790,
 					title="Dank Pool Access",
-					description=f"Only the server owner can configure this!Contact {interaction.guild.owner.mention} for more info."
+					description=f"- Only the server owner can configure this! \n- Contact {interaction.guild.owner.mention} if you need this changed."
 				)
-				self.options[0].default = True
-				await interaction.response.edit_message(embed=embed, view=self.view)
-				return
+				self.view.stop()
+				dank_pool_view = discord.ui.View()
+				dank_pool_view.add_item(Serversettings_Dropdown(0))
+				await interaction.response.edit_message(embed=embed, view=dank_pool_view)
+				dank_pool_view.message = await interaction.original_response()
 			else:
-				data = await interaction.client.dankSecurity.find(interaction.guild.id)
-				if data is None:
-					data = { 
-						"_id": interaction.guild.id, 
-						"event_manager": None, 
-						"whitelist": [], 
-						"quarantine": None, 
-						"enable_logging":False, 
-						"logs_channel": None
-					}
-					await interaction.client.dankSecurity.upsert(data)
-
 				users = f""
 				
 				if data['whitelist'] is None or len(data['whitelist']) == 0:
