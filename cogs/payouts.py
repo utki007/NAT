@@ -628,4 +628,4 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
         await interaction.followup.send("Finished Express Payout", ephemeral=True)
 
 async def setup(bot):
-    await bot.add_cog(Payout(bot), guilds=[discord.Object(999551299286732871), discord.Object(1072079211419938856), discord.Object(785839283847954433)])
+    await bot.add_cog(Payout(bot))

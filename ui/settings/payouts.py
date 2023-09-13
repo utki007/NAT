@@ -395,6 +395,7 @@ class Payout_claim(discord.ui.View):
 	@discord.ui.button(label="Cancel", style=discord.ButtonStyle.red, custom_id="payout:cancel")
 	async def payout_cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
 		payout_data = await interaction.client.payout_queue.find(interaction.message.id)
+		if not payout_data: return await interaction.edit_original_response(embed=discord.Embed(description="<:octane_no:1019957208466862120> | This payout has already been claimed or invalid", color=discord.Color.red()))
 		if payout_data['set_by'] != interaction.user.id:
 			config = await interaction.client.payout_config.find(interaction.guild.id)
 			user_roles = [role.id for role in interaction.user.roles]
