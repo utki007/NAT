@@ -22,7 +22,7 @@ class Historical_Data(enum.Enum):
 	Day_Before_Yesterday = 3
 
 @app_commands.guild_only()
-class dank(commands.GroupCog, name="dank", description="Run dank based commands"):
+class dank(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		
