@@ -66,7 +66,7 @@ class serverUtils(commands.Cog):
 	@app_commands.command(name="serversettings", description="Adjust server-specific settings! ⚙️")
 	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
-	@App_commands_Checks.is_server_owner()
+	@app_commands.checks.has_permissions(administrator=True)
 	async def serversettings(self, interaction:  discord.Interaction):
 		embed = discord.Embed(
 			color=3092790,
@@ -85,6 +85,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 			discord.SelectOption(label='Mafia Logs Setup', description='Log entire game', emoji='<:tgk_amongUs:1103542462628253726>'),
 			discord.SelectOption(label='Dank Payout Management', description='Manage Dank Payouts', emoji='<:tgk_cc:1150394902585290854>'),
    			discord.SelectOption(label='Server Lockdown', description='Configure Lockdown Profiles', emoji='<:tgk_lock:1072851190213259375>'),
+			#discord.SelectOption(label='Nat Changelogs', description='Get DMs for patch notes', emoji='<:tgk_entries:1124995375548338176>')
 		]
 		if default != -1:
 			options[default].default = True
@@ -94,102 +95,112 @@ class Serversettings_Dropdown(discord.ui.Select):
 		
 		if self.values[0] == "Dank Pool Access":
 
-			data = await interaction.client.dankSecurity.find(interaction.guild.id)
-			if data is None:
-				data = { 
-					"_id": interaction.guild.id, 
-					"event_manager": None, 
-					"whitelist": [], 
-					"quarantine": None, 
-					"enable_logging":False, 
-					"logs_channel": None
-				}
-				await interaction.client.dankSecurity.upsert(data)
-
-			users = f""
-			
-			if data['whitelist'] is None or len(data['whitelist']) == 0:
-				users += f"` - ` **Add users when?**\n"
+			if interaction.user.id != interaction.guild.owner_id:
+				embed = discord.Embed(
+					color=3092790,
+					title="Dank Pool Access",
+					description=f"Only the server owner can configure this!Contact {interaction.guild.owner.mention} for more info."
+				)
+				self.options[0].default = True
+				await interaction.response.edit_message(embed=embed, view=self.view)
+				return
 			else:
-				for member_id in data['whitelist']:
-					try: 
-						member = interaction.guild.get_member(int(member_id))
-						users += f"` - ` {member.mention}\n"
-					except:
-						data['whitelist'].remove(member_id)
-						await interaction.client.dankSecurity.upsert(data)
-						pass
-			event_manager = data['event_manager']
-			
-			event_manager_error = ''
-			if event_manager is None:
-				event_manager = f"**`None`**"
-			else:
-				event_manager = interaction.guild.get_role(int(event_manager))
-				if event_manager is not None:
-					if event_manager.position > interaction.guild.me.top_role.position:
-						event_manager_error = f"> The {event_manager.mention} role is higher than my top role. \n > I cannot remove it from **raiders**."
-					event_manager = f"**{event_manager.mention} (`{event_manager.id}`)**"
-				else:
-					data['event_manager'] = None
+				data = await interaction.client.dankSecurity.find(interaction.guild.id)
+				if data is None:
+					data = { 
+						"_id": interaction.guild.id, 
+						"event_manager": None, 
+						"whitelist": [], 
+						"quarantine": None, 
+						"enable_logging":False, 
+						"logs_channel": None
+					}
 					await interaction.client.dankSecurity.upsert(data)
-					event_manager = f"**`None`**"
 
+				users = f""
 				
-			quarantine = data['quarantine']
-
-			if quarantine is None:
-				quarantine = f"**`None`**"
-			else:
-				quarantine = interaction.guild.get_role(int(quarantine))
-				if quarantine is not None:
-					quarantine = f"**{quarantine.mention} (`{quarantine.id}`)**"
+				if data['whitelist'] is None or len(data['whitelist']) == 0:
+					users += f"` - ` **Add users when?**\n"
 				else:
-					data['quarantine'] = None
-					await interaction.client.dankSecurity.upsert(data)
+					for member_id in data['whitelist']:
+						try: 
+							member = interaction.guild.get_member(int(member_id))
+							users += f"` - ` {member.mention}\n"
+						except:
+							data['whitelist'].remove(member_id)
+							await interaction.client.dankSecurity.upsert(data)
+							pass
+				event_manager = data['event_manager']
+				
+				event_manager_error = ''
+				if event_manager is None:
+					event_manager = f"**`None`**"
+				else:
+					event_manager = interaction.guild.get_role(int(event_manager))
+					if event_manager is not None:
+						if event_manager.position > interaction.guild.me.top_role.position:
+							event_manager_error = f"> The {event_manager.mention} role is higher than my top role. \n > I cannot remove it from **raiders**."
+						event_manager = f"**{event_manager.mention} (`{event_manager.id}`)**"
+					else:
+						data['event_manager'] = None
+						await interaction.client.dankSecurity.upsert(data)
+						event_manager = f"**`None`**"
+
+					
+				quarantine = data['quarantine']
+
+				if quarantine is None:
 					quarantine = f"**`None`**"
-			
-			channel = data['logs_channel']
-
-			if channel is None:
-				channel = f"**`None`**"
-			else:
-				channel = interaction.guild.get_channel(int(channel))
-				if channel is not None:
-					channel = f"**{channel.mention} (`{channel.name}`)**"
 				else:
-					data['logs_channel'] = None
-					await interaction.client.mafiaConfig.upsert(data)
+					quarantine = interaction.guild.get_role(int(quarantine))
+					if quarantine is not None:
+						quarantine = f"**{quarantine.mention} (`{quarantine.id}`)**"
+					else:
+						data['quarantine'] = None
+						await interaction.client.dankSecurity.upsert(data)
+						quarantine = f"**`None`**"
+				
+				channel = data['logs_channel']
+
+				if channel is None:
 					channel = f"**`None`**"
+				else:
+					channel = interaction.guild.get_channel(int(channel))
+					if channel is not None:
+						channel = f"**{channel.mention} (`{channel.name}`)**"
+					else:
+						data['logs_channel'] = None
+						await interaction.client.mafiaConfig.upsert(data)
+						channel = f"**`None`**"
 
-			embed = discord.Embed(
-				color=3092790,
-				title="Dank Pool Access"
-			)
-			embed.add_field(name="Following users are whitelisted:", value=f"{users}", inline=False)
-			embed.add_field(name="Event Manager Role:", value=f"{event_manager}", inline=False)
-			embed.add_field(name="Quarantine Role:", value=f"{quarantine}", inline=False)
-			embed.add_field(name="Logging Channel:", value=f"{channel}", inline=False)
-			if event_manager_error != '':
-				embed.add_field(name="<a:nat_warning:1062998119899484190> Warning: <a:nat_warning:1062998119899484190>", value=f"{event_manager_error}", inline=False)
+				embed = discord.Embed(
+					color=3092790,
+					title="Dank Pool Access"
+				)
+				embed.add_field(name="Following users are whitelisted:", value=f"{users}", inline=False)
+				embed.add_field(name="Event Manager Role:", value=f"{event_manager}", inline=False)
+				embed.add_field(name="Quarantine Role:", value=f"{quarantine}", inline=False)
+				embed.add_field(name="Logging Channel:", value=f"{channel}", inline=False)
+				if event_manager_error != '':
+					embed.add_field(name="<a:nat_warning:1062998119899484190> Warning: <a:nat_warning:1062998119899484190>", value=f"{event_manager_error}", inline=False)
 
-			self.view.stop()
-			dank_pool_view =  Dank_Pool_Panel(interaction)
+				self.view.stop()
+				dank_pool_view =  Dank_Pool_Panel(interaction)
 
-			# Initialize the button
-			if data['enable_logging']:
-				dank_pool_view.children[0].style = discord.ButtonStyle.green
-				dank_pool_view.children[0].label = 'Logs Enabled'
-				dank_pool_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
-			else:
-				dank_pool_view.children[0].style = discord.ButtonStyle.red
-				dank_pool_view.children[0].label = 'Logs Disabled'
-				dank_pool_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
+				# Initialize the button
+				if data['enable_logging']:
+					dank_pool_view.children[0].style = discord.ButtonStyle.green
+					dank_pool_view.children[0].label = 'Logs Enabled'
+					dank_pool_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
+				else:
+					dank_pool_view.children[0].style = discord.ButtonStyle.red
+					dank_pool_view.children[0].label = 'Logs Disabled'
+					dank_pool_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
 
-			dank_pool_view.add_item(Serversettings_Dropdown(0))
-			
-			await interaction.response.edit_message(embed=embed, view=dank_pool_view)
-			dank_pool_view.message = await interaction.original_response()
+				dank_pool_view.add_item(Serversettings_Dropdown(0))
+				
+				await interaction.response.edit_message(embed=embed, view=dank_pool_view)
+				dank_pool_view.message = await interaction.original_response()
 
 		elif self.values[0] == "Mafia Logs Setup":
 
