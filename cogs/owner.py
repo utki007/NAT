@@ -27,6 +27,27 @@ class owner(commands.Cog):
                 new_options.append(app_commands.Choice(name=cog, value=cog))                
         return new_options[:24]
 
+
+    @app_commands.command(name="dev-sync", description="Syncs a guild/gobal command")
+    async def sync(self, interaction: discord.Interaction, guild_id: str=None):
+        if interaction.user.id not in self.bot.owner_ids:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+        if guild_id is None:
+            await interaction.response.send_message(embed=discord.Embed(description="Syncing global commands...", color=interaction.client.default_color))
+            await interaction.client.tree.sync()
+            await interaction.edit_original_response(embed=discord.Embed(description="Successfully synced global commands", color=interaction.client.default_color))
+        else:
+            if guild_id == "*":
+                guild = interaction.guild
+            else:
+                guild = await interaction.client.fetch_guild(int(guild_id))
+                if guild is None:
+                    return await interaction.response.send_message(embed=discord.Embed(description="Invalid guild id", color=interaction.client.default_color))
+            await interaction.response.send_message(embed=discord.Embed(description=f"Syncing guild commands for `{guild.name}`...", color=interaction.client.default_color))
+            await interaction.client.tree.sync(guild=guild)
+            await interaction.edit_original_response(embed=discord.Embed(description=f"Successfully synced guild commands for `{guild.name}`", color=interaction.client.default_color))
+
     @commands.Cog.listener()
     async def on_ready(self):
         print(f"{self.__class__.__name__} Cog has been loaded\n-----")
@@ -139,5 +160,5 @@ class owner(commands.Cog):
 async def setup(bot):
     await bot.add_cog(
         owner(bot),
-        guilds = [discord.Object(999551299286732871)]
+        guilds = [discord.Object(785839283847954433), discord.Object(999551299286732871)]
     )
