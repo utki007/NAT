@@ -371,7 +371,7 @@ class Payout_claim(discord.ui.View):
 		current_embed_description[5] = f"~~{current_embed_description[5]}~~"
 
 
-		await interaction.edit_original_response(embed=discord.Embed(description="<:octane_yes:1019957051721535618> | Sucessfully claimed payout, you will be paid in 24hrs", color=0x2b2d31))
+		await interaction.edit_original_response(embed=discord.Embed(description="<:octane_yes:1019957051721535618> | Sucessfully claimed payout, you will be paid in 24hrs", color=interaction.client.default_color))
 
 		view = Payout_Buttton()
 		msg = await queue_channel.send(embed=queue_embed, view=view)
@@ -385,9 +385,7 @@ class Payout_claim(discord.ui.View):
 		button.emoji = "<a:nat_check:1010969401379536958>"
 		button.disabled = True
 		self.children[1].disabled = True
-		button_spam = [button.name for button in self.children]
-		if 'Payout Queue Message' not in button_spam:
-			self.add_item(discord.ui.Button(label=f'Payout Queue Message', style=discord.ButtonStyle.url, disabled=False, url=msg.jump_url))
+		self.add_item(discord.ui.Button(label=f'Queue Message', style=discord.ButtonStyle.url, disabled=False, url=msg.jump_url))
 
 		await interaction.message.edit(embed=current_embed, view=self)
 		interaction.client.dispatch("payout_claim", interaction.message, interaction.user)
