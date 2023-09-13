@@ -45,7 +45,12 @@ class MyBot(commands.Bot):
 			owner_ids=[488614633670967307, 301657045248114690],
 			intents=intents,
 			help_command=None,
-			application_id=application_id
+			application_id=application_id,
+			activity=discord.Activity(
+				type=discord.ActivityType.playing, 
+				name="Starting up ..."
+			),
+			status=discord.Status.idle
 		)
 
 	async def setup_hook(self):
@@ -67,25 +72,11 @@ class MyBot(commands.Bot):
 		bot.dankItems = Document(bot.db2, "Item prices")
 
 		for file in os.listdir('./cogs'):
-			if file.endswith('.py') and not file.startswith("_"):
+			if file.endswith('.py') and not file.startswith(("_", "donations")):
 				await bot.load_extension(f'cogs.{file[:-3]}')
 	
 	async def on_ready(self):		
 		print(f"{bot.user} has connected to Discord!")
-		await bot.change_presence(
-			status=discord.Status.idle, 
-			activity=discord.Activity(
-				type=discord.ActivityType.playing, 
-				name="Starting up ..."
-			)
-		)
-		await bot.tree.sync()
-		for guild in bot.guilds:
-			await bot.tree.sync(guild=guild)
-
-		members_list = [len(guild.members) for guild in  bot.guilds]
-		total_members = sum(members_list)
-
 		await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.watching, name=f"Beta Version 2.0.3!"))
 
 if os.path.exists(os.getcwd()+"./properties/tokens.json"):
