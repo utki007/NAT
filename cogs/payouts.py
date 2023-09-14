@@ -193,12 +193,13 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
     @app_commands.command(name="create", description="Create a new payout")
     @app_commands.describe(event="event name", message_id="winner message id", winners="winner of the event", quantity='A constant number like "123" or a shorthand like "5m"', item="what item did they win?")
     @app_commands.autocomplete(item=item_autocomplete)
+    @app_commands.rename(winners="winners_list")
     async def payout_create(self, interaction: discord.Interaction, event: str, message_id: str, winners: app_commands.Transform[discord.Member, MultipleMember], quantity: app_commands.Transform[int, DMCConverter], item: str=None):
         data = await self.bot.payout_config.find(interaction.guild.id)
         if data is None: return await interaction.response.send_message("Payout system is not configured yet!", ephemeral=True)
 
         user_roles = [role.id for role in interaction.user.roles]
-        if (set(user_roles) & set(data['event_manager_roles'])):
+        if (set(user_roles) & set(data['event_manager_roles'])) or (set(user_roles) & set(data['manager_roles'])):
             pass
         else:
             return await interaction.response.send_message("You are not allowed to use this command!", ephemeral=True)
@@ -307,7 +308,7 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
         if data is None: return await interaction.response.send_message("Payout system is not configured yet!", ephemeral=True)
 
         user_roles = [role.id for role in interaction.user.roles]
-        if (set(user_roles) & set(data['event_manager_roles'])):
+        if (set(user_roles) & set(data['event_manager_roles'])) or (set(user_roles) & set(data['manager_roles'])):
             pass
         else:
             return await interaction.response.send_message("You are not allowed to use this command!", ephemeral=True)
@@ -327,7 +328,7 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
         if config is None: return await interaction.response.send_message("Payout system is not configured yet!", ephemeral=True)
 
         user_roles = [role.id for role in interaction.user.roles]
-        if (set(user_roles) & set(config['event_manager_roles'])):
+        if (set(user_roles) & set(config['event_manager_roles'])) or (set(user_roles) & set(config['manager_roles'])):
             pass
         else:
             return await interaction.response.send_message("You are not allowed to use this command!", ephemeral=True)
