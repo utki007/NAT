@@ -15,7 +15,7 @@ from typing import List, Union
 from ui.settings import *
 from ui.settings.dankPool import *
 from utils.functions import *
-from utils.views.confirm import Confirm, Toggle
+from utils.views.confirm import Confirm
 from utils.views.ui import *
 from ui.settings.lockdown import *
 from utils.views.paginator import Paginator
@@ -85,7 +85,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 			discord.SelectOption(label='Mafia Logs Setup', description='Log entire game', emoji='<:tgk_amongUs:1103542462628253726>'),
 			discord.SelectOption(label='Dank Payout Management', description='Manage Dank Payouts', emoji='<:tgk_cc:1150394902585290854>'),
    			discord.SelectOption(label='Server Lockdown', description='Configure Lockdown Profiles', emoji='<:tgk_lock:1072851190213259375>'),
-			discord.SelectOption(label='Nat Changelogs', description='Get DMs for patch notes', emoji='<:tgk_entries:1124995375548338176>')
+			#discord.SelectOption(label='Nat Changelogs', description='Get DMs for patch notes', emoji='<:tgk_entries:1124995375548338176>')
 		]
 		if default != -1:
 			options[default].default = True
@@ -359,29 +359,8 @@ class Serversettings_Dropdown(discord.ui.Select):
 
 			await interaction.message.edit(embed=embed, view=lockdown_profile_view)
 			lockdown_profile_view.message = await interaction.original_response()
-
-		elif self.values[0] == "Nat Changelogs":
-			data = await self.bot.dm_notis.find(interaction.user.id)
-			if not data:
-				data ={
-					"_id": interaction.user.id,
-					"dm_notis": True
-				}
-			
-			embed = discord.Embed(
-				color=3092790,
-				title="Nat Changelogs",
-				description=f"Your current settings are: Dm Notifications: **{data['dm_notis']}**"
-			)
-
-			self.view.stop()
-			toggle = Toggle(user=interaction.user, value=data['dm_notis'], timeout=None)
-			toggle.add_item(Serversettings_Dropdown(4))
-			await interaction.response.edit_message(embed=embed, view=toggle)
-
-		
 		else:
-			await interaction.response.send_message(f'Invaid Interaction',ephemeral=True)		
+			await interaction.response.send_message(f'Invaid Interaction',ephemeral=True)
 
 async def setup(bot):
 	await bot.add_cog(serverUtils(bot))

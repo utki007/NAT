@@ -65,7 +65,6 @@ class MyBot(commands.Bot):
 		bot.mafiaConfig = Document(bot.db, "mafiaConfig")	
 		bot.dankAdventureStats = Document(bot.db, "dankAdventureStats")
 		bot.premium = Document(bot.db, "premium")
-		bot.dm_notis = Document(bot.db, "dm_notis")
 
 		# Octane DB
 		bot.octane = motor.motor_asyncio.AsyncIOMotorClient(str(bot.dankHelper))
