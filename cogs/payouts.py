@@ -12,7 +12,7 @@ from ui.settings.payouts import Payout_Buttton, Payout_claim
 from utils.views.confirm import Confirm
 from utils.transformers import DMCConverter, MultipleMember
 
-
+@app_commands.guild_only()
 class Payout(commands.GroupCog, name="payout", description="Payout commands"):
     def __init__(self, bot):
         self.bot = bot
