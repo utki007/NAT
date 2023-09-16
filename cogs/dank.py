@@ -74,39 +74,57 @@ class dank(commands.Cog):
 
 		return pfp
 
-	async def create_adv_top3(self, guild: discord.Guild, event_name:str, data: list):
-		template = Image.open('./assets/leaderboard_template.png')
-		guild_icon = await self.round_pfp_4_advtop3(guild)
-		if guild_icon is not None: 
-			template.paste(guild_icon, (15, 16), guild_icon)
+	async def round_pfp(self, user: discord.User | discord.Member, size: tuple):
+		if user.avatar is None:
+			pfp = user.default_avatar.with_format('png')
+		else:
+			pfp = user.avatar.with_format('png')
+		
+		pfp = BytesIO(await pfp.read())
+		pfp = Image.open(pfp)
+		pfp = pfp.resize(size, Image.Resampling.LANCZOS).convert('RGBA')
 
-		draw = ImageDraw.Draw(template)
-		font = ImageFont.truetype('./assets/fonts/Symbola.ttf', 24)
-		winner_name_font = ImageFont.truetype('./assets/fonts/Symbola.ttf', 28)
-		winner_exp_font = ImageFont.truetype('./assets/fonts/DejaVuSans.ttf', 20)
+		bigzise = (pfp.size[0] * 3, pfp.size[1] * 3)
+		mask = Image.new('L', bigzise, 0)
+		draw = ImageDraw.Draw(mask)
+		draw.ellipse((0, 0) + bigzise, fill=255)
+		mask = mask.resize(pfp.size, Image.Resampling.LANCZOS)
+		mask = ImageChops.darker(mask, pfp.split()[-1])
+		pfp.putalpha(mask)
+		
+		return pfp
 
-		winne_postions = {
-			#postions of the winners, pfp and name and donation
-			0: {'icon': (58, 150), 'name': (160, 165), 'donated': (160, 202)},
-			1: {'icon': (58, 270), 'name': (160, 285), 'donated': (160, 322)},
-			2: {'icon': (58, 390), 'name': (160, 405), 'donated': (160, 442)}}
+	async def create_adv_top3(self, data: dict, user_position: int, total_users: int):
+		image = Image.open('./assets/adv_lb_card.png.png')
+		crown = Image.open('./assets/crown.png')
+		draw = ImageDraw.Draw(image)
 
-		draw.text((125, 28), f"{event_name}", font=winner_name_font, fill="#9A9BD5") #guild name 
-		draw.text((118, 61), f"📈 Adventure Top 3 📈", font=font, fill="#9A9BD5") #event name
+		##draw.text(xy=(850, 630), text="#1/99", fill=(0, 0, 1), font=ImageFont.truetype("./DejaVuSans.ttf", 81), stroke_width=2, spacing=8)
+		##
 
-		for i in data[:3]:
-			user = i['user']
-			index = data.index(i)
-			user_icon = await self.round_pfp_4_advtop3(user)
-			template.paste(user_icon, winne_postions[index]['icon'], user_icon)
-			draw.text(winne_postions[index]['name'], f"{i['name']}", font=winner_name_font, fill="#9A9BD5")
-			draw.text(winne_postions[index]['donated'], f"⏣ {i['donated']:,}", font=winner_exp_font, fill="#A8A8C8")
+		# for top 1
+		pfp = await self.round_pfp(data[1]['user'], (280, 280))
+		image.paste(pfp, (239, 1090), pfp)
+		image.paste(crown, (102, 918), crown)
+		draw.text(xy=(850, 1087), text=data[1]['name'], fill=(254, 205, 61), font=ImageFont.truetype("./DejaVuSans.ttf", 100), stroke_width=2, spacing=10)
+		draw.text(xy=(680, 1250), text=millify(data[1]['amount']), fill=(80, 200, 120), font=ImageFont.truetype("./DejaVuSans.ttf", 100), stroke_width=2, spacing=10)
 
-		return template
+		# for top 2
+		pfp = await self.round_pfp(data[2]['user'], (280, 280))
+		image.paste(pfp, (239, 1870), pfp)
+		draw.text(xy=(280, 2200), text=data[2]['name'], fill=(254, 205, 61), font=ImageFont.truetype("./DejaVuSans.ttf", 100), stroke_width=2, spacing=10)
+		draw.text(xy=(100, 2350), text=millify(data[2]['amount']), fill=(80, 200, 120), font=ImageFont.truetype("./DejaVuSans.ttf", 100), stroke_width=2, spacing=10)
+
+		# for top 3
+		pfp = await self.round_pfp(data[3]['user'], (280, 280))
+		image.paste(pfp, (966, 1870), pfp)
+		draw.text(xy=(1000, 2200), text=data[3]['name'], fill=(254, 205, 61), font=ImageFont.truetype("./DejaVuSans.ttf", 100), stroke_width=2, spacing=10)
+		draw.text(xy=(820, 2350), text=millify(data[3]['amount']), fill=(80, 200, 120), font=ImageFont.truetype("./DejaVuSans.ttf", 100), stroke_width=2, spacing=10)
+
+		return image
 	
 	async def create_item_lb(self, guild: discord.Guild, data: list):
 		image = Image.open('./assets/item_leaderboard.png')
-
 		draw = ImageDraw.Draw(image)
 		footer_font = ImageFont.truetype('./assets/fonts/Symbola.ttf', 52)
 		top_line = ImageFont.truetype("./assets/fonts/DejaVuSans.ttf", 66)
@@ -278,7 +296,7 @@ class dank(commands.Cog):
 		k = Counter(final_data)
 		top_3 = k.most_common(3)
 
-		leaderboard = []
+		leaderboard = {1: None, 2: None, 3: None}
 		for user_record in top_3:
 			user = interaction.guild.get_member(user_record[0])
 			if user is None:
@@ -288,10 +306,10 @@ class dank(commands.Cog):
 				name = user.display_name[:15] + '...'
 			else:
 				name = user.display_name
-			leaderboard.append({'user': user,'name': name,'donated': amount}) 
+			leaderboard[user_record[0]] = {'user': user, 'name': name, 'amount': amount}
 
 		
-		image = await self.create_adv_top3(interaction.guild, "🐸 Dank Memer 🐸", leaderboard)
+		image = await self.create_adv_top3(data=leaderboard, total_users=len(data), your_rank?)
 
 		with BytesIO() as image_binary:
 			image.save(image_binary, 'PNG')
