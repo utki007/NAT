@@ -65,6 +65,7 @@ class MyBot(commands.Bot):
 		bot.mafiaConfig = Document(bot.db, "mafiaConfig")	
 		bot.dankAdventureStats = Document(bot.db, "dankAdventureStats")
 		bot.premium = Document(bot.db, "premium")
+		bot.userSettings = Document(bot.db, "userSettings")
 
 		# Octane DB
 		bot.octane = motor.motor_asyncio.AsyncIOMotorClient(str(bot.dankHelper))
@@ -115,7 +116,7 @@ async def on_message(message):
 				transcript_file = discord.File(io.BytesIO(transcript_file.encode()), filename=f"Mafia Logs.html")
 				link_msg  = await log_channel.send(content = f"**Mafia Logs:** <t:{int(datetime.datetime.utcnow().timestamp())}>", file=transcript_file, allowed_mentions=discord.AllowedMentions.none())
 				link_view = discord.ui.View()
-				link_view.add_item(discord.ui.Button(emoji="<:nat_mafia:1102305100527042622>",label="Mafia Evidence", style=discord.ButtonStyle.link, url=f"https://mahto.id/chat-exporter?url={link_msg.attachments[0].url}"))
+				link_view.add_item(discord.ui.Button(emoji="<:nat_mafia:1102305100527042622>",label="Mafia Evidence", style=discord.ButtonStyle.link, url=f"https://tgk-web.vercel.app/api/transcript?url={link_msg.attachments[0].url}"))
 				await link_msg.edit(view=link_view)
 
 	# pool logging for dank memer

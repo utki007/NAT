@@ -7,6 +7,7 @@ from discord.ext import commands
 import humanfriendly
 from ui.settings.mafia import Mafia_Panel
 from ui.settings.payouts import Payouts_Panel
+from ui.settings.userConfig import Changelogs_Panel
 from utils.embeds import *
 from utils.convertor import *
 from utils.checks import App_commands_Checks
@@ -85,7 +86,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 			discord.SelectOption(label='Mafia Logs Setup', description='Log entire game', emoji='<:tgk_amongUs:1103542462628253726>'),
 			discord.SelectOption(label='Dank Payout Management', description='Manage Dank Payouts', emoji='<:tgk_cc:1150394902585290854>'),
    			discord.SelectOption(label='Server Lockdown', description='Configure Lockdown Profiles', emoji='<:tgk_lock:1072851190213259375>'),
-			#discord.SelectOption(label='Nat Changelogs', description='Get DMs for patch notes', emoji='<:tgk_entries:1124995375548338176>')
+			discord.SelectOption(label='Nat Changelogs', description='Get DMs for patch notes', emoji='<:tgk_entries:1124995375548338176>')
 		]
 		if default != -1:
 			options[default].default = True
@@ -113,10 +114,10 @@ class Serversettings_Dropdown(discord.ui.Select):
 					description=f"- Only the server owner can configure this! \n- Contact {interaction.guild.owner.mention} if you need this changed."
 				)
 				self.view.stop()
-				dank_pool_view = discord.ui.View()
-				dank_pool_view.add_item(Serversettings_Dropdown(0))
-				await interaction.response.edit_message(embed=embed, view=dank_pool_view)
-				dank_pool_view.message = await interaction.original_response()
+				nat_changelog_view = discord.ui.View()
+				nat_changelog_view.add_item(Serversettings_Dropdown(0))
+				await interaction.response.edit_message(embed=embed, view=nat_changelog_view)
+				nat_changelog_view.message = await interaction.original_response()
 			else:
 				users = f""
 				
@@ -186,22 +187,22 @@ class Serversettings_Dropdown(discord.ui.Select):
 					embed.add_field(name="<a:nat_warning:1062998119899484190> Warning: <a:nat_warning:1062998119899484190>", value=f"{event_manager_error}", inline=False)
 
 				self.view.stop()
-				dank_pool_view =  Dank_Pool_Panel(interaction)
+				nat_changelog_view =  Dank_Pool_Panel(interaction)
 
 				# Initialize the button
 				if data['enable_logging']:
-					dank_pool_view.children[0].style = discord.ButtonStyle.green
-					dank_pool_view.children[0].label = 'Logs Enabled'
-					dank_pool_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
+					nat_changelog_view.children[0].style = discord.ButtonStyle.green
+					nat_changelog_view.children[0].label = 'Logs Enabled'
+					nat_changelog_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
 				else:
-					dank_pool_view.children[0].style = discord.ButtonStyle.red
-					dank_pool_view.children[0].label = 'Logs Disabled'
-					dank_pool_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
+					nat_changelog_view.children[0].style = discord.ButtonStyle.red
+					nat_changelog_view.children[0].label = 'Logs Disabled'
+					nat_changelog_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
 
-				dank_pool_view.add_item(Serversettings_Dropdown(0))
+				nat_changelog_view.add_item(Serversettings_Dropdown(0))
 				
-				await interaction.response.edit_message(embed=embed, view=dank_pool_view)
-				dank_pool_view.message = await interaction.original_response()
+				await interaction.response.edit_message(embed=embed, view=nat_changelog_view)
+				nat_changelog_view.message = await interaction.original_response()
 
 		elif self.values[0] == "Mafia Logs Setup":
 
@@ -359,6 +360,57 @@ class Serversettings_Dropdown(discord.ui.Select):
 
 			await interaction.message.edit(embed=embed, view=lockdown_profile_view)
 			lockdown_profile_view.message = await interaction.original_response()
+		
+		elif self.values[0] == "Nat Changelogs":
+
+			if not (interaction.user.id == interaction.guild.owner.id):
+
+				embed = discord.Embed(
+					color=3092790,
+					title="Nat Changelogs",
+					description=f"- This setting is restricted to server owners only!"
+				)
+				self.view.stop()
+				nat_changelog_view = discord.ui.View()
+				nat_changelog_view.add_item(Serversettings_Dropdown(4))
+				await interaction.response.edit_message(embed=embed, view=nat_changelog_view)
+				nat_changelog_view.message = await interaction.original_response()
+			
+			else:
+
+				data = await interaction.client.userSettings.find(interaction.user.id)
+				if data is None:
+					data = {"_id": interaction.user.id, "changelog_dms": True}
+					await interaction.client.userSettings.upsert(data)
+				if 'changelog_dms' not in data:
+					data['changelog_dms'] = True
+					await interaction.client.userSettings.upsert(data)
+
+				embed = discord.Embed(
+					color=3092790,
+					title="Nat Changelogs",
+					description= 	f"- In case you own multiple servers: \n - Settings will sync across all servers.\n - Will be dm'ed once per patch note.\n"
+									f"- Join our bot's [`support server`](https://discord.gg/C44Hgr9nDQ) for latest patch notes!"
+				)
+				
+				self.view.stop()
+				nat_changelogs_view =  Changelogs_Panel(interaction, data)
+
+				# Initialize the button
+				if data['changelog_dms']:
+					nat_changelogs_view.children[0].style = discord.ButtonStyle.green
+					nat_changelogs_view.children[0].label = "Yes, I would love to know what's new!"
+					nat_changelogs_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
+				else:
+					nat_changelogs_view.children[0].style = discord.ButtonStyle.red
+					nat_changelogs_view.children[0].label = 'No, I follow the changelogs channel.'
+					nat_changelogs_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
+
+				nat_changelogs_view.add_item(Serversettings_Dropdown(4))
+
+				await interaction.response.edit_message(embed=embed, view=nat_changelogs_view)
+				nat_changelogs_view.message = await interaction.original_response()
+
 		else:
 			await interaction.response.send_message(f'Invaid Interaction',ephemeral=True)
 
