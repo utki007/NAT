@@ -77,7 +77,10 @@ class events(commands.Cog):
 				warning.title = "Only Server Owners can use this!"
 			# else:
 			# 	embed.description = f"{error} Imagine trying though <a:nat_roflfr:1063393491549429801>"
-			return await interaction.response.send_message(embed=warning, ephemeral=False)
+			try:
+				return await interaction.response.send_message(embed=warning, ephemeral=False)
+			except:
+				pass
 		elif isinstance(error, app_commands.MissingRole):
 			url = "https://cdn.discordapp.com/attachments/999555672733663285/1063392550192431134/access_Denied.png"
 			warning = discord.Embed(
