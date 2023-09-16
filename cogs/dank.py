@@ -99,7 +99,8 @@ class dank(commands.Cog):
 		crown = Image.open('./assets/crown.png')
 		draw = ImageDraw.Draw(image)
 
-		draw.text(xy=(850, 630), text=f"#{user_position}/{total_users}", fill=(0, 0, 1), font=ImageFont.truetype("./assets/fonts/DejaVuSans.ttf", 81), stroke_width=2, spacing=8)
+		draw.text(xy=(160, 480), text=f"Adventure Leaderboard", fill=(0, 0, 1), font=ImageFont.truetype("./assets/fonts/DejaVuSans.ttf", 100), stroke_width=4, spacing=8)
+		draw.text(xy=(500, 630), text=f"Rank: #{user_position}/{total_users}", fill=(0, 0, 1), font=ImageFont.truetype("./assets/fonts/DejaVuSans.ttf", 81), stroke_width=2, spacing=8)
 		
 		# for top 1
 		pfp = await self.round_pfp(data[1]['user'], (280, 280))
@@ -111,14 +112,14 @@ class dank(commands.Cog):
 		# for top 2
 		pfp = await self.round_pfp(data[2]['user'], (280, 280))
 		image.paste(pfp, (239, 1870), pfp)
-		draw.text(xy=(150, 2200), text=data[2]['name'], fill=(254, 205, 61), font=ImageFont.truetype("./assets/fonts/DejaVuSans.ttf", 75), stroke_width=2, spacing=10)
-		draw.text(xy=(150, 2350), text=f"⏣ {await millify(data[2]['amount'])}", fill=(80, 200, 120), font=ImageFont.truetype("./assets/fonts/DejaVuSans.ttf", 75), stroke_width=2, spacing=10)
+		draw.text(xy=(155, 2200), text=data[2]['name'], fill=(254, 205, 61), font=ImageFont.truetype("./assets/fonts/DejaVuSans.ttf", 75), stroke_width=2, spacing=10)
+		draw.text(xy=(155, 2350), text=f"⏣ {await millify(data[2]['amount'])}", fill=(80, 200, 120), font=ImageFont.truetype("./assets/fonts/DejaVuSans.ttf", 75), stroke_width=2, spacing=10)
 
 		# for top 3
 		pfp = await self.round_pfp(data[3]['user'], (280, 280))
 		image.paste(pfp, (966, 1870), pfp)
-		draw.text(xy=(875, 2200), text=data[3]['name'], fill=(254, 205, 61), font=ImageFont.truetype("./assets/fonts/DejaVuSans.ttf", 75), stroke_width=2, spacing=10)
-		draw.text(xy=(875, 2350), text=f"⏣ {await millify(data[3]['amount'])}", fill=(80, 200, 120), font=ImageFont.truetype("./assets/fonts/DejaVuSans.ttf", 75), stroke_width=2, spacing=10)
+		draw.text(xy=(885, 2200), text=data[3]['name'], fill=(254, 205, 61), font=ImageFont.truetype("./assets/fonts/DejaVuSans.ttf", 75), stroke_width=2, spacing=10)
+		draw.text(xy=(885, 2350), text=f"⏣ {await millify(data[3]['amount'])}", fill=(80, 200, 120), font=ImageFont.truetype("./assets/fonts/DejaVuSans.ttf", 75), stroke_width=2, spacing=10)
 
 		return image
 	
