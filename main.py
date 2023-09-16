@@ -78,7 +78,7 @@ class MyBot(commands.Bot):
 	
 	async def on_ready(self):		
 		print(f"{bot.user} has connected to Discord!")
-		await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.watching, name=f"Beta Version 2.0.3!"))
+		await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.watching, name=f"Beta Version 2.1.0!"))
 
 if os.path.exists(os.getcwd()+"./properties/tokens.json"):
 	application_id = 1010883367119638658

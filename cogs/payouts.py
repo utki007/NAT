@@ -32,7 +32,7 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
     
     async def interaction_check(self, interaction: discord.Interaction):
         if interaction.guild.member_count < 10:
-            await interaction.response.send_message("This command is only available for servers with more than 50 members.", ephemeral=True)
+            await interaction.response.send_message("This command is only available for servers with more than 10 members.", ephemeral=True)
             return False
         else:
             data = await interaction.client.payout_config.find(interaction.guild.id)
