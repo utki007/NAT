@@ -22,13 +22,10 @@ class Historical_Data(enum.Enum):
 	Day_Before_Yesterday = 3
 
 @app_commands.guild_only()
-class dank(commands.Cog):
+class dank(commands.GroupCog, name="adventure", description="Get Fun Adventure Stats 📈"):
 	def __init__(self, bot):
 		self.bot = bot
-		
-	adventure_group = app_commands.Group(name="adventure", description="Get Fun Adventure Stats 📈")
-	
-				
+					
 	async def round_pfp_4_advtop3(self, pfp: discord.User | discord.Member | discord.Guild):
 		if isinstance(pfp, discord.Member) or isinstance(pfp, discord.User):
 			if pfp.avatar is None:
@@ -159,7 +156,7 @@ class dank(commands.Cog):
 		
 		return image
 	
-	@adventure_group.command(name="stats", description="Get adventure related statistics 📊")
+	@app_commands.command(name="stats", description="Get adventure related statistics 📊")
 	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
 	async def adventure_stats(self, interaction:  discord.Interaction, user: discord.Member = None):
 		await interaction.response.defer(ephemeral = False)
@@ -262,7 +259,7 @@ class dank(commands.Cog):
 			await interaction.edit_original_response(content= f'## Adventure Summary\n- **Showing For:** {user.mention} \n- **Total Grind:** ⏣ {grind:,}' ,attachments=[file], allowed_mentions=discord.AllowedMentions.none())
 			image_binary.close()
 
-	@adventure_group.command(name="leaderboard", description="Get adventure leaderboard 📊")
+	@app_commands.command(name="leaderboard", description="Get adventure leaderboard 📊")
 	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
 	async def adventure_leaderboard(self, interaction:  discord.Interaction):
 		await interaction.response.defer(ephemeral = False)
