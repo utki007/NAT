@@ -62,25 +62,18 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
         else:
             return choices[:24]
     
-    async def create_pending_embed(self, event: str, winner: discord.Member, prize: str, channel: discord.TextChannel, message: discord.Message, claim_time: int, host: discord.Member, item_data: dict) -> discord.Embed:
+    async def create_pending_embed(self, event: str, winner: discord.Member, prize: str, host: discord.Member, item_data: dict=None) -> discord.Embed:
         embed = discord.Embed(title="Payout Queue", timestamp=datetime.datetime.now(), description="", color=0x2b2d31)
-        embed.description += f"**Event:** {event}\n"
-        embed.description += f"**Winner:** {winner.mention}\n"
-        if item_data != None:
-            embed.description += f"**Prize:** `{prize}x {item_data['_id']}`\n"
+        ##new format
+        embed.add_field(name="Event Info", value=f"<:nat_replycont:1146496789361479741> **Name:** {event}\n<:nat_reply:1146498277068517386> **Winner:** {winner.mention} ", inline=True)
+        value = ""
+        if isinstance(item_data, dict):
+           value += f"<:nat_replycont:1146496789361479741> **Won:**  `{prize}x` {item_data['_id']}\n"
+           value += f"<:nat_reply:1146498277068517386> **Net Wroth:** `⏣ {(prize * item_data['price']):,}`\n"
         else:
-            embed.description += f"**Prize:** `⏣ {prize:,}`\n"
-        embed.description += f"**Channel:** {channel.mention}\n"
-        embed.description += f"**Message:** [Click Here]({message.jump_url})\n"
-        embed.description += f"**Claim Time:** <t:{int(claim_time)}:R>\n"
-        embed.description += f"**Set By:** {host.mention}\n"
-        embed.description += f"**Status:** `Pending`"
-        embed.set_footer(text=f"ID: {message.id}")
-        if item_data != None:
-            value = f"**Name**: {item_data['_id']}\n"
-            value += f"**Price**: ⏣ {item_data['price']:,}\n"
-            value += f"Total Value of this payout with {prize}x {item_data['_id']} is ⏣ {prize * item_data['price']:,}"
-            embed.add_field(name="Item Info", value=value)
+            value += f"<:nat_replycont:1146496789361479741> **Won:**  `⏣ {prize:,}`\n"
+        embed.add_field(name="Prize Info", value=value, inline=True)
+        embed.set_footer(text="Queued by: {}".format(host.name))
         return embed
     
     async def create_payout(self, event: str, winner: discord.Member, host: discord.Member, prize: int, message: discord.Message, item: dict=None):
@@ -100,10 +93,10 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
             'claim_time': config['default_claim_time']
             }
         claim_time_timestamp = int((datetime.datetime.now() + datetime.timedelta(seconds=int(config['default_claim_time']))).timestamp())
-        embed = await self.create_pending_embed(event, winner, prize, message.channel, message, claim_time_timestamp, host, item)
+        embed = await self.create_pending_embed(event=event, winner=winner, prize=prize, host=host, item_data=item)
         claim_channel = message.guild.get_channel(config['pending_channel'])
         if not claim_channel: return		
-        claim_message = await claim_channel.send(embed=embed, view=Payout_claim(), content=f"{winner.mention} Your prize has been queued for payout. Please claim it within <t:{claim_time_timestamp}:R> or it will rerolled.")
+        claim_message = await claim_channel.send(embed=embed, view=Payout_claim(), content=f"{winner.mention} Your prize has been queued for payout\n> Please claim it within <t:{claim_time_timestamp}:R> or it will rerolled.")
         queue_data['_id'] = claim_message.id
         await self.bot.payout_queue.insert(queue_data)
         await message.add_reaction("<a:loading:998834454292344842>")
@@ -119,15 +112,15 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
             await self.bot.payout_queue.delete(data['_id'])
             return
         try:
-            message = await channel.fetch_message(data['_id'])
+            message: discord.Message = await channel.fetch_message(data['_id'])
         except discord.NotFound:
             await self.bot.payout_queue.delete(data['_id'])
             return
         
         embed = message.embeds[0]
-        embed = message.embeds[0]
         embed.title = "Payout Expired"
-        embed.description = embed.description.replace("`Pending`", "`Expired`")
+        if embed.description is not None:
+            embed.description = embed.description.replace("`Pending`", "`Expired`")
         await message.edit(embed=embed,view=view, content=f"<@{data['winner']}> your prize has expired. host has been notified.")
         host = guild.get_member(data['set_by'])
 
@@ -208,16 +201,16 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
 
         try:
             event_message = await interaction.channel.fetch_message(message_id)
-        except discord.NotFound:
-            return await interaction.response.send_message("Error: Message not found! Please make sure you have the correct message id and in same channel as the message.", ephemeral=True)
+        except discord.HTTPException:
+            return await interaction.response.send_message("Oops! Can't find that message!\nDouble-check the message ID and make sure it's in the same channel.", ephemeral=True)
 
         claim_channel = interaction.guild.get_channel(data['pending_channel'])
         if claim_channel is None:
-            return await interaction.response.send_message("Error: Claim channel not found! Please make sure your configured claim channel is still valid.", ephemeral=True)
+            return await interaction.response.send_message("Oops! Can't find that claim channel!\nDouble-check that claim channel is vaild", ephemeral=True)
 
         queue_channel = interaction.guild.get_channel(data['queue_channel'])
         if queue_channel is None:
-            return await interaction.response.send_message("Error: Queue channel not found! Please make sure your configured queue channel is still valid.", ephemeral=True)
+            return await interaction.response.send_message("Oops! Can't find that queue channel!\nDouble-check that queue channel is vaild", ephemeral=True)
 
 
         confrim_embed = discord.Embed(title="Payout confirmation", description="", color=0x2b2d31)
@@ -227,7 +220,7 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
         if item:
             item_data = await interaction.client.dankItems.find(item)
             if not item_data:
-                return await interaction.response.send_message("Error: Item not found! Please make sure you have the correct item name.", ephemeral=True)
+                return await interaction.response.send_message("Oops! can't find item with that name", ephemeral=True)
             confrim_embed.description += f"**Prize:** {quantity} x {item}\n"
         else:
             confrim_embed.description += f"**Prize: ⏣ {quantity:,} Each**\n"
@@ -427,72 +420,6 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
         log_channel = message.guild.get_channel(config['log_channel'])
         if log_channel is None: return
         await log_channel.send(embed=embed)
-    
-    @commands.Cog.listener()
-    async def on_payout_payment(self, message: discord.Message, user: discord.Member, winner: discord.Member, payout_channel: discord.TextChannel,data: dict, interaction: discord.Interaction):
-        def check(m: discord.Message):
-            if m.channel.id != payout_channel.id: 
-                return False
-            if m.author.id != 270904126974590976:
-                return False
-            
-            if len(m.embeds) == 0: 
-                return False
-            embed = m.embeds[0]
-            if embed.description.startswith("Successfully paid"):
-
-                found_winner = message.guild.get_member(int(embed.description.split(" ")[2].replace("<", "").replace(">", "").replace("!", "").replace("@", ""))) 
-                if winner.id != found_winner.id: 
-                    return False
-                
-                items = re.findall(r"\*\*(.*?)\*\*", embed.description)[0]
-                if "⏣" in items:
-                    items = int(items.replace("⏣", "").replace(",", ""))
-                    if items == data['prize']:
-                        return True
-                    else:
-                        return False
-                else:
-                    emojis = list(set(re.findall(":\w*:\d*", items)))
-                    for emoji in emojis :items = items.replace(emoji,"",100); items = items.replace("<>","",100);items = items.replace("<a>","",100);items = items.replace("  "," ",100)
-                    mathc = re.search(r"(\d+)x (.+)", items)
-                    item_found = mathc.group(2)
-                    quantity_found = int(mathc.group(1))
-                    if item_found == data['item'] and quantity_found == data['prize']:
-                        return True			
-
-        try:
-            msg: discord.Message = await self.bot.wait_for('message', check=check, timeout=60)
-            view = discord.ui.View()
-            view.add_item(discord.ui.Button(label=f"Paid at", style=discord.ButtonStyle.url, url=msg.jump_url, emoji="<:tgk_link:1105189183523401828>"))
-            embed = message.embeds[0]
-            embed.description += f"\n**Payout Location:** {msg.jump_url}"
-            embed.description = embed.description.replace("`Initiated`", "`Successfuly Paid`")
-            embed.description += f"\n**Santioned By:** {user.mention}"
-            embed.title = "Successfully Paid"
-            await self.bot.payout_pending.delete(data['_id'])
-            await msg.add_reaction("<:tgk_active:1082676793342951475>")
-            await asyncio.sleep(random.randint(1, 5))
-            await interaction.message.edit(embeds=[embed], view=view)
-            is_more_payout_pending = await interaction.client.payout_pending.find_many_by_custom({'winner_message_id': data['winner_message_id']})
-            if len(is_more_payout_pending) <= 0:
-                winner_channel = interaction.client.get_channel(data['channel'])
-                try:
-                    winner_message = await winner_channel.fetch_message(data['winner_message_id'])
-                    await winner_message.remove_reaction(self.pending_emoji, interaction.client.user)
-                    await winner_message.add_reaction(self.paid_emoji)
-                except Exception as e:
-                    pass
-
-        except asyncio.TimeoutError:
-            embed = message.embeds[0]
-            embed.title = "Payout Queue"
-            embed.description = embed.description.replace("`Initiated`", "`Awaiting Payment`")
-            view = Payout_Buttton()
-            view.children[2].disabled = False
-            await interaction.message.edit(embeds=[embed], view=view)
-            await message.reply(f"{user.mention} This payout could not be confirmed in time. Please try again, if you think it's a mistake, please contact a `developers`", delete_after=10)
-        
 
     @commands.Cog.listener()
     async def on_more_pending(self, info: dict):
@@ -588,6 +515,7 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
             await asyncio.sleep(1.25)
             link_view = discord.ui.View()
             link_view.add_item(discord.ui.Button(label=f"Queue Link", style=discord.ButtonStyle.url, url=f"https://discord.com/channels/{interaction.guild.id}/{queue_channel.id}/{data['_id']}", emoji="<:tgk_link:1105189183523401828>"))
+            link_view.add_item(discord.ui.Button(label=f"Event Link", style=discord.ButtonStyle.url, url=f"https://discord.com/channels/{interaction.guild.id}/{data['channel']}/{data['winner_message_id']}", emoji="<:tgk_link:1105189183523401828>"))
             await interaction.followup.send(embed=embed, ephemeral=True, view=link_view)
             try:
                 msg: discord.Message = await self.bot.wait_for('message', check=check, timeout=60)
@@ -604,10 +532,12 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
                 except discord.NotFound:
                     continue
                 embed = winner_message.embeds[0]
-                embed.description += f"\n**Payout Location:** {msg.jump_url}"
-                embed.description = embed.description.replace("`Awaiting Payment`", "`Successfuly Paid`")
-                embed.description = embed.description.replace("`Initiated`", "`Successfuly Paid`")
-                embed.title = "Successfully Paid"
+                embed.title = "Payout Paid"
+                if embed.description is not None:
+                    embed.description += f"\n**Payout Location:** {msg.jump_url}"
+                    embed.description = embed.description.replace("`Awaiting Payment`", "`Successfuly Paid`")
+                    embed.description = embed.description.replace("`Initiated`", "`Successfuly Paid`")
+
                 await self.bot.payout_pending.delete(data['_id'])
                 await msg.add_reaction("<:tgk_active:1082676793342951475>")
                 await winner_message.edit(embed=embed, view=view, content=None)
