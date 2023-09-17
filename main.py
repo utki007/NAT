@@ -433,6 +433,21 @@ async def on_guild_join(guild: discord.Guild):
 		allowed_mentions=discord.AllowedMentions.none()
 	)
 
+@bot.event
+async def on_guild_remove(guild: discord.Guild):
+	channel = bot.get_channel(1145314908599222342)
+	await channel.send(
+		f"## ★｡ﾟ☆ﾟ{guild.name.title()}☆ﾟ｡★\n"
+		f'- **ID:** {guild.id}\n'
+		f'- **Owner:** {guild.owner.mention} (ID: `{guild.owner.id}`)\n'
+		f'- **Members:** {guild.member_count}\n'
+		f'- **Created At:** <t:{int(guild.created_at.timestamp())}>\n'
+		f'- **Left At:** <t:{int(datetime.datetime.utcnow().timestamp())}>\n'
+  		f'- **Bot is in:** {len(bot.guilds)} guilds.\n'
+		f'## ☆ﾟ｡★｡ﾟ☆ﾟ｡★｡ﾟ☆ﾟ｡★｡ﾟ☆ﾟ｡ﾟ☆ﾟ｡★｡ﾟ☆ﾟ\n**\n**',
+		allowed_mentions=discord.AllowedMentions.none()
+	)
+
 # loading enviroment variables
 if os.path.exists(os.getcwd()+"./properties/tokens.json"):
 	# loading from tokens.py
