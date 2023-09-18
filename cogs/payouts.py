@@ -69,9 +69,9 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
         value = ""
         if isinstance(item_data, dict):
            value += f"<:nat_replycont:1146496789361479741> **Won:**  `{prize}x` {item_data['_id']}\n"
-           value += f"<:nat_reply:1146498277068517386> **Net Wroth:** `⏣ {(prize * item_data['price']):,}`\n"
+           value += f"<:nat_reply:1146498277068517386> **Net Worth:** `⏣ {(prize * item_data['price']):,}`\n"
         else:
-            value += f"<:nat_replycont:1146496789361479741> **Won:**  `⏣ {prize:,}`\n"
+            value += f"<:nat_reply:1146498277068517386> **Won:**  `⏣ {prize:,}`\n"
         embed.add_field(name="Prize Info", value=value, inline=True)
         embed.set_footer(text="Queued by: {}".format(host.name))
         return embed
