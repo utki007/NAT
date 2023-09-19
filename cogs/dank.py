@@ -103,19 +103,19 @@ class dank(commands.GroupCog, name="adventure", description="Get Fun Adventure S
 		pfp = await self.round_pfp(data[1]['user'], (280, 280))
 		image.paste(pfp, (239, 1090), pfp)
 		image.paste(crown, (102, 918), crown)
-		draw.text(xy=(680, 1087), text=data[1]['name'], fill=(254, 205, 61), font=ImageFont.truetype("./assets/fonts/DejaVuSans.ttf", 100), stroke_width=2, spacing=10)
+		draw.text(xy=(680, 1137), text=data[1]['name'], fill=(254, 205, 61), font=ImageFont.truetype("./assets/fonts/Symbola.ttf", 100), stroke_width=2, spacing=10)
 		draw.text(xy=(680, 1250), text=f"⏣ {await millify(data[1]['amount'])}", fill=(80, 200, 120), font=ImageFont.truetype("./assets/fonts/DejaVuSans.ttf", 100), stroke_width=2, spacing=10)
 
 		# for top 2
 		pfp = await self.round_pfp(data[2]['user'], (280, 280))
 		image.paste(pfp, (239, 1870), pfp)
-		draw.text(xy=(155, 2200), text=data[2]['name'], fill=(254, 205, 61), font=ImageFont.truetype("./assets/fonts/DejaVuSans.ttf", 75), stroke_width=2, spacing=10)
+		draw.text(xy=(155, 2250), text=data[2]['name'], fill=(254, 205, 61), font=ImageFont.truetype("./assets/fonts/Symbola.ttf", 75), stroke_width=2, spacing=10)
 		draw.text(xy=(155, 2350), text=f"⏣ {await millify(data[2]['amount'])}", fill=(80, 200, 120), font=ImageFont.truetype("./assets/fonts/DejaVuSans.ttf", 75), stroke_width=2, spacing=10)
 
 		# for top 3
 		pfp = await self.round_pfp(data[3]['user'], (280, 280))
 		image.paste(pfp, (966, 1870), pfp)
-		draw.text(xy=(885, 2200), text=data[3]['name'], fill=(254, 205, 61), font=ImageFont.truetype("./assets/fonts/DejaVuSans.ttf", 75), stroke_width=2, spacing=10)
+		draw.text(xy=(885, 2250), text=data[3]['name'], fill=(254, 205, 61), font=ImageFont.truetype("./assets/fonts/Symbola.ttf", 75), stroke_width=2, spacing=10)
 		draw.text(xy=(885, 2350), text=f"⏣ {await millify(data[3]['amount'])}", fill=(80, 200, 120), font=ImageFont.truetype("./assets/fonts/DejaVuSans.ttf", 75), stroke_width=2, spacing=10)
 
 		return image
