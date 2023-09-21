@@ -93,10 +93,12 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
             'claim_time': config['default_claim_time']
             }
         claim_time_timestamp = int((datetime.datetime.now() + datetime.timedelta(seconds=int(config['default_claim_time']))).timestamp())
-        embed = await self.create_pending_embed(event=event, winner=winner, prize=prize, host=host, item_data=item)
+        embed = await self.create_pending_embed(event=event, winner=winner, prize=prize, host=host,item_data=item)
         claim_channel = message.guild.get_channel(config['pending_channel'])
         if not claim_channel: return		
-        claim_message = await claim_channel.send(embed=embed, view=Payout_claim(), content=f"{winner.mention} Your prize has been queued for payout\n> Please claim it within <t:{claim_time_timestamp}:R> or it will rerolled.")
+        view = Payout_claim()
+        view.add_item(discord.ui.Button(label="Event Message",style=discord.ButtonStyle.link,url=message.jump_url ,emoji="<:tgk_link:1105189183523401828>"))
+        claim_message = await claim_channel.send(embed=embed, view=view, content=f"{winner.mention} Your prize has been queued for payout\n> Please claim it within <t:{claim_time_timestamp}:R> or it will rerolled.")
         queue_data['_id'] = claim_message.id
         await self.bot.payout_queue.insert(queue_data)
         await message.add_reaction("<a:loading:998834454292344842>")

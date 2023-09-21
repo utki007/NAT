@@ -380,19 +380,17 @@ class Payout_claim(discord.ui.View):
 		await interaction.edit_original_response(content=None, embed=discord.Embed(description="<:octane_yes:1019957051721535618> | Sucessfully claimed payout", color=0x2b2d31))
 
 		view = Payout_Buttton()
+		view.add_item(self.children[-1])
 		msg = await queue_channel.send(embed=queue_embed, view=view)
 		pending_data = data
 		pending_data['_id'] = msg.id
 		await interaction.client.payout_pending.insert(pending_data)
 		await interaction.client.payout_queue.delete(interaction.message.id)
 
-		button.label = "Claimed Successfully"
-		button.style = discord.ButtonStyle.gray
-		button.emoji = "<a:nat_check:1010969401379536958>"
-		button.disabled = True
-		self.children[1].disabled = True
+		for btn in self.children:
+			if btn.label.lower() in ["claim", "cancel"]:
+				self.remove_item(btn)
 		self.add_item(discord.ui.Button(label=f'Queue Message', style=discord.ButtonStyle.url, disabled=False, url=msg.jump_url, emoji="<:tgk_link:1105189183523401828>"))
-
 		await interaction.message.edit(embed=current_embed, view=self)
 		interaction.client.dispatch("payout_claim", interaction.message, interaction.user)
 		interaction.client.dispatch("payout_pending", msg)
