@@ -84,7 +84,8 @@ class Serversettings_Dropdown(discord.ui.Select):
 		options = [
 			discord.SelectOption(label='Dank Pool Access', description="Who all can access Server's Donation Pool", emoji='<:tgk_bank:1073920882130558987>'),
 			discord.SelectOption(label='Mafia Logs Setup', description='Log entire game', emoji='<:tgk_amongUs:1103542462628253726>'),
-			discord.SelectOption(label='Dank Payout Management', description='Manage Dank Payouts', emoji='<:tgk_cc:1150394902585290854>'),
+			discord.SelectOption(label='Dank Payout Management', description='Manage Dank Payouts', emoji='<:level_roles:1123938667212312637>'),
+			# discord.SelectOption(label='Dank Grinders Manager', description='Manage Dank Grinders', emoji='<:tgk_cc:1150394902585290854>'),
    			discord.SelectOption(label='Server Lockdown', description='Configure Lockdown Profiles', emoji='<:tgk_lock:1072851190213259375>'),
 			discord.SelectOption(label='Nat Changelogs', description='Get DMs for patch notes', emoji='<:tgk_entries:1124995375548338176>')
 		]
