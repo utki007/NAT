@@ -82,11 +82,11 @@ class Serversettings_Dropdown(discord.ui.Select):
 	def __init__(self, default = -1):
 
 		options = [
+			discord.SelectOption(label="Dank's Grinder Manager", description='Manage Dank Grinders', emoji='<:tgk_cc:1150394902585290854>'),
+			discord.SelectOption(label='Dank Payout Management', description='Manage Dank Payouts', emoji='<:level_roles:1123938667212312637>'),
 			discord.SelectOption(label='Dank Pool Access', description="Who all can access Server's Donation Pool", emoji='<:tgk_bank:1073920882130558987>'),
 			discord.SelectOption(label='Mafia Logs Setup', description='Log entire game', emoji='<:tgk_amongUs:1103542462628253726>'),
-			discord.SelectOption(label='Dank Payout Management', description='Manage Dank Payouts', emoji='<:level_roles:1123938667212312637>'),
-			# discord.SelectOption(label='Dank Grinders Manager', description='Manage Dank Grinders', emoji='<:tgk_cc:1150394902585290854>'),
-   			discord.SelectOption(label='Server Lockdown', description='Configure Lockdown Profiles', emoji='<:tgk_lock:1072851190213259375>'),
+			discord.SelectOption(label='Server Lockdown', description='Configure Lockdown Profiles', emoji='<:tgk_lock:1072851190213259375>'),
 			discord.SelectOption(label='Nat Changelogs', description='Get DMs for patch notes', emoji='<:tgk_entries:1124995375548338176>')
 		]
 		if default != -1:
@@ -95,74 +95,124 @@ class Serversettings_Dropdown(discord.ui.Select):
 
 	async def callback(self, interaction: discord.Interaction):
 		
-		if self.values[0] == "Dank Pool Access":
+		match self.values[0]:
 			
-			data = await interaction.client.dankSecurity.find(interaction.guild.id)
-			if data is None:
-				data = { 
-					"_id": interaction.guild.id, 
-					"event_manager": None, 
-					"whitelist": [], 
-					"quarantine": None, 
-					"enable_logging":False, 
-					"logs_channel": None
-				}
-				await interaction.client.dankSecurity.upsert(data)
-			if not (interaction.user.id == interaction.guild.owner.id or interaction.user.id in interaction.client.owner_ids):
-				embed = discord.Embed(
-					color=3092790,
-					title="Dank Pool Access",
-					description=f"- Only the server owner can configure this! \n- Contact {interaction.guild.owner.mention} if you need this changed."
-				)
-				self.view.stop()
-				nat_changelog_view = discord.ui.View()
-				nat_changelog_view.add_item(Serversettings_Dropdown(0))
-				await interaction.response.edit_message(embed=embed, view=nat_changelog_view)
-				nat_changelog_view.message = await interaction.original_response()
-			else:
-				users = f""
-				
-				if data['whitelist'] is None or len(data['whitelist']) == 0:
-					users += f"` - ` **Add users when?**\n"
+			case "Dank Pool Access":
+				data = await interaction.client.dankSecurity.find(interaction.guild.id)
+				if data is None:
+					data = { 
+						"_id": interaction.guild.id, 
+						"event_manager": None, 
+						"whitelist": [], 
+						"quarantine": None, 
+						"enable_logging":False, 
+						"logs_channel": None
+					}
+					await interaction.client.dankSecurity.upsert(data)
+				if not (interaction.user.id == interaction.guild.owner.id or interaction.user.id in interaction.client.owner_ids):
+					embed = discord.Embed(
+						color=3092790,
+						title="Dank Pool Access",
+						description=f"- Only the server owner can configure this! \n- Contact {interaction.guild.owner.mention} if you need this changed."
+					)
+					self.view.stop()
+					nat_changelog_view = discord.ui.View()
+					nat_changelog_view.add_item(Serversettings_Dropdown(2))
+					await interaction.response.edit_message(embed=embed, view=nat_changelog_view)
+					nat_changelog_view.message = await interaction.original_response()
 				else:
-					for member_id in data['whitelist']:
-						try: 
-							member = interaction.guild.get_member(int(member_id))
-							users += f"` - ` {member.mention}\n"
-						except:
-							data['whitelist'].remove(member_id)
-							await interaction.client.dankSecurity.upsert(data)
-							pass
-				event_manager = data['event_manager']
-				
-				event_manager_error = ''
-				if event_manager is None:
-					event_manager = f"**`None`**"
-				else:
-					event_manager = interaction.guild.get_role(int(event_manager))
-					if event_manager is not None:
-						if event_manager.position > interaction.guild.me.top_role.position:
-							event_manager_error = f"> The {event_manager.mention} role is higher than my top role. \n > I cannot remove it from **raiders**."
-						event_manager = f"**{event_manager.mention} (`{event_manager.id}`)**"
-					else:
-						data['event_manager'] = None
-						await interaction.client.dankSecurity.upsert(data)
-						event_manager = f"**`None`**"
-
+					users = f""
 					
-				quarantine = data['quarantine']
-
-				if quarantine is None:
-					quarantine = f"**`None`**"
-				else:
-					quarantine = interaction.guild.get_role(int(quarantine))
-					if quarantine is not None:
-						quarantine = f"**{quarantine.mention} (`{quarantine.id}`)**"
+					if data['whitelist'] is None or len(data['whitelist']) == 0:
+						users += f"` - ` **Add users when?**\n"
 					else:
-						data['quarantine'] = None
-						await interaction.client.dankSecurity.upsert(data)
+						for member_id in data['whitelist']:
+							try: 
+								member = interaction.guild.get_member(int(member_id))
+								users += f"` - ` {member.mention}\n"
+							except:
+								data['whitelist'].remove(member_id)
+								await interaction.client.dankSecurity.upsert(data)
+								pass
+					event_manager = data['event_manager']
+					
+					event_manager_error = ''
+					if event_manager is None:
+						event_manager = f"**`None`**"
+					else:
+						event_manager = interaction.guild.get_role(int(event_manager))
+						if event_manager is not None:
+							if event_manager.position > interaction.guild.me.top_role.position:
+								event_manager_error = f"> The {event_manager.mention} role is higher than my top role. \n > I cannot remove it from **raiders**."
+							event_manager = f"**{event_manager.mention} (`{event_manager.id}`)**"
+						else:
+							data['event_manager'] = None
+							await interaction.client.dankSecurity.upsert(data)
+							event_manager = f"**`None`**"
+
+						
+					quarantine = data['quarantine']
+
+					if quarantine is None:
 						quarantine = f"**`None`**"
-				
+					else:
+						quarantine = interaction.guild.get_role(int(quarantine))
+						if quarantine is not None:
+							quarantine = f"**{quarantine.mention} (`{quarantine.id}`)**"
+						else:
+							data['quarantine'] = None
+							await interaction.client.dankSecurity.upsert(data)
+							quarantine = f"**`None`**"
+					
+					channel = data['logs_channel']
+
+					if channel is None:
+						channel = f"**`None`**"
+					else:
+						channel = interaction.guild.get_channel(int(channel))
+						if channel is not None:
+							channel = f"**{channel.mention} (`{channel.name}`)**"
+						else:
+							data['logs_channel'] = None
+							await interaction.client.mafiaConfig.upsert(data)
+							channel = f"**`None`**"
+
+					embed = discord.Embed(
+						color=3092790,
+						title="Dank Pool Access"
+					)
+					embed.add_field(name="Following users are whitelisted:", value=f"{users}", inline=False)
+					embed.add_field(name="Event Manager Role:", value=f"{event_manager}", inline=False)
+					embed.add_field(name="Quarantine Role:", value=f"{quarantine}", inline=False)
+					embed.add_field(name="Logging Channel:", value=f"{channel}", inline=False)
+					if event_manager_error != '':
+						embed.add_field(name="<a:nat_warning:1062998119899484190> Warning: <a:nat_warning:1062998119899484190>", value=f"{event_manager_error}", inline=False)
+
+					self.view.stop()
+					nat_changelog_view =  Dank_Pool_Panel(interaction)
+
+					# Initialize the button
+					if data['enable_logging']:
+						nat_changelog_view.children[0].style = discord.ButtonStyle.green
+						nat_changelog_view.children[0].label = 'Logs Enabled'
+						nat_changelog_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
+					else:
+						nat_changelog_view.children[0].style = discord.ButtonStyle.red
+						nat_changelog_view.children[0].label = 'Logs Disabled'
+						nat_changelog_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
+
+					nat_changelog_view.add_item(Serversettings_Dropdown(2))
+					
+					await interaction.response.edit_message(embed=embed, view=nat_changelog_view)
+					nat_changelog_view.message = await interaction.original_response()
+
+			case "Mafia Logs Setup":
+
+				data = await interaction.client.mafiaConfig.find(interaction.guild.id)
+				if data is None:
+					data = {"_id": interaction.guild.id, "enable_logging":False, "logs_channel": None, "message_logs": []}
+					await interaction.client.mafiaConfig.upsert(data)
+
 				channel = data['logs_channel']
 
 				if channel is None:
@@ -178,242 +228,201 @@ class Serversettings_Dropdown(discord.ui.Select):
 
 				embed = discord.Embed(
 					color=3092790,
-					title="Dank Pool Access"
+					title="Mafia Logs Setup"
 				)
-				embed.add_field(name="Following users are whitelisted:", value=f"{users}", inline=False)
-				embed.add_field(name="Event Manager Role:", value=f"{event_manager}", inline=False)
-				embed.add_field(name="Quarantine Role:", value=f"{quarantine}", inline=False)
 				embed.add_field(name="Logging Channel:", value=f"{channel}", inline=False)
-				if event_manager_error != '':
-					embed.add_field(name="<a:nat_warning:1062998119899484190> Warning: <a:nat_warning:1062998119899484190>", value=f"{event_manager_error}", inline=False)
 
 				self.view.stop()
-				nat_changelog_view =  Dank_Pool_Panel(interaction)
+				mafia_view = Mafia_Panel(interaction , data)
 
 				# Initialize the button
 				if data['enable_logging']:
-					nat_changelog_view.children[0].style = discord.ButtonStyle.green
-					nat_changelog_view.children[0].label = 'Logs Enabled'
-					nat_changelog_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
+					mafia_view.children[0].style = discord.ButtonStyle.green
+					mafia_view.children[0].label = 'Logging Enabled'
+					mafia_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
 				else:
-					nat_changelog_view.children[0].style = discord.ButtonStyle.red
-					nat_changelog_view.children[0].label = 'Logs Disabled'
-					nat_changelog_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
+					mafia_view.children[0].style = discord.ButtonStyle.red
+					mafia_view.children[0].label = 'Logging Disabled'
+					mafia_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
 
-				nat_changelog_view.add_item(Serversettings_Dropdown(0))
-				
-				await interaction.response.edit_message(embed=embed, view=nat_changelog_view)
-				nat_changelog_view.message = await interaction.original_response()
+				mafia_view.add_item(Serversettings_Dropdown(3))
 
-		elif self.values[0] == "Mafia Logs Setup":
-
-			data = await interaction.client.mafiaConfig.find(interaction.guild.id)
-			if data is None:
-				data = {"_id": interaction.guild.id, "enable_logging":False, "logs_channel": None, "message_logs": []}
-				await interaction.client.mafiaConfig.upsert(data)
-
-			channel = data['logs_channel']
-
-			if channel is None:
-				channel = f"**`None`**"
-			else:
-				channel = interaction.guild.get_channel(int(channel))
-				if channel is not None:
-					channel = f"**{channel.mention} (`{channel.name}`)**"
-				else:
-					data['logs_channel'] = None
-					await interaction.client.mafiaConfig.upsert(data)
-					channel = f"**`None`**"
-
-			embed = discord.Embed(
-				color=3092790,
-				title="Mafia Logs Setup"
-			)
-			embed.add_field(name="Logging Channel:", value=f"{channel}", inline=False)
-
-			self.view.stop()
-			mafia_view = Mafia_Panel(interaction , data)
-
-			# Initialize the button
-			if data['enable_logging']:
-				mafia_view.children[0].style = discord.ButtonStyle.green
-				mafia_view.children[0].label = 'Logging Enabled'
-				mafia_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
-			else:
-				mafia_view.children[0].style = discord.ButtonStyle.red
-				mafia_view.children[0].label = 'Logging Disabled'
-				mafia_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
-
-			mafia_view.add_item(Serversettings_Dropdown(1))
-
-			await interaction.response.edit_message(embed=embed, view=mafia_view)
-			mafia_view.message = await interaction.original_response()
-
-		elif self.values[0] == "Dank Payout Management":
-			data = await interaction.client.payout_config.find(interaction.guild.id)
-   			
-			if data is None:
-				data = {
-						'_id': interaction.guild.id,
-						'queue_channel': None,
-						'pending_channel': None,
-						'payout_channel': None,
-						'manager_roles': [],
-						'event_manager_roles': [],
-						'log_channel': None,
-						'default_claim_time': 3600,
-						'express': False,
-						'enable_payouts': False,
-					}
-				await interaction.client.payout_config.insert(data)
-
-			embed = discord.Embed(title="Dank Payout Management", color=3092790)
-			
-			channel = interaction.guild.get_channel(data['pending_channel'])
-			if channel is None:
-				channel = f"`None`"
-			else:
-				channel = f"{channel.mention}"
-			embed.add_field(name="Claim Channel:", value=f"> {channel}", inline=True)
-
-			channel = interaction.guild.get_channel(data['queue_channel'])
-			if channel is None:
-				channel = f"`None`"
-			else:
-				channel = f"{channel.mention}"
-			embed.add_field(name="Queue Channel:", value=f"> {channel}", inline=True)
-
-			channel = interaction.guild.get_channel(data['payout_channel'])
-			if channel is None:
-				channel = f"`None`"
-			else:
-				channel = f"{channel.mention}"
-			embed.add_field(name="Payouts Channel:", value=f"> {channel}", inline=True)
-
-			channel = interaction.guild.get_channel(data['log_channel'])
-			if channel is None:
-				channel = f"`None`"
-			else:
-				channel = f"{channel.mention}"
-			embed.add_field(name="Log Channel:", value=f"> {channel}", inline=True)
-
-			embed.add_field(name="Claim Time:", value=f"> **{humanfriendly.format_timespan(data['default_claim_time'])}**", inline=True)
-
-			roles = data['manager_roles']
-			roles = [interaction.guild.get_role(role) for role in roles if interaction.guild.get_role(role) is not None]
-			roles = [role.mention for role in roles]
-			role = ", ".join(roles)
-			if len(roles) == 0 :
-				role = f"`None`"
-			embed.add_field(name="Payout Managers (Admin):", value=f"> {role}", inline=False)
-
-			roles = data['event_manager_roles']
-			roles = [interaction.guild.get_role(role) for role in roles if interaction.guild.get_role(role) is not None]
-			roles = [role.mention for role in roles]
-			role = ", ".join(roles)
-			if len(roles) == 0:
-				role = f"`None`"
-			embed.add_field(name="Staff Roles (Queue Payouts):", value=f"> {role}", inline=False)
-			
-			self.view.stop()
-			payouts_view = Payouts_Panel(interaction , data)
-
-			# Initialize the button
-			if data['enable_payouts']:
-				payouts_view.children[0].style = discord.ButtonStyle.green
-				payouts_view.children[0].label = 'Module Enabled'
-				payouts_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
-			else:
-				payouts_view.children[0].style = discord.ButtonStyle.red
-				payouts_view.children[0].label = 'Module Disabled'
-				payouts_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
-
-			payouts_view.add_item(Serversettings_Dropdown(2))
-
-			await interaction.response.edit_message(embed=embed, view=payouts_view)
-			payouts_view.message = await interaction.original_response()
-  
-		elif self.values[0] == "Server Lockdown":
-
-			data = await interaction.client.lockdown.find(interaction.guild.id)
-			if not data:
-				data = {"_id": interaction.guild.id, "lockdown_profiles": []}
-				await interaction.client.lockdown.upsert(data)
-
-			if data['lockdown_profiles'] is None or len(data['lockdown_profiles']) == 0:
-				profiles = f"` - ` **Add lockdown protocols when?**\n"
-			else:
-				profiles = ""
-				for profile in data['lockdown_profiles']:
-					profiles += f"` - ` **{profile.title()}**\n"
-
-			embed = discord.Embed(
-				color=3092790,
-				title="Configure Server Lockdown"
-			)
-			embed.add_field(name="Declared protocols are:", value=f"{profiles}", inline=False)
-			
-			self.view.stop()
-			lockdown_profile_view =  Lockdown_Profile_Panel(interaction)			
-			lockdown_profile_view.add_item(Serversettings_Dropdown(3))
-			await interaction.response.edit_message(embed=embed, view=lockdown_profile_view)
-			lockdown_profile_view.message = await interaction.original_response()
-
-			await interaction.message.edit(embed=embed, view=lockdown_profile_view)
-			lockdown_profile_view.message = await interaction.original_response()
+				await interaction.response.edit_message(embed=embed, view=mafia_view)
+				mafia_view.message = await interaction.original_response()
 		
-		elif self.values[0] == "Nat Changelogs":
-
-			if not (interaction.user.id == interaction.guild.owner.id):
-
-				embed = discord.Embed(
-					color=3092790,
-					title="Nat Changelogs",
-					description=f"- This setting is restricted to server owners only!"
-				)
-				self.view.stop()
-				nat_changelog_view = discord.ui.View()
-				nat_changelog_view.add_item(Serversettings_Dropdown(4))
-				await interaction.response.edit_message(embed=embed, view=nat_changelog_view)
-				nat_changelog_view.message = await interaction.original_response()
-			
-			else:
-
-				data = await interaction.client.userSettings.find(interaction.user.id)
+			case "Dank Payout Management":
+				data = await interaction.client.payout_config.find(interaction.guild.id)
+				
 				if data is None:
-					data = {"_id": interaction.user.id, "changelog_dms": True}
-					await interaction.client.userSettings.upsert(data)
-				if 'changelog_dms' not in data:
-					data['changelog_dms'] = True
-					await interaction.client.userSettings.upsert(data)
+					data = {
+							'_id': interaction.guild.id,
+							'queue_channel': None,
+							'pending_channel': None,
+							'payout_channel': None,
+							'manager_roles': [],
+							'event_manager_roles': [],
+							'log_channel': None,
+							'default_claim_time': 3600,
+							'express': False,
+							'enable_payouts': False,
+						}
+					await interaction.client.payout_config.insert(data)
 
-				embed = discord.Embed(
-					color=3092790,
-					title="Nat Changelogs",
-					description= 	f"- In case you own multiple servers: \n - Settings will sync across all servers.\n - Will be dm'ed once per patch note.\n"
-									f"- Join our bot's [`support server`](https://discord.gg/C44Hgr9nDQ) for latest patch notes!"
-				)
+				embed = discord.Embed(title="Dank Payout Management", color=3092790)
+				
+				channel = interaction.guild.get_channel(data['pending_channel'])
+				if channel is None:
+					channel = f"`None`"
+				else:
+					channel = f"{channel.mention}"
+				embed.add_field(name="Claim Channel:", value=f"> {channel}", inline=True)
+
+				channel = interaction.guild.get_channel(data['queue_channel'])
+				if channel is None:
+					channel = f"`None`"
+				else:
+					channel = f"{channel.mention}"
+				embed.add_field(name="Queue Channel:", value=f"> {channel}", inline=True)
+
+				channel = interaction.guild.get_channel(data['payout_channel'])
+				if channel is None:
+					channel = f"`None`"
+				else:
+					channel = f"{channel.mention}"
+				embed.add_field(name="Payouts Channel:", value=f"> {channel}", inline=True)
+
+				channel = interaction.guild.get_channel(data['log_channel'])
+				if channel is None:
+					channel = f"`None`"
+				else:
+					channel = f"{channel.mention}"
+				embed.add_field(name="Log Channel:", value=f"> {channel}", inline=True)
+
+				embed.add_field(name="Claim Time:", value=f"> **{humanfriendly.format_timespan(data['default_claim_time'])}**", inline=True)
+
+				roles = data['manager_roles']
+				roles = [interaction.guild.get_role(role) for role in roles if interaction.guild.get_role(role) is not None]
+				roles = [role.mention for role in roles]
+				role = ", ".join(roles)
+				if len(roles) == 0 :
+					role = f"`None`"
+				embed.add_field(name="Payout Managers (Admin):", value=f"> {role}", inline=False)
+
+				roles = data['event_manager_roles']
+				roles = [interaction.guild.get_role(role) for role in roles if interaction.guild.get_role(role) is not None]
+				roles = [role.mention for role in roles]
+				role = ", ".join(roles)
+				if len(roles) == 0:
+					role = f"`None`"
+				embed.add_field(name="Staff Roles (Queue Payouts):", value=f"> {role}", inline=False)
 				
 				self.view.stop()
-				nat_changelogs_view =  Changelogs_Panel(interaction, data)
+				payouts_view = Payouts_Panel(interaction , data)
 
 				# Initialize the button
-				if data['changelog_dms']:
-					nat_changelogs_view.children[0].style = discord.ButtonStyle.green
-					nat_changelogs_view.children[0].label = "Yes, I would love to know what's new!"
-					nat_changelogs_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
+				if data['enable_payouts']:
+					payouts_view.children[0].style = discord.ButtonStyle.green
+					payouts_view.children[0].label = 'Module Enabled'
+					payouts_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
 				else:
-					nat_changelogs_view.children[0].style = discord.ButtonStyle.red
-					nat_changelogs_view.children[0].label = 'No, I follow the changelogs channel.'
-					nat_changelogs_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
+					payouts_view.children[0].style = discord.ButtonStyle.red
+					payouts_view.children[0].label = 'Module Disabled'
+					payouts_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
 
-				nat_changelogs_view.add_item(Serversettings_Dropdown(4))
+				payouts_view.add_item(Serversettings_Dropdown(1))
 
-				await interaction.response.edit_message(embed=embed, view=nat_changelogs_view)
-				nat_changelogs_view.message = await interaction.original_response()
+				await interaction.response.edit_message(embed=embed, view=payouts_view)
+				payouts_view.message = await interaction.original_response()
+  
+			case "Server Lockdown":
 
-		else:
-			await interaction.response.send_message(f'Invaid Interaction',ephemeral=True)
+				data = await interaction.client.lockdown.find(interaction.guild.id)
+				if not data:
+					data = {"_id": interaction.guild.id, "lockdown_profiles": []}
+					await interaction.client.lockdown.upsert(data)
+
+				if data['lockdown_profiles'] is None or len(data['lockdown_profiles']) == 0:
+					profiles = f"` - ` **Add lockdown protocols when?**\n"
+				else:
+					profiles = ""
+					for profile in data['lockdown_profiles']:
+						profiles += f"` - ` **{profile.title()}**\n"
+
+				embed = discord.Embed(
+					color=3092790,
+					title="Configure Server Lockdown"
+				)
+				embed.add_field(name="Declared protocols are:", value=f"{profiles}", inline=False)
+				
+				self.view.stop()
+				lockdown_profile_view =  Lockdown_Profile_Panel(interaction)			
+				lockdown_profile_view.add_item(Serversettings_Dropdown(4))
+				await interaction.response.edit_message(embed=embed, view=lockdown_profile_view)
+				lockdown_profile_view.message = await interaction.original_response()
+
+				await interaction.message.edit(embed=embed, view=lockdown_profile_view)
+				lockdown_profile_view.message = await interaction.original_response()
+			
+			case "Nat Changelogs":
+
+				if not (interaction.user.id == interaction.guild.owner.id):
+
+					embed = discord.Embed(
+						color=3092790,
+						title="Nat Changelogs",
+						description=f"- This setting is restricted to server owners only!"
+					)
+					self.view.stop()
+					nat_changelog_view = discord.ui.View()
+					nat_changelog_view.add_item(Serversettings_Dropdown(5))
+					await interaction.response.edit_message(embed=embed, view=nat_changelog_view)
+					nat_changelog_view.message = await interaction.original_response()
+				
+				else:
+
+					data = await interaction.client.userSettings.find(interaction.user.id)
+					if data is None:
+						data = {"_id": interaction.user.id, "changelog_dms": True}
+						await interaction.client.userSettings.upsert(data)
+					if 'changelog_dms' not in data:
+						data['changelog_dms'] = True
+						await interaction.client.userSettings.upsert(data)
+
+					embed = discord.Embed(
+						color=3092790,
+						title="Nat Changelogs",
+						description= 	f"- In case you own multiple servers: \n - Settings will sync across all servers.\n - Will be dm'ed once per patch note.\n"
+										f"- Join our bot's [`support server`](https://discord.gg/C44Hgr9nDQ) for latest patch notes!"
+					)
+					
+					self.view.stop()
+					nat_changelogs_view =  Changelogs_Panel(interaction, data)
+
+					# Initialize the button
+					if data['changelog_dms']:
+						nat_changelogs_view.children[0].style = discord.ButtonStyle.green
+						nat_changelogs_view.children[0].label = "Yes, I would love to know what's new!"
+						nat_changelogs_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
+					else:
+						nat_changelogs_view.children[0].style = discord.ButtonStyle.red
+						nat_changelogs_view.children[0].label = 'No, I follow the changelogs channel.'
+						nat_changelogs_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
+
+					nat_changelogs_view.add_item(Serversettings_Dropdown(4))
+
+					await interaction.response.edit_message(embed=embed, view=nat_changelogs_view)
+					nat_changelogs_view.message = await interaction.original_response()
+
+			case _:
+				self.view.stop()
+				nat_changelog_view = discord.ui.View()
+				nat_changelog_view.add_item(Serversettings_Dropdown(0))
+				embed = await get_invisible_embed(f"<:tgk_activeDevelopment:1088434070666612806> **|** This module is under development...")
+				await interaction.response.edit_message( 
+					embed=embed, 
+					view=nat_changelog_view
+				)
+				nat_changelog_view.message = await interaction.original_response()
 
 async def setup(bot):
 	await bot.add_cog(serverUtils(bot))
