@@ -507,6 +507,8 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
             embed.description += f"**Channel:** <#{data['channel']}>\n"
             embed.description += f"**Host:** <@{data['set_by']}>\n"
             embed.description += f"* Note: To skip this payout, type `skip`, `next` or `pass`"
+            if 'claimed_at' in data.keys():
+                embed.description += f"\n**Claimed At:** <t:{int(data['claimed_at'].timestamp())}:R>"
             cmd = ""
             if not data['item']:
                 cmd += f"/serverevents payout user:{data['winner']} quantity:{data['prize']}"

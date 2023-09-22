@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import re
 import discord
 from discord import Interaction, app_commands
@@ -384,6 +385,7 @@ class Payout_claim(discord.ui.View):
 		msg = await queue_channel.send(embed=queue_embed, view=view)
 		pending_data = data
 		pending_data['_id'] = msg.id
+		pending_data['claimed_at'] = datetime.datetime.now()
 		await interaction.client.payout_pending.insert(pending_data)
 		await interaction.client.payout_queue.delete(interaction.message.id)
 
