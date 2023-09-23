@@ -4,6 +4,7 @@ import discord
 import datetime
 import asyncio
 import humanfriendly
+from pymongo.results import DeleteResult
 from discord import app_commands, Interaction
 from discord.ext import commands, tasks
 from utils.db import Document
@@ -542,7 +543,11 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
                     embed.description = embed.description.replace("`Awaiting Payment`", "`Successfuly Paid`")
                     embed.description = embed.description.replace("`Initiated`", "`Successfuly Paid`")
 
-                await self.bot.payout_pending.delete(data['_id'])
+                deleted: DeleteResult = await self.bot.payout_pending.delete(data['_id'])
+                if not deleted.acknowledged or deleted.deleted_count != 1:
+                    await self.bot.payout_pending.delete(data)
+                    await self.bot.payout_pending.delete(data['_id'])
+
                 await msg.add_reaction("<:tgk_active:1082676793342951475>")
                 await winner_message.edit(embed=embed, view=view, content=None)
                 self.bot.dispatch("more_pending", data)
