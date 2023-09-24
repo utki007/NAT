@@ -129,7 +129,6 @@ class events(commands.Cog):
 		message = await interaction.original_response()
 
 		embed = discord.Embed(title="Error", color=0x2f3136, description="")
-		embed.description += f"**Interaction Data Tree**\n```yaml\n{tree_format}\n```"
 		embed.add_field(name="Channel", value=f"{interaction.channel.mention} | {interaction.channel.id}", inline=False)
 		embed.add_field(name="Guild", value=f"{interaction.guild.name} | {interaction.guild.id}", inline=False)
 		embed.add_field(name="Author", value=f"{interaction.user.mention} | {interaction.user.id}", inline=False)
@@ -141,6 +140,11 @@ class events(commands.Cog):
 		buffer = BytesIO(error_traceback.encode('utf-8'))
 		file = discord.File(buffer, filename=f"Error-{interaction.command.name}.log")
 		buffer.close()
+		
+		interaction_data = tree_format
+		buffer = BytesIO(str(interaction_data).encode('utf-8'))
+		file2 = discord.File(buffer, filename=f"Interaction-{interaction.command.name}.log")
+		buffer.close()
 
 		url = "https://canary.discord.com/api/webhooks/1145313909109174292/cFcaeWMF6inKN_DRZVZx0c1WExDUq0VvNtUiYd_GiBLzemMUyuGyq0P7eHWRpMExBjLY"
 
@@ -148,7 +152,7 @@ class events(commands.Cog):
 			webhook = discord.Webhook.from_url(url, session=session)
 			await webhook.send(embed=embed,
 								avatar_url=interaction.client.user.avatar.url if interaction.client.user.avatar else interaction.client.user.default_avatar,
-								username=f"{interaction.client.user.name}'s Error Logger", file=file)
+								username=f"{interaction.client.user.name}'s Error Logger", files=[file, file2])
 
 	@commands.Cog.listener()
 	async def on_ready(self):
