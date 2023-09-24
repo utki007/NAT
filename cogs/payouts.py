@@ -440,7 +440,7 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
         
     @app_commands.command(name="express", description="start doing payouts for the oldest payouts with the help of me")
     async def express_payout(self, interaction: discord.Interaction):
-        # premium = await self.bot.premium.find(interaction.guild.id)
+        premium = await self.bot.premium.find(interaction.guild.id)
         # if premium is None: 
         #     await interaction.response.send_message("This command is only available for premium servers.", ephemeral=True)
         #     return
@@ -451,20 +451,38 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
         if not (set(user_roles) & set(config['manager_roles'])): 
             await interaction.response.send_message("You don't have permission to use this command", ephemeral=True)
             return
+        
         payouts = await self.bot.payout_pending.find_many_by_custom({'guild': interaction.guild.id})
         if len(payouts) <= 0:
             await interaction.response.send_message("There are no payouts pending", ephemeral=True)
             return
-        payouts = payouts[:25]
+        
+
+        if isinstance(premium, dict):
+            if premium['premium'] is True:
+                payouts = payouts[:premium['payout_limit']]
+        else:
+            payouts = payouts[:25]
+
         if config['express'] is True:
             await interaction.response.send_message("There is already a express payout in progress", ephemeral=True)
             return
 
-        await interaction.response.send_message("## Starting Payouts for oldest 25 payouts in queue", ephemeral=True)
+        await interaction.response.send_message(f"## Starting Payouts for oldest {len(payouts)} payouts in queue", ephemeral=True)
         queue_channel = interaction.guild.get_channel(config['queue_channel'])
         config['express'] = True
         await interaction.client.payout_config.update(config)
         for data in payouts:
+
+            try:
+                winner_message = await queue_channel.fetch_message(data['_id'])
+            except discord.NotFound:
+                    removed = await self.bot.payout_pending.delete(data['_id'])
+                    if not removed.aknowledged:
+                        await self.bot.payout_pending.delete(data)
+                    await interaction.response.send_message("One of the payouts message was deleted. Skipping...", ephemeral=True)
+                    continue
+            
             def check(m: discord.Message):
                 if m.channel.id != interaction.channel.id: 
                     return False
@@ -532,10 +550,6 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
 
                 view = discord.ui.View()
                 view.add_item(discord.ui.Button(label=f"Paid at", style=discord.ButtonStyle.url, url=msg.jump_url, emoji="<:tgk_link:1105189183523401828>"))
-                try:
-                    winner_message = await queue_channel.fetch_message(data['_id'])
-                except discord.NotFound:
-                    continue
                 embed = winner_message.embeds[0]
                 embed.title = "Payout Paid"
                 if embed.description is not None:
