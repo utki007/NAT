@@ -348,7 +348,7 @@ async def on_message_edit(before, after):
 		return
 
 @bot.event
-async def on_audit_log_entry_create(entry):
+async def on_audit_log_entry_create(entry: discord.AuditLogEntry):
 	match entry.action:
 		case discord.AuditLogAction.member_role_update:
 			if entry.changes.after.roles:
@@ -372,7 +372,8 @@ async def on_audit_log_entry_create(entry):
 							role = member.guild.get_role(data['quarantine'])
 						try:
 							await quarantineUser(bot, member, role, f"{member.name}(ID: {member.id}) has made an unauthorized attempt to get Dank Manager role.")	
-							await quarantineUser(bot, added_by, role, f"{added_by.name}(ID: {added_by.id}) has made an unauthorized attempt to give Dank Manager role to {member.name} (ID: {member.id}).")					
+							if added_by.id != member.guild.id:								
+								await quarantineUser(bot, added_by, role, f"{added_by.name}(ID: {added_by.id}) has made an unauthorized attempt to give Dank Manager role to {member.name} (ID: {member.id}).")					
 						except:
 							pass
 						
