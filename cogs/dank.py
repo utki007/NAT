@@ -314,6 +314,9 @@ class dank(commands.GroupCog, name="adventure", description="Get Fun Adventure S
 				name = user.display_name
 			leaderboard[index] = {'user': user, 'name': name, 'amount': amount}
 
+
+		if None in leaderboard.values():
+			return await interaction.followup.send(embed= await get_invisible_embed(f'Not enough players have played adventure today!'))
 		
 		image = await self.create_adv_top3(data=leaderboard, total_users=len(data), user_position=user_position)
 
