@@ -372,7 +372,7 @@ async def on_audit_log_entry_create(entry: discord.AuditLogEntry):
 							role = member.guild.get_role(data['quarantine'])
 						try:
 							await quarantineUser(bot, member, role, f"{member.name}(ID: {member.id}) has made an unauthorized attempt to get Dank Manager role.")	
-							if added_by.id != member.guild.id:								
+							if added_by.id != member.guild.owner.id:								
 								await quarantineUser(bot, added_by, role, f"{added_by.name}(ID: {added_by.id}) has made an unauthorized attempt to give Dank Manager role to {member.name} (ID: {member.id}).")					
 						except:
 							pass
