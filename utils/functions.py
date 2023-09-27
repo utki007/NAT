@@ -45,11 +45,10 @@ async def unquarantineUser(bot, user: discord.Member, quarantineRole: discord.Ro
     if data:
         if str(user.id) in data['users']:
             roles = [user.guild.get_role(role_id) for role_id in data['users'][str(user.id)]]
-            roles.append(quarantineRole)
-            roles_to_add = [role for role in roles if role.position < user.guild.me.top_role.position]
-            roles_to_add = [role for role in user.roles if role not in [user.guild.default_role]]
-            roles_to_add = [role for role in roles_to_add if role is not None]
-            await user.edit(roles=set(roles_to_add), reason=reason)
+            roles.extend([role for role in user.roles if role not in [user.guild.default_role, quarantineRole]])
+            roles = [role for role in roles if role.position < user.guild.me.top_role.position]
+            roles = [role for role in roles if role is not None]
+            await user.edit(roles=set(roles), reason=reason)
             del data['users'][str(user.id)]
             await bot.quarantinedUsers.upsert(data)
             return True
