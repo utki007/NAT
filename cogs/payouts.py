@@ -215,6 +215,8 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
         if queue_channel is None:
             return await interaction.response.send_message("Oops! Can't find that queue channel!\nDouble-check that queue channel is vaild", ephemeral=True)
 
+        if len(winners) == 0:
+            return await interaction.response.send_message("Oops! Can't find any winners!\nDouble-check that winners are vaild", ephemeral=True)
 
         confrim_embed = discord.Embed(title="Payout confirmation", description="", color=0x2b2d31)
         
