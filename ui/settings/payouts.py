@@ -90,16 +90,16 @@ class Payouts_Panel(discord.ui.View):
 		if data['enable_payouts']:
 			data['enable_payouts'] = False
 			await interaction.client.payout_config.upsert(data)
-			button.style = discord.ButtonStyle.red
+			button.style = discord.ButtonStyle.gray
 			button.label = 'Module Disabled'
-			button.emoji = "<:tgk_deactivated:1082676877468119110>"
+			button.emoji = "<:toggle_off:1123932890993020928>"
 			await interaction.response.edit_message(view=self)
 		else:
 			data['enable_payouts'] = True
 			await interaction.client.payout_config.upsert(data)
-			button.style = discord.ButtonStyle.green
+			button.style = discord.ButtonStyle.gray
 			button.label = 'Module Enabled'
-			button.emoji = "<:tgk_active:1082676793342951475>"
+			button.emoji = "<:toggle_on:1123932825956134912>"
 			await interaction.response.edit_message(view=self)
 	
 	@discord.ui.button(label="Claim Channel", style=discord.ButtonStyle.gray, emoji="<:tgk_channel:1073908465405268029>",row=1)

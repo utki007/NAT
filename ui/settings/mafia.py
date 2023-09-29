@@ -46,17 +46,17 @@ class Mafia_Panel(discord.ui.View):
 			data['enable_logging'] = False
 			await interaction.client.mafiaConfig.upsert(data)
 			await update_mafia_embed(interaction, data)
-			button.style = discord.ButtonStyle.red
+			button.style = discord.ButtonStyle.gray
 			button.label = 'Logging Disabled'
-			button.emoji = "<:tgk_deactivated:1082676877468119110>"
+			button.emoji = "<:toggle_off:1123932890993020928>"
 			await interaction.response.edit_message(view=self)
 		else:
 			data['enable_logging'] = True
 			await interaction.client.mafiaConfig.upsert(data)
 			await update_mafia_embed(interaction, data)
-			button.style = discord.ButtonStyle.green
+			button.style = discord.ButtonStyle.gray
 			button.label = 'Logging Enabled'
-			button.emoji = "<:tgk_active:1082676793342951475>"
+			button.emoji = "<:toggle_on:1123932825956134912>"
 			await interaction.response.edit_message(view=self)
 	
 	@discord.ui.button(label="Add/Edit Logs Channel", style=discord.ButtonStyle.gray, emoji="<:tgk_channel:1073908465405268029>",row=1)
