@@ -21,6 +21,7 @@ from utils.views.ui import *
 from ui.settings.lockdown import *
 from utils.views.paginator import Paginator
 from itertools import islice
+from ui.settings.voiceView import Voice_config
 
 def chunk(it, size):
 	it = iter(it)
@@ -87,7 +88,8 @@ class Serversettings_Dropdown(discord.ui.Select):
 			discord.SelectOption(label='Dank Pool Access', description="Who all can access Server's Donation Pool", emoji='<:tgk_bank:1073920882130558987>'),
 			discord.SelectOption(label='Mafia Logs Setup', description='Log entire game', emoji='<:tgk_amongUs:1103542462628253726>'),
 			discord.SelectOption(label='Server Lockdown', description='Configure Lockdown Profiles', emoji='<:tgk_lock:1072851190213259375>'),
-			discord.SelectOption(label='Nat Changelogs', description='Get DMs for patch notes', emoji='<:tgk_entries:1124995375548338176>')
+			discord.SelectOption(label="Private Voice", description='Create a private voice channel', emoji='<:tgk_voice:1156454028109168650>'),
+			discord.SelectOption(label='Nat Changelogs', description='Get DMs for patch notes', emoji='<:tgk_entries:1124995375548338176>'),
 		]
 		if default != -1:
 			options[default].default = True
@@ -353,6 +355,34 @@ class Serversettings_Dropdown(discord.ui.Select):
 
 				await interaction.message.edit(embed=embed, view=lockdown_profile_view)
 				lockdown_profile_view.message = await interaction.original_response()
+
+			case "Private Voice":
+				data = await interaction.client.vc_config.find(interaction.guild.id)
+				if not data:
+					data = {
+						'_id': interaction.guild.id,
+						'join_create': None,
+						'enabled': False,
+					}
+					await interaction.client.vc_config.insert(data)
+				embed = discord.Embed(
+					color=3092790,
+					title="Private Voice"
+				)
+				channel = interaction.guild.get_channel(data['join_create'])
+				if channel is None:
+					channel = f"`None`"
+				else:
+					channel = f"{channel.mention}"
+				embed.add_field(name="Join to create:", value=f"{channel}", inline=False)
+				self.view.stop()
+				voice_view = Voice_config(interaction.user , data)
+				voice_view.add_item(Serversettings_Dropdown(5))
+
+				await interaction.response.edit_message(embed=embed, view=voice_view)
+				voice_view.message = await interaction.original_response()
+
+				pass
 			
 			case "Nat Changelogs":
 
@@ -365,7 +395,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 					)
 					self.view.stop()
 					nat_changelog_view = discord.ui.View()
-					nat_changelog_view.add_item(Serversettings_Dropdown(5))
+					nat_changelog_view.add_item(Serversettings_Dropdown(6))
 					await interaction.response.edit_message(embed=embed, view=nat_changelog_view)
 					nat_changelog_view.message = await interaction.original_response()
 				
