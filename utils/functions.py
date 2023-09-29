@@ -46,7 +46,10 @@ async def unquarantineUser(bot, user: discord.Member, quarantineRole: discord.Ro
         guild: discord.Guild = user.guild
         user_data = data['users'][str(user.id)]
         roles: list[discord.Role] = []
+        pool_data = await bot.dankSecurity.find(user.guild.id)
+
         for role in user_data:
+            if role == pool_data['event_manager']: continue
             role = guild.get_role(role)
             if isinstance(role, discord.Role): roles.append(role)
         
@@ -58,7 +61,7 @@ async def unquarantineUser(bot, user: discord.Member, quarantineRole: discord.Ro
             user_roles = [role for role in user.roles if role not in [user.guild.default_role, quarantineRole]]
         else:
             user_roles = [role for role in user.roles if role not in [user.guild.default_role]]
-
+                
         await user.edit(roles=set(roles_to_add), reason=reason)
 
         await bot.quarantinedUsers.upsert(data)

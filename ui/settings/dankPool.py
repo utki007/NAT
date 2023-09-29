@@ -77,31 +77,37 @@ async def update_pool_embed(interaction: Interaction, data: dict):
 	await interaction.message.edit(embed=embed)
 
 class Dank_Pool_Panel(discord.ui.View):
-	def __init__(self, interaction: discord.Interaction):
+	def __init__(self, interaction: discord.Interaction, data: dict, message: discord.Message=None):
 		super().__init__(timeout=180)
 		self.interaction = interaction
 		self.message = None #req for disabling buttons after timeout
+		self.data = data
+		if self.data['enabled'] is True:
+			self.children[0].label = 'Module Enabled'
+			self.children[0].style = discord.ButtonStyle.gray
+			self.children[0].emoji = "<:toggle_on:1123932825956134912>"
+		else:
+			self.children[0].label = 'Module Disabled'
+			self.children[0].style = discord.ButtonStyle.gray
+			self.children[0].emoji = "<:toggle_off:1123932890993020928>"
 
 	
-	@discord.ui.button(label='toggle_button_label' ,row=1)
+	@discord.ui.button(label='Module' ,row=1)
 	async def toggle(self, interaction: discord.Interaction, button: discord.ui.Button):
 		data = await interaction.client.dankSecurity.find(interaction.guild.id)
-		if data['enable_logging']:
-			data['enable_logging'] = False
-			await interaction.client.dankSecurity.upsert(data)
-			await update_pool_embed(interaction, data)
-			button.style = discord.ButtonStyle.red
-			button.label = 'Logs Disabled'
-			button.emoji = "<:tgk_deactivated:1082676877468119110>"
-			await interaction.response.edit_message(view=self)
+		if data['enabled'] is True:
+			data['enabled'] = False
+			button.label = 'Module Disabled'
+			button.style = discord.ButtonStyle.gray
+			button.emoji = "<:toggle_off:1123932890993020928>"
 		else:
-			data['enable_logging'] = True
-			await interaction.client.dankSecurity.upsert(data)
-			await update_pool_embed(interaction, data)
-			button.style = discord.ButtonStyle.green
-			button.label = 'Logs Enabled'
-			button.emoji = "<:tgk_active:1082676793342951475>"
-			await interaction.response.edit_message(view=self)
+			data['enabled'] = True
+			button.label = 'Module Enabled'
+			button.style = discord.ButtonStyle.gray
+			button.emoji = "<:toggle_on:1123932825956134912>"
+		await interaction.client.dankSecurity.upsert(data)
+		await update_pool_embed(self.interaction, data)
+		await interaction.response.edit_message(view=self)
 	
 	@discord.ui.button(label="Logging Channel", style=discord.ButtonStyle.gray, emoji="<:tgk_channel:1073908465405268029>",row=1)
 	async def add_logs(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -179,10 +185,9 @@ class Dank_Pool_Panel(discord.ui.View):
 		return True
 
 	async def on_timeout(self):
-		for button in self.children:
-			button.disabled = True
-		
-		await self.message.edit(view=self)
+		for button in self.children:button.disabled = True
+		try:await self.message.edit(view=self)
+		except:pass
 
 class Dank_Pool_Whitelist_User(discord.ui.View): 
 	def __init__(self, interaction: discord.Interaction):

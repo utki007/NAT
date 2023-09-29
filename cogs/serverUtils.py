@@ -106,7 +106,8 @@ class Serversettings_Dropdown(discord.ui.Select):
 						"whitelist": [], 
 						"quarantine": None, 
 						"enable_logging":False, 
-						"logs_channel": None
+						"logs_channel": None,
+						"enabled": False
 					}
 					await interaction.client.dankSecurity.upsert(data)
 				if not (interaction.user.id == interaction.guild.owner.id or interaction.user.id in interaction.client.owner_ids):
@@ -189,17 +190,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 						embed.add_field(name="<a:nat_warning:1062998119899484190> Warning: <a:nat_warning:1062998119899484190>", value=f"{event_manager_error}", inline=False)
 
 					self.view.stop()
-					nat_changelog_view =  Dank_Pool_Panel(interaction)
-
-					# Initialize the button
-					if data['enable_logging']:
-						nat_changelog_view.children[0].style = discord.ButtonStyle.green
-						nat_changelog_view.children[0].label = 'Logs Enabled'
-						nat_changelog_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
-					else:
-						nat_changelog_view.children[0].style = discord.ButtonStyle.red
-						nat_changelog_view.children[0].label = 'Logs Disabled'
-						nat_changelog_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
+					nat_changelog_view =  Dank_Pool_Panel(interaction, data)
 
 					nat_changelog_view.add_item(Serversettings_Dropdown(2))
 					
@@ -237,13 +228,13 @@ class Serversettings_Dropdown(discord.ui.Select):
 
 				# Initialize the button
 				if data['enable_logging']:
-					mafia_view.children[0].style = discord.ButtonStyle.green
+					mafia_view.children[0].style = discord.ButtonStyle.gray
 					mafia_view.children[0].label = 'Logging Enabled'
-					mafia_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
+					mafia_view.children[0].emoji = "<:toggle_on:1123932825956134912>"
 				else:
-					mafia_view.children[0].style = discord.ButtonStyle.red
+					mafia_view.children[0].style = discord.ButtonStyle.gray
 					mafia_view.children[0].label = 'Logging Disabled'
-					mafia_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
+					mafia_view.children[0].emoji = "<:toggle_off:1123932890993020928>"
 
 				mafia_view.add_item(Serversettings_Dropdown(3))
 
@@ -321,13 +312,13 @@ class Serversettings_Dropdown(discord.ui.Select):
 
 				# Initialize the button
 				if data['enable_payouts']:
-					payouts_view.children[0].style = discord.ButtonStyle.green
+					payouts_view.children[0].style = discord.ButtonStyle.gray
 					payouts_view.children[0].label = 'Module Enabled'
-					payouts_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
+					payouts_view.children[0].emoji = "<:toggle_on:1123932825956134912>"
 				else:
-					payouts_view.children[0].style = discord.ButtonStyle.red
+					payouts_view.children[0].style = discord.ButtonStyle.gray
 					payouts_view.children[0].label = 'Module Disabled'
-					payouts_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
+					payouts_view.children[0].emoji = "<:toggle_off:1123932890993020928>"
 
 				payouts_view.add_item(Serversettings_Dropdown(1))
 
@@ -408,7 +399,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 						nat_changelogs_view.children[0].label = 'No, I follow the changelogs channel.'
 						nat_changelogs_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
 
-					nat_changelogs_view.add_item(Serversettings_Dropdown(4))
+					nat_changelogs_view.add_item(Serversettings_Dropdown(6))
 
 					await interaction.response.edit_message(embed=embed, view=nat_changelogs_view)
 					nat_changelogs_view.message = await interaction.original_response()

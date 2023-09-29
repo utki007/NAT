@@ -128,6 +128,7 @@ async def on_message(message):
 					data = await bot.dankSecurity.find(message.guild.id)
 					member = message.interaction.user
 					if data:
+						if data['enabled'] is False: return
 						if member.id not in data['whitelist'] and member.id != member.guild.owner.id: 
 							await message.delete()
 							try:
@@ -221,7 +222,7 @@ async def on_message_edit(before, after):
 					managerRole = int(idList[0])
 					data = await bot.dankSecurity.find(message.guild.id)
 					if not data:
-						data = {"_id": message.guild.id, "event_manager": None, "whitelist": [], "quarantine": None}
+						data = {"_id": message.guild.id, "event_manager": None, "whitelist": [], "quarantine": None, "enabled": False}
 					if data['event_manager'] != managerRole:
 						data['event_manager'] = managerRole
 						await bot.dankSecurity.upsert(data)
@@ -361,6 +362,7 @@ async def on_audit_log_entry_create(entry: discord.AuditLogEntry):
 				data = await bot.dankSecurity.find(entry.target.guild.id)
 
 				if data:
+					if data['enabled'] is False: return
 					event_manager = member.guild.get_role(data['event_manager'])
 					if event_manager is not None and event_manager in roles and member.id not in data['whitelist'] and member.id != member.guild.owner.id: 
 						try:
