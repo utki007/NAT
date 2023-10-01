@@ -444,8 +444,6 @@ class Payout_Buttton(discord.ui.View):
 		if view.value is None or view.value is False: 
 			return await interaction.delete_original_response()
 		data = await interaction.client.payout_pending.find(interaction.message.id)
-		if not data: return await view.interaction.response.edit_message(embed=discord.Embed(description="<:dynoError:1000351802702692442> | Payout not found in Database", color=discord.Color.red()))
-
 		embed = interaction.message.embeds[0]
 		embed.title = "Payout Rejected"
 
@@ -454,7 +452,7 @@ class Payout_Buttton(discord.ui.View):
 
 		await view.interaction.response.edit_message(embed=discord.Embed(description="<:octane_yes:1019957051721535618> | Payout Rejected Successfully!", color=0x2b2d31), view=None, content=None)
 		await interaction.message.edit(view=edit_view, embed=embed, content=None)
-		await interaction.client.payout_pending.delete(data['_id'])
+		await interaction.client.payout_pending.delete(interaction.message.id)
 		await view.interaction.delete_original_response()
 	
 	@discord.ui.button(label="Manual Verification", style=discord.ButtonStyle.gray, emoji="<:caution:1122473257338151003>", custom_id="manual_verification", disabled=False)
