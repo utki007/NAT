@@ -216,7 +216,8 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 		try:
 			message = await channel.fetch_message(timer_data['_id'])
 		except discord.NotFound:
-			# self.bot.remove_view(Button(timer_data))
+			return await self.bot.timer.delete(timer_data['_id'])
+		except discord.MissingAccess:
 			return await self.bot.timer.delete(timer_data['_id'])
 
 		embed = message.embeds[0]
