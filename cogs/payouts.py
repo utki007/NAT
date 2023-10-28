@@ -479,9 +479,7 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
             try:
                 winner_message = await queue_channel.fetch_message(data['_id'])
             except discord.NotFound:
-                    removed = await self.bot.payout_pending.delete(data['_id'])
-                    if not removed.aknowledged:
-                        await self.bot.payout_pending.delete(data)
+                    await self.bot.payout_pending.delete(data['_id'])
                     await interaction.response.send_message("One of the payouts message was deleted. Skipping...", ephemeral=True)
                     continue
             
