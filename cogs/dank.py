@@ -282,7 +282,12 @@ class dank(commands.GroupCog, name="adventure", description="Get Fun Adventure S
 				continue
 			
 			for item in items.keys():
-				item_price = item_price_dict[item]
+				if item not in item_price_dict.keys():
+					channel = interaction.guild.get_channel(1168987042697449522)
+					await channel.send(f'Item `{item}` not found in database')
+					continue
+				else:
+					item_price = item_price_dict[item]
 				amount = round(items[item] * item_price)
 				temp_dict = {"Name": item , "Quantity":str(items[item]),"Amount": amount}
 				list_of_items.append(temp_dict)				
