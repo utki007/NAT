@@ -264,7 +264,7 @@ class dank(commands.GroupCog, name="adventure", description="Get Fun Adventure S
 	async def adventure_leaderboard(self, interaction:  discord.Interaction):
 		await interaction.response.defer(ephemeral = False)
 
-		today = str(datetime.date.today()- datetime.timedelta(days=1))
+		today = str(datetime.date.today())
 		data = await interaction.client.dankAdventureStats.get_all()
 		data = [data for data in data if today in data['rewards'].keys()]
 
