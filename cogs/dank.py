@@ -264,7 +264,7 @@ class dank(commands.GroupCog, name="adventure", description="Get Fun Adventure S
 	async def adventure_leaderboard(self, interaction:  discord.Interaction):
 		await interaction.response.defer(ephemeral = False)
 
-		today = str(datetime.date.today())
+		today = str(datetime.date.today()- datetime.timedelta(days=1))
 		data = await interaction.client.dankAdventureStats.get_all()
 		data = [data for data in data if today in data['rewards'].keys()]
 
@@ -274,6 +274,7 @@ class dank(commands.GroupCog, name="adventure", description="Get Fun Adventure S
 		for item in item_prices:
 			item_price_dict[item['_id']] = int(item['price'])
 
+		items_not_found = []
 		for user_record in data:
 			list_of_items = []
 			items = user_record['rewards'][today]['items']
@@ -283,17 +284,23 @@ class dank(commands.GroupCog, name="adventure", description="Get Fun Adventure S
 			
 			for item in items.keys():
 				if item not in item_price_dict.keys():
-					channel = interaction.guild.get_channel(1168987042697449522)
-					await channel.send(f'Item `{item}` not found in database')
+					items_not_found.append(item)
 					continue
 				else:
 					item_price = item_price_dict[item]
 				amount = round(items[item] * item_price)
 				temp_dict = {"Name": item , "Quantity":str(items[item]),"Amount": amount}
-				list_of_items.append(temp_dict)				
+				list_of_items.append(temp_dict)							
 			df = pd.DataFrame(list_of_items)
 			final_data.append({"user_id": user_record["_id"] , "amount" :  df["Amount"].sum()+dmc})
 
+		if len(list_of_items) > 0:
+			items_not_found = list(set(items_not_found))
+			items_not_found = f"\n1. ".join([i for i in items_not_found])
+			embed = await get_invisible_embed(f'\n1. {items_not_found}')
+			embed.title = "Items not found in database"
+			channel = await interaction.client.fetch_channel(1168987042697449522)
+			await channel.send(embed=embed)
 		df = pd.DataFrame(final_data)	
 		df['rank'] = df['amount'].rank(method='max',ascending=False)
 		top_3 = df.sort_values(by='rank',ascending=True).head(3)
