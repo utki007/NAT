@@ -294,7 +294,7 @@ class dank(commands.GroupCog, name="adventure", description="Get Fun Adventure S
 			df = pd.DataFrame(list_of_items)
 			final_data.append({"user_id": user_record["_id"] , "amount" :  df["Amount"].sum()+dmc})
 
-		if len(list_of_items) > 0:
+		if len(items_not_found) > 0:
 			items_not_found = list(set(items_not_found))
 			items_not_found = f"\n1. ".join([i for i in items_not_found])
 			embed = await get_invisible_embed(f'\n1. {items_not_found}')
