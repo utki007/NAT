@@ -66,6 +66,7 @@ class MyBot(commands.Bot):
 		bot.dankAdventureStats = Document(bot.db, "dankAdventureStats")
 		bot.premium = Document(bot.db, "premium")
 		bot.userSettings = Document(bot.db, "userSettings")
+		bot.config = Document(bot.db, "config")
 
 		# Octane DB
 		bot.octane = motor.motor_asyncio.AsyncIOMotorClient(str(bot.dankHelper))
@@ -423,6 +424,23 @@ async def on_audit_log_entry_create(entry: discord.AuditLogEntry):
 
 @bot.event
 async def on_guild_join(guild: discord.Guild):
+	if guild.member_count < 50:
+		config = await bot.config.find(bot.user.id)
+		if config is None:pass
+		if guild.id in config['member_lock_bypass']:
+			pass
+		else:
+			try:
+				await guild.owner.send(f"Hey, {guild.owner.name}!\nThanks for adding me to your server {guild.name}!\n\nBut sad to say your server dose not meet the minimum member requirement of 50 members.\n\nPlease add me back when you have 50 members in your server, if you want to whitelist your server please contact us in our support [server](https://discord.gg/4BpUghwr9w).\n\nThanks for understanding!")
+			except:
+				for channel in guild.channels:
+					try:
+						await channel.send(f"Hey, {guild.owner.name}!\nThanks for adding me to your server {guild.name}!\n\nBut sad to say your server dose not meet the minimum member requirement of 50 members.\n\nPlease add me back when you have 50 members in your server, if you want to whitelist your server please contact us in our support [server](https://discord.gg/4BpUghwr9w).\n\nThanks for understanding!")
+						break
+					except:
+						pass
+			await guild.leave()
+
 	channel = bot.get_channel(1145314908599222342)
 	await channel.send(
 		f"## ★｡ﾟ☆ﾟ{guild.name.title()}☆ﾟ｡★\n"

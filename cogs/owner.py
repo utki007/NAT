@@ -9,12 +9,14 @@ from discord.ext import commands
 from utils.functions import clean_code
 from utils.checks import App_commands_Checks
 from utils.db import Document
+from utils.views.confirm import Confirm
 from typing import List
 import os
 
 class owner(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.bot.alerts = Document(bot.db, "alerts")
     
     async def cog_autocomplete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
         current_cogs = []
@@ -27,34 +29,19 @@ class owner(commands.Cog):
                 new_options.append(app_commands.Choice(name=cog, value=cog))                
         return new_options[:24]
 
-
-    @app_commands.command(name="dev-sync", description="Syncs a guild/gobal command")
-    async def sync(self, interaction: discord.Interaction, guild_id: str=None):
-        if interaction.user.id not in self.bot.owner_ids:
-            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
-            return
-        if guild_id is None:
-            await interaction.response.send_message(embed=discord.Embed(description="Syncing global commands...", color=2829617))
-            await interaction.client.tree.sync()
-            await interaction.edit_original_response(embed=discord.Embed(description="Successfully synced global commands", color=2829617))
-        else:
-            if guild_id == "*":
-                guild = interaction.guild
-            else:
-                guild = await interaction.client.fetch_guild(int(guild_id))
-                if guild is None:
-                    return await interaction.response.send_message(embed=discord.Embed(description="Invalid guild id", color=2829617))
-            await interaction.response.send_message(embed=discord.Embed(description=f"Syncing guild commands for `{guild.name}`...", color=2829617))
-            await interaction.client.tree.sync(guild=guild)
-            await interaction.edit_original_response(embed=discord.Embed(description=f"Successfully synced guild commands for `{guild.name}`", color=2829617))
+    dev = app_commands.Group(name="dev", description="Developer commands")
+    alert = app_commands.Group(name="alert", description="Alert commands", parent=dev)
 
     @commands.Cog.listener()
     async def on_ready(self):
+        alert = await self.bot.alerts.find({"active": True})
+        if alert is not None:
+            self.bot.current_alert = alert
+
         print(f"{self.__class__.__name__} Cog has been loaded\n-----")
 
-    @app_commands.command(name="get-logs", description="Get the logs of bot")
+    @dev.command(name="get-logs", description="Get the logs of bot")
     @App_commands_Checks.is_owner()
-    @app_commands.guilds(999551299286732871)
     async def get_logs(self, interaction: discord.Interaction):
         if interaction.user.id not in self.bot.owner_ids:
             await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
@@ -103,10 +90,9 @@ class owner(commands.Cog):
 		]
         await Contex_Paginator(ctx, page, custom_button).start(embeded=True, quick_navigation=False)
     
-    @app_commands.command(name="reload", description="Reload a cog")
+    @dev.command(name="reload", description="Reload a cog")
     @app_commands.default_permissions(administrator=True)
     @app_commands.autocomplete(cog=cog_autocomplete)
-    @app_commands.guilds(785839283847954433, 999551299286732871)
     async def reload(self, interaction: discord.Interaction, cog: str):
         if interaction.user.id not in self.bot.owner_ids:
             await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
@@ -137,7 +123,7 @@ class owner(commands.Cog):
                         await interaction.edit_original_response(embed=embed)
     
 
-    @app_commands.command(name="sync", description="Syncs a guild/gobal command")
+    @dev.command(name="sync", description="Syncs a guild/gobal command")
     async def sync(self, interaction: discord.Interaction, guild_id: str=None):
         if interaction.user.id not in self.bot.owner_ids:
             await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
@@ -156,6 +142,83 @@ class owner(commands.Cog):
             await interaction.response.send_message(embed=discord.Embed(description=f"Syncing guild commands for `{guild.name}`...", color=2829617))
             await interaction.client.tree.sync(guild=guild)
             await interaction.edit_original_response(embed=discord.Embed(description=f"Successfully synced guild commands for `{guild.name}`", color=2829617))
+
+
+    @dev.command(name="member_lock_bypass", description="Bypass member lock")
+    @app_commands.default_permissions(administrator=True)
+    async def member_lock_bypass(self, interaction: discord.Interaction, guild_id: str):
+        if interaction.user.id not in self.bot.owner_ids:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+        try:
+            guild_id  = int(guild_id)
+        except: 
+            return await interaction.response.send_message(embed=discord.Embed(description="Invalid guild id", color=2829617))
+        data = await self.bot.config.find(interaction.client.user.id)
+        if not data:
+            await interaction.response.send_message("Db error", ephemeral=True)
+            return
+        if guild_id in data['member_lock_bypass']:
+            await interaction.response.send_message(embed=discord.Embed(description="This guild is already bypassed", color=2829617))
+            return
+        data['member_lock_bypass'].append(guild_id)
+        await self.bot.config.update(data)
+        await interaction.response.send_message(embed=discord.Embed(description="Successfully bypassed", color=2829617))
+    #Note: This is a test command
+
+    @commands.Cog.listener()
+    async def on_app_command_completion(self, interaction: discord.Interaction, command: app_commands.Command | app_commands.ContextMenu):
+        current_alert = await self.bot.alerts.find({"active": True})
+        if current_alert is None:
+            return
+        if command.parent is not None:
+            if command.parent.name == "dev" or "alert":
+                return
+            
+        if interaction.user.id in current_alert['viewed_by']:
+            return
+        current_alert['viewed_by'].append(interaction.user.id)
+        current_alert['view_count'] += 1
+
+        embed = discord.Embed(title=current_alert['_id'], description=current_alert['message'], color=discord.Color.red())
+        embed.set_footer(text=f"Viewed by {current_alert['view_count']} users")
+
+        await self.bot.alerts.update(current_alert)
+
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+    @alert.command(name="add", description="Add an alert")
+    @app_commands.describe(message="The message to send when the alert is triggered", title="title of the alert")
+    async def _add(self, interaction: discord.Interaction, title: str,message: str):
+        if interaction.user.id not in interaction.client.owner_ids:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+        
+        embed = discord.Embed(title=title, description=message, color=discord.Color.red())
+        view = Confirm(interaction.user, 60)
+        await interaction.response.send_message(embed=embed, view=view)
+        view.message = await interaction.original_response()
+
+        await view.wait()
+        if view.value is None or view.value is False:
+            await interaction.delete_original_response()
+            return
+        old_alert = await self.bot.alerts.find({"active": True})
+        if old_alert is not None:
+            old_alert['active'] = False
+            await self.bot.alerts.update(old_alert)
+
+        data = {
+            "_id": title,
+            "message": message,
+            "view_count": 0,
+            "made_by": interaction.user.id, 
+            "viewed_by": [],
+            "active": True,
+        }
+        
+        await self.bot.alerts.insert(data)
+        await interaction.edit_original_response(content="Alert has been added.")
 
 async def setup(bot):
     await bot.add_cog(
