@@ -262,8 +262,8 @@ async def on_message_edit(before, after):
 				}
 			else:
 				if today not in data['rewards'].keys():
-					# if len(data['rewards']) >= 3:
-					# 	del data['rewards'][list(data['rewards'].keys())[0]]
+					while len(data['rewards']) >= 3:
+						del data['rewards'][list(data['rewards'].keys())[0]]
 					data['rewards'][today] = {
 						"total_adv": 0,
 						"reward_adv": 0,
