@@ -165,6 +165,10 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
         self.paid_emoji = self.bot.get_emoji(1071752278794575932)
         self.bot.add_view(Payout_Buttton())
         self.bot.add_view(Payout_claim())
+        for guild in await self.bot.payout_config.get_all():
+            if guild['express'] is True:
+                guild['express'] = False
+                await self.bot.payout_config.update(guild)
         for item in await self.bot.dankItems.get_all(): self.bot.dank_items_cache[item['_id']] = item
 
     
