@@ -282,7 +282,7 @@ class Voice_UI(View):
 		await interaction.response.send_message("Are you sure you want to delete this voice channel?", view=view)
 		view.message = await interaction.original_response()
 		await view.wait()
-		if view.value is None: return await interaction.delete_original_response()
+		if view.value is not True: return await interaction.delete_original_response()
 		await view.interaction.response.edit_message(content="Deleting the voice channel...", view=None)
 		await interaction.client.vc_channel.delete(interaction.channel.id)
 		await interaction.channel.delete()
