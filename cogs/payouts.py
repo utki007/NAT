@@ -32,23 +32,25 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
         self.claim_task.cancel()
     
     async def interaction_check(self, interaction: discord.Interaction):
-        if interaction.guild.member_count < 10:
-            await interaction.response.send_message("This command is only available for servers with more than 10 members.", ephemeral=True)
-            return False
-        else:
-            data = await interaction.client.payout_config.find(interaction.guild.id)
-            if data is None or data is False:
-                await interaction.response.send_message("Payout system is not configured yet!", ephemeral=True)
-                return False
-            else:
-                if 'enable_payouts' not in data.keys():
-                    data['enable_payouts'] = False
-                    await interaction.client.payout_config.update(data)
+        # if interaction.guild.member_count < 10:
+        #     await interaction.response.send_message("This command is only available for servers with more than 10 members.", ephemeral=True)
+        #     return False
+        # else:
+        #     data = await interaction.client.payout_config.find(interaction.guild.id)
+        #     if data is None or data is False:
+        #         await interaction.response.send_message("Payout system is not configured yet!", ephemeral=True)
+        #         return False
+        #     else:
+        #         if 'enable_payouts' not in data.keys():
+        #             data['enable_payouts'] = False
+        #             await interaction.client.payout_config.update(data)
 
-                if data['enable_payouts'] is False or data['enable_payouts'] is None:
-                    await interaction.response.send_message("Payout system is disabled!", ephemeral=True)
-                    return False                
-        return True
+        #         if data['enable_payouts'] is False or data['enable_payouts'] is None:
+        #             await interaction.response.send_message("Payout system is disabled!", ephemeral=True)
+        #             return False                
+        # return True
+        await interaction.response.send_message("Due to some issues with the payout system, it has been disabled for now. Users can still claim their payouts, but new payouts cannot be queued.", ephemeral=True)
+        return False
 
     async def item_autocomplete(self, interaction: discord.Interaction, string: str) -> List[app_commands.Choice[str]]:
         choices = []
