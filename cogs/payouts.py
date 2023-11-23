@@ -32,25 +32,24 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
         self.claim_task.cancel()
     
     async def interaction_check(self, interaction: discord.Interaction):
-        # if interaction.guild.member_count < 10:
-        #     await interaction.response.send_message("This command is only available for servers with more than 10 members.", ephemeral=True)
-        #     return False
-        # else:
-        #     data = await interaction.client.payout_config.find(interaction.guild.id)
-        #     if data is None or data is False:
-        #         await interaction.response.send_message("Payout system is not configured yet!", ephemeral=True)
-        #         return False
-        #     else:
-        #         if 'enable_payouts' not in data.keys():
-        #             data['enable_payouts'] = False
-        #             await interaction.client.payout_config.update(data)
+        if interaction.guild.member_count < 10:
+            await interaction.response.send_message("This command is only available for servers with more than 10 members.", ephemeral=True)
+            return False
+        else:
+            data = await interaction.client.payout_config.find(interaction.guild.id)
+            if data is None or data is False:
+                await interaction.response.send_message("Payout system is not configured yet!", ephemeral=True)
+                return False
+            else:
+                if 'enable_payouts' not in data.keys():
+                    data['enable_payouts'] = False
+                    await interaction.client.payout_config.update(data)
 
-        #         if data['enable_payouts'] is False or data['enable_payouts'] is None:
-        #             await interaction.response.send_message("Payout system is disabled!", ephemeral=True)
-        #             return False                
-        # return True
-        await interaction.response.send_message("Due to some issues with the payout system, it has been disabled for now. Users can still claim their payouts, but new payouts cannot be queued.", ephemeral=True)
-        return False
+                if data['enable_payouts'] is False or data['enable_payouts'] is None:
+                    await interaction.response.send_message("Payout system is disabled!", ephemeral=True)
+                    return False                
+        return True
+        
 
     async def item_autocomplete(self, interaction: discord.Interaction, string: str) -> List[app_commands.Choice[str]]:
         choices = []
@@ -67,7 +66,6 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
     
     async def create_pending_embed(self, event: str, winner: discord.Member, prize: str, host: discord.Member, item_data: dict=None) -> discord.Embed:
         embed = discord.Embed(title="Payout Queue", timestamp=datetime.datetime.now(), description="", color=0x2b2d31)
-        ##new format
         embed.add_field(name="Event Info", value=f"<:nat_replycont:1146496789361479741> **Name:** {event}\n<:nat_reply:1146498277068517386> **Winner:** {winner.mention} ", inline=True)
         value = ""
         if isinstance(item_data, dict):
@@ -197,6 +195,7 @@ class Payout(commands.GroupCog, name="payout", description="Payout commands"):
     @app_commands.autocomplete(item=item_autocomplete)
     @app_commands.rename(winners="winners_list")
     async def payout_create(self, interaction: discord.Interaction, event: str, message_id: str, winners: app_commands.Transform[discord.Member, MultipleMember], quantity: app_commands.Transform[int, DMCConverter], item: str=None):
+        return await interaction.response.send_message("This command is currently disabled.", ephemeral=True)
         data = await self.bot.payout_config.find(interaction.guild.id)
         if data is None: return await interaction.response.send_message("Payout system is not configured yet!", ephemeral=True)
 
