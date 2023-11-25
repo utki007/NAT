@@ -244,7 +244,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 				mafia_view.message = await interaction.original_response()
 		
 			case "Dank Payout Management":
-				data = await interaction.client.payout_config.find(interaction.guild.id)
+				data = await interaction.client.payouts.get_config(interaction.guild.id)
 				
 				if data is None:
 					data = {
@@ -259,16 +259,18 @@ class Serversettings_Dropdown(discord.ui.Select):
 							'express': False,
 							'enable_payouts': False,
 						}
-					await interaction.client.payout_config.insert(data)
+					await interaction.client.payouts.config.update(data)
 
 				embed = discord.Embed(title="Dank Payout Management", color=3092790)
 				
-				channel = interaction.guild.get_channel(data['pending_channel'])
-				if channel is None:
-					channel = f"`None`"
+				if isinstance(data['queue_channel'], discord.Webhook):
+					channel = f"{data['queue_channel'].channel.mention}"
 				else:
-					channel = f"{channel.mention}"
-				embed.add_field(name="Claim Channel:", value=f"> {channel}", inline=True)
+					channel = interaction.guild.get_channel(data['queue_channel'])
+					if channel is None:
+						channel = f"`None`"
+					else:
+						channel = f"{channel.mention}"
 
 				channel = interaction.guild.get_channel(data['queue_channel'])
 				if channel is None:
