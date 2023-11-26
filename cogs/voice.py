@@ -26,7 +26,7 @@ class Voice(commands.Cog):
         self.bot.add_view(Voice_UI())
 
 
-    @tasks.loop(seconds=10)
+    @tasks.loop(minutes=5)
     async def voice_expire(self):
         now = datetime.datetime.utcnow()
         for data in await self.channels.get_all():
