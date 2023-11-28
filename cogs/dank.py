@@ -178,13 +178,27 @@ class dank(commands.GroupCog, name="adventure", description="Get Fun Adventure S
 			item_str = f''
 			list_of_items = []
 			dict = data['items']
+			items_not_found = []
 
 			for item_name in dict.keys():
-				item_price = int((await interaction.client.dankItems.find(item_name))['price'])
+				fetched_item = await interaction.client.dankItems.find(item_name)
+				if fetched_item is None:
+					items_not_found.append(item_name)
+					continue
+				item_price = int(fetched_item['price'])
 				amount = round(dict[item_name] * item_price)
 				temp_dict = {"Name": item_name , "Quantity":str(dict[item_name]),"Amount": await millify(amount), "dummy":amount}
 				list_of_items.append(temp_dict)
-			
+
+
+			if len(items_not_found) > 0:
+				items_not_found = list(set(items_not_found))
+				items_not_found = f"\n1. ".join([i for i in items_not_found])
+				embed = await get_invisible_embed(f'\n1. {items_not_found}')
+				embed.title = "</adventure stats:1151588100204658819> : Items not found"
+				channel = await interaction.client.fetch_channel(1168987042697449522)
+				await channel.send(embed=embed)
+
 			df = pd.DataFrame(list_of_items)
 			df = df.sort_values(by=['dummy'],ascending=False)
 			df.reset_index(inplace = True, drop = True)
@@ -298,7 +312,7 @@ class dank(commands.GroupCog, name="adventure", description="Get Fun Adventure S
 			items_not_found = list(set(items_not_found))
 			items_not_found = f"\n1. ".join([i for i in items_not_found])
 			embed = await get_invisible_embed(f'\n1. {items_not_found}')
-			embed.title = "Items not found in database"
+			embed.title = "</adventure leaderboard:1151588100204658819> : Items not found"
 			channel = await interaction.client.fetch_channel(1168987042697449522)
 			await channel.send(embed=embed)
 		df = pd.DataFrame(final_data)	
