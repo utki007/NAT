@@ -131,12 +131,12 @@ class PayoutDB:
         if unclaim_webhook is None:
             return None
         
-        claim_message = await unclaim_webhook.send(embed=embed, view=view, wait=True, content=f"{winner.mention} Your prize has been queued for payout\n> Please claim it within <t:{claim_time_timestamp}:R> or it will rerolled.")
+        claim_message = await unclaim_webhook.send(username="👑 | N.A.T Payouts",embed=embed, view=view, wait=True, content=f"{winner.mention} Your prize has been queued for payout\n> Please claim it within <t:{claim_time_timestamp}:R> or it will rerolled.")
         queue_data['_id'] = claim_message.id
         await self.unclaimed.insert(queue_data)
         return claim_message
 
-class PayoutV2(commands.GroupCog):
+class PayoutV2(commands.GroupCog, name="payout"):
     def __init__(self, bot):
         self.bot = bot
         self.backend = PayoutDB(bot)
@@ -179,6 +179,9 @@ class PayoutV2(commands.GroupCog):
             pass
         else:
             return await interaction.response.send_message("You are not allowed to use this command!", ephemeral=True)
+        
+        if guild_config['claim_channel'] is None or guild_config['claimed_channel'] is None:
+            return await interaction.response.send_message("Oops! Can't find the queue or pending channel's webhook!\nPlease reconfigure the bot.", ephemeral=True)
         
         claim_time_seconds = guild_config['default_claim_time'] if guild_config['default_claim_time'] is not None else 86400
 
@@ -227,6 +230,7 @@ class PayoutV2(commands.GroupCog):
         await view.interaction.response.edit_message(view=None, embed=loading_embed)
 
         for winner in winners:
+            winner: discord.Member
             queue_data = await self.backend.unclaimed.find({'winner_message_id': event_message.id, 'winner': winner.id})
             pending_data = await self.backend.claimed.find({'winner_message_id': event_message.id, 'winner': winner.id})
 
@@ -237,7 +241,7 @@ class PayoutV2(commands.GroupCog):
                         await guild_config['claim_channel'].channel.fetch_message(queue_data['_id'])
                         dupe = True
                     except discord.NotFound:
-                        await self.bot.payout_queue.delete(queue_data['_id'])
+                        await self.backend.unclaimed.delete(queue_data['_id'])
                         dupe = False
                 
                 if pending_data:
@@ -245,7 +249,7 @@ class PayoutV2(commands.GroupCog):
                         await guild_config['claimed_channel'].channel.fetch_message(pending_data['_id'])
                         dupe = True
                     except discord.NotFound:
-                        await self.bot.payout_pending.delete(pending_data['_id'])
+                        await self.backend.claimed.delete(pending_data['_id'])
                         dupe = False
                 
                 if dupe:
@@ -284,6 +288,9 @@ class PayoutV2(commands.GroupCog):
             pass
         else:
             return await interaction.response.send_message("You are not allowed to use this command!", ephemeral=True)
+        
+        if data['claim_channel'] is None or data['claimed_channel'] is None:
+            return await interaction.response.send_message("Oops! Can't find the queue or pending channel's webhook!\nPlease reconfigure the bot.", ephemeral=True)
 
         await self.backend.unclaimed.find_many_by_custom({'_id': int(message_id)})
         await self.backend.claimed.find_many_by_custom({'_id': int(message_id)})
@@ -304,6 +311,9 @@ class PayoutV2(commands.GroupCog):
             pass
         else:
             return await interaction.response.send_message("You are not allowed to use this command!", ephemeral=True)
+        
+        if config['claim_channel'] is None or config['claimed_channel'] is None:
+            return await interaction.response.send_message("Oops! Can't find the queue or pending channel's webhook!\nPlease reconfigure the bot.", ephemeral=True)
         
         unclaim = await self.backend.unclaimed.find_many_by_custom({'winner_message_id': int(message_id)})
         embed = discord.Embed(title="Unclaimed payouts", description="", color=0x2b2d31)
@@ -344,6 +354,9 @@ class PayoutV2(commands.GroupCog):
             await interaction.response.send_message("You don't have permission to use this command", ephemeral=True)
             return
         
+        if guild_config['claim_channel'] is None or guild_config['claimed_channel'] is None:
+            return await interaction.response.send_message("Oops! Can't find the queue or pending channel's webhook!\nPlease reconfigure the bot.", ephemeral=True)
+
         payouts = await self.backend.claimed.find_many_by_custom({'guild': interaction.guild.id})
         if len(payouts) <= 0:
             await interaction.response.send_message("There are no payouts pending", ephemeral=True)
