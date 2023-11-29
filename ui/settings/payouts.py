@@ -28,7 +28,7 @@ class ButtonCooldown(app_commands.CommandOnCooldown):
 async def update_payouts_embed(interaction: Interaction, data: dict):
 
 	embed = discord.Embed(title="Dank Payout Management", color=3092790)
-	data = await interaction.client.payouts.get_config(interaction.guild.id)
+	data = await interaction.client.payouts.get_config(interaction.guild.id, True)
 
 	if isinstance(data['claim_channel'], discord.Webhook):
 		channel = f"{data['claim_channel'].channel.mention}"
@@ -111,6 +111,7 @@ class Payouts_Panel(discord.ui.View):
 				content = None, embed = embed, view = None
 			)
 		else:
+			await view.interaction.response.edit_message(content="Setting up webhook...", view=None)
 			channel = interaction.guild.get_channel(view.value.id)
 			New_webhook = None
 			for webhook in await channel.webhooks():
@@ -120,13 +121,13 @@ class Payouts_Panel(discord.ui.View):
 					break
 			if New_webhook is None:
 				New_webhook = await channel.create_webhook(name="Payout Webhook", avatar=await interaction.client.user.avatar.read())
-			data['claimed_channel'] = New_webhook.id
+			data['claim_channel'] = New_webhook
 
-			await interaction.client.payouts.config.update(data)
+			await interaction.client.payouts.update_config(data)
 			interaction.client.payouts.config_cache[interaction.guild.id]['claimed_channel'] = New_webhook.id
 
 			embed = await get_success_embed(f'Payouts Claim Channel changed from {channel} to {view.value.mention}')
-			await interaction.edit_original_response(
+			await view.interaction.edit_original_response(
 					content = None, embed = embed, view = None
 				)
 			embed = await update_payouts_embed(self.interaction, data)
@@ -161,8 +162,8 @@ class Payouts_Panel(discord.ui.View):
 			if New_webhook is None:
 				New_webhook = await channel.create_webhook(name="Payout Webhook", avatar=await interaction.client.user.avatar.read())
 
-			data['claim_channel'] = New_webhook.id
-			await interaction.client.payouts.config.update(data)
+			data['claimed_channel'] = New_webhook
+			await interaction.client.payouts.update_config(data)
 			interaction.client.payouts.config_cache[interaction.guild.id]['claim_channel'] = New_webhook.id
 			
 			embed = await get_success_embed(f'Payouts Queue Channel changed from {channel} to {view.value.mention}')
@@ -192,8 +193,10 @@ class Payouts_Panel(discord.ui.View):
 				channel = f'<#{channel}>'
 			if data['payout_channel'] is None or data['payout_channel'] != view.value.id:
 				data['payout_channel'] = view.value.id
-				await interaction.client.payouts.config.update(data)
+
+				await interaction.client.payouts.update_config(data)
 				interaction.client.payouts.config_cache[interaction.guild.id]['payout_channel'] = view.value.id
+
 				embed = await get_success_embed(f'Payouts Channel changed from {channel} to {view.value.mention}')
 				await interaction.edit_original_response(
 					content = None, embed = embed, view = None
@@ -225,8 +228,10 @@ class Payouts_Panel(discord.ui.View):
 				channel = f'<#{channel}>'
 			if data['log_channel'] is None or data['log_channel'] != view.value.id:
 				data['log_channel'] = view.value.id
-				await interaction.client.payouts.config.update(data)
+
+				await interaction.client.payouts.update_config(data)
 				interaction.client.payouts.config_cache[interaction.guild.id]['log_channel'] = view.value.id
+
 				embed = await get_success_embed(f'Logs Channel changed from {channel} to {view.value.mention}')
 				await interaction.edit_original_response(
 					content = None, embed = embed, view = None
@@ -254,7 +259,8 @@ class Payouts_Panel(discord.ui.View):
 			if time < 3600: 
 				return await modal.interaction.response.send_message(embed = await get_error_embed('Claim time must be greater than 1 hour'), ephemeral=True)
 			data['default_claim_time'] = time
-			await interaction.client.payouts.config.update(data)
+			
+			await interaction.client.payouts.update_config(data)
 			interaction.client.payouts.config_cache[interaction.guild.id]['default_claim_time'] = time
 
 			embed = await get_success_embed(f"Successfully updated claim time to : **`{humanfriendly.format_timespan(data['default_claim_time'])}`**!")
@@ -284,7 +290,7 @@ class Payouts_Panel(discord.ui.View):
 						removed.append(ids.mention)
 				await view.select.interaction.response.edit_message(content=f"Suscessfully updated manager roles\nAdded: {', '.join(added)}\nRemoved: {', '.join(removed)}", view=None)
 
-				await interaction.client.payouts.config.update(data)
+				await interaction.client.payouts.update_config(data)
 				interaction.client.payouts.config_cache[interaction.guild.id]['manager_roles'] = data["manager_roles"]
 
 				embed = await update_payouts_embed(self.interaction, data)
@@ -316,7 +322,7 @@ class Payouts_Panel(discord.ui.View):
 						removed.append(ids.mention)
 				await view.select.interaction.response.edit_message(content=f"Suscessfully updated event manager roles\nAdded: {', '.join(added)}\nRemoved: {', '.join(removed)}", view=None)
 
-				await interaction.client.payouts.config.update(data)
+				await interaction.client.payouts.update_config(data)
 				interaction.client.payouts.config_cache[interaction.guild.id]['event_manager_roles'] = data["event_manager_roles"]
 				embed = await update_payouts_embed(self.interaction, data)
 				await interaction.message.edit(embed=embed)

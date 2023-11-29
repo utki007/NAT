@@ -64,7 +64,17 @@ class PayoutDB:
         self.pending_emoji: discord.Emoji = self.bot.get_emoji(998834454292344842)
         self.paid_emoji: discord.Emoji = self.bot.get_emoji(1071752278794575932)
 
-    async def get_config(self, guild_id: int) -> PayoutConfigCache| PayoutConfig | None:
+    async def get_config(self, guild_id: int, new=False) -> PayoutConfigCache| PayoutConfig | None:
+        if new is True:
+            guild_config: PayoutConfig = await self.config.find(guild_id)
+            try:
+                guild_config['claim_channel'] = await self.bot.fetch_webhook(guild_config['claim_channel']) if guild_config['claim_channel'] is not None else None
+                guild_config['claimed_channel'] = await self.bot.fetch_webhook(guild_config['claimed_channel']) if guild_config['claimed_channel'] is not None else None
+                return guild_config
+            except:
+                return None
+
+
         if guild_id in self.config_cache.keys():
             return self.config_cache[guild_id]
         else:
@@ -95,6 +105,13 @@ class PayoutDB:
             self.config_cache[guild_id] = config            
             config = PayoutConfigCache(**config)
             return config
+        
+    async def update_config(self, data: PayoutConfigCache):
+        if isinstance(data['claim_channel'], discord.Webhook):
+            data['claim_channel'] = data['claim_channel'].id
+        if isinstance(data['claimed_channel'], discord.Webhook):
+            data['claimed_channel'] = data['claimed_channel'].id
+        await self.config.update(data)
     
     async def create_pending_embed(self, event: str, winner: discord.Member, prize: int, host: discord.Member, item_data: dict=None) -> discord.Embed:
         embed = discord.Embed(title="Payout Queue", timestamp=datetime.datetime.now(), description="", color=0x2b2d31)
@@ -579,7 +596,7 @@ class PayoutV2(commands.GroupCog, name="payout"):
             return
 
 async def setup(bot):
-    await bot.add_cog(PayoutV2(bot), guilds=[discord.Object(785839283847954433), discord.Object(999551299286732871)])
+    await bot.add_cog(PayoutV2(bot), guilds=[discord.Object(785839283847954433), discord.Object(999551299286732871), discord.Object(1072079211419938856)])
 
 async def teardown(bot):
     for guild in await bot.payouts.config.find_many_by_custom({'express': True}):
