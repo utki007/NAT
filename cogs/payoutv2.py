@@ -64,7 +64,7 @@ class PayoutDB:
         self.paid_emoji: discord.Emoji = self.bot.get_emoji(1071752278794575932)
 
     async def get_config(self, guild_id: int) -> PayoutConfigCache| PayoutConfig | None:
-        if guild_id in self.config_cache:
+        if guild_id in self.config_cache.keys():
             return self.config_cache[guild_id]
         else:
             config = await self.config.find(guild_id)
