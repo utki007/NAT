@@ -23,5 +23,5 @@ class Dropdown_Channel(discord.ui.View):
 	@discord.ui.select(cls=ChannelSelect, channel_types=[discord.ChannelType.text], placeholder='Select channel...', min_values=1, max_values=1)
 	async def select_channels(self, interaction: discord.Interaction, select: ChannelSelect):
 		self.value = select.values[0]
-		interaction = self.interaction
+		self.interaction = interaction
 		self.stop()

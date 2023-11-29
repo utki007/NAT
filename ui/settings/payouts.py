@@ -28,34 +28,26 @@ class ButtonCooldown(app_commands.CommandOnCooldown):
 async def update_payouts_embed(interaction: Interaction, data: dict):
 
 	embed = discord.Embed(title="Dank Payout Management", color=3092790)
-			
-	channel = interaction.guild.get_channel(data['pending_channel'])
-	if channel is None:
-		channel = f"`None`"
+	data = await interaction.client.payouts.get_config(interaction.guild.id, True)
+
+	if isinstance(data['claim_channel'], discord.Webhook):
+		channel = f"{data['claim_channel'].channel.mention}"
 	else:
-		channel = f"{channel.mention}"
+		channel = f"`None`"
 	embed.add_field(name="Claim Channel:", value=f"> {channel}", inline=True)
 
-	channel = interaction.guild.get_channel(data['queue_channel'])
-	if channel is None:
-		channel = f"`None`"
+	if isinstance(data['claimed_channel'], discord.Webhook):
+		channel = f"{data['claimed_channel'].channel.mention}"
 	else:
-		channel = f"{channel.mention}"
+		channel = f"`None`"
 	embed.add_field(name="Queue Channel:", value=f"> {channel}", inline=True)
-
-	channel = interaction.guild.get_channel(data['payout_channel'])
-	if channel is None:
-		channel = f"`None`"
-	else:
-		channel = f"{channel.mention}"
-	embed.add_field(name="Payouts Channel:", value=f"> {channel}", inline=True)
 
 	channel = interaction.guild.get_channel(data['log_channel'])
 	if channel is None:
 		channel = f"`None`"
 	else:
 		channel = f"{channel.mention}"
-	embed.add_field(name="Log Channel:", value=f"> {channel}", inline=True)
+	embed.add_field(name="Payout Channel:", value=f"> {channel}", inline=True)
 
 	embed.add_field(name="Claim Time:", value=f"> **{humanfriendly.format_timespan(data['default_claim_time'])}**", inline=True)
 
@@ -86,17 +78,17 @@ class Payouts_Panel(discord.ui.View):
 
 	@discord.ui.button(label='toggle_button_label' ,row=1)
 	async def toggle(self, interaction: discord.Interaction, button: discord.ui.Button):
-		data = await interaction.client.payout_config.find(interaction.guild.id)
+		data = await interaction.client.payouts.get_config(interaction.guild.id)
 		if data['enable_payouts']:
 			data['enable_payouts'] = False
-			await interaction.client.payout_config.upsert(data)
+			await interaction.client.payouts.get_config(interaction.guild.id)
 			button.style = discord.ButtonStyle.gray
 			button.label = 'Module Disabled'
 			button.emoji = "<:toggle_off:1123932890993020928>"
 			await interaction.response.edit_message(view=self)
 		else:
 			data['enable_payouts'] = True
-			await interaction.client.payout_config.upsert(data)
+			await interaction.client.payouts.get_config(interaction.guild.id)
 			button.style = discord.ButtonStyle.gray
 			button.label = 'Module Enabled'
 			button.emoji = "<:toggle_on:1123932825956134912>"
@@ -104,7 +96,12 @@ class Payouts_Panel(discord.ui.View):
 	
 	@discord.ui.button(label="Claim Channel", style=discord.ButtonStyle.gray, emoji="<:tgk_channel:1073908465405268029>",row=1)
 	async def modify_claim_channel(self, interaction: discord.Interaction, button: discord.ui.Button):
-		data = await interaction.client.payout_config.find(interaction.guild.id)
+		if interaction.guild.me.guild_permissions.manage_webhooks is False:
+			embed = await get_warning_embed(f'I do not have the `Manage Webhooks` permission, please give me the permission and try again.')
+			return await interaction.response.send_message(
+				embed = embed
+			)
+		data = await interaction.client.payouts.get_config(interaction.guild.id)
 		view = Dropdown_Channel(interaction)
 		await interaction.response.send_message(view=view, ephemeral=True)
 		await view.wait()
@@ -114,29 +111,37 @@ class Payouts_Panel(discord.ui.View):
 				content = None, embed = embed, view = None
 			)
 		else:
-			channel = data['pending_channel']
-			if channel is None:
-				channel = f"`None`"
-			else:
-				channel = f'<#{channel}>'
-			if data['pending_channel'] is None or data['pending_channel'] != view.value.id:
-				data['pending_channel'] = view.value.id
-				await interaction.client.payout_config.upsert(data)
-				embed = await get_success_embed(f'Payouts Claim Channel changed from {channel} to {view.value.mention}')
-				await interaction.edit_original_response(
+			await view.interaction.response.edit_message(content="Setting up webhook...", view=None)
+			channel = interaction.guild.get_channel(view.value.id)
+			New_webhook = None
+			for webhook in await channel.webhooks():
+				webhook: discord.Webhook = webhook
+				if webhook.user.id == interaction.client.user.id:
+					New_webhook = webhook
+					break
+			if New_webhook is None:
+				New_webhook = await channel.create_webhook(name="Payout Webhook", avatar=await interaction.client.user.avatar.read())
+			data['claim_channel'] = New_webhook
+
+			await interaction.client.payouts.update_config(data)
+			interaction.client.payouts.config_cache[interaction.guild.id]['claimed_channel'] = New_webhook.id
+
+			embed = await get_success_embed(f'Payouts Claim Channel changed from {channel} to {view.value.mention}')
+			await view.interaction.edit_original_response(
 					content = None, embed = embed, view = None
 				)
-				embed = await update_payouts_embed(self.interaction, data)
-				await interaction.message.edit(embed=embed)
-			else:
-				embed = await get_error_embed(f"Payouts Claim Channel was already set to {channel}")
-				return await interaction.edit_original_response(
-					content = None, embed = embed, view = None
-				)
+			embed = await update_payouts_embed(self.interaction, data)
+			await interaction.message.edit(embed=embed)				  
+    
 			
 	@discord.ui.button(label="Queue Channel", style=discord.ButtonStyle.gray, emoji="<:tgk_channel:1073908465405268029>",row=2)
 	async def modify_queue_channel(self, interaction: discord.Interaction, button: discord.ui.Button):
-		data = await interaction.client.payout_config.find(interaction.guild.id)
+		if interaction.guild.me.guild_permissions.manage_webhooks is False:
+			embed = await get_warning_embed(f'I do not have the `Manage Webhooks` permission, please give me the permission and try again.')
+			return await interaction.response.send_message(
+				embed = embed
+			)
+		data = await interaction.client.payouts.get_config(interaction.guild.id)
 		view = Dropdown_Channel(interaction)
 		await interaction.response.send_message(view=view, ephemeral=True)
 		await view.wait()
@@ -146,29 +151,32 @@ class Payouts_Panel(discord.ui.View):
 				content = None, embed = embed, view = None
 			)
 		else:
-			channel = data['queue_channel']
-			if channel is None:
-				channel = f"`None`"
-			else:
-				channel = f'<#{channel}>'
-			if data['queue_channel'] is None or data['queue_channel'] != view.value.id:
-				data['queue_channel'] = view.value.id
-				await interaction.client.payout_config.upsert(data)
-				embed = await get_success_embed(f'Payouts Queue Channel changed from {channel} to {view.value.mention}')
-				await interaction.edit_original_response(
+			channel = interaction.guild.get_channel(view.value.id)
+			New_webhook = None
+
+			for webhook in await channel.webhooks():
+				webhook: discord.Webhook = webhook
+				if webhook.user.id == interaction.client.user.id:
+					New_webhook = webhook
+					break
+			if New_webhook is None:
+				New_webhook = await channel.create_webhook(name="Payout Webhook", avatar=await interaction.client.user.avatar.read())
+
+			data['claimed_channel'] = New_webhook
+			await interaction.client.payouts.update_config(data)
+			interaction.client.payouts.config_cache[interaction.guild.id]['claim_channel'] = New_webhook.id
+			
+			embed = await get_success_embed(f'Payouts Queue Channel changed from {channel} to {view.value.mention}')
+			await interaction.edit_original_response(
 					content = None, embed = embed, view = None
 				)
-				embed = await update_payouts_embed(self.interaction, data)
-				await interaction.message.edit(embed=embed)
-			else:
-				embed = await get_error_embed(f"Payouts Queue Channel was already set to {channel}")
-				return await interaction.edit_original_response(
-					content = None, embed = embed, view = None
-				)
+			embed = await update_payouts_embed(self.interaction, data)
+			await interaction.message.edit(embed=embed)
+
 
 	@discord.ui.button(label="Payouts Channel", style=discord.ButtonStyle.gray, emoji="<:tgk_channel:1073908465405268029>",row=2)
 	async def payouts_channel(self, interaction: discord.Interaction, button: discord.ui.Button):
-		data = await interaction.client.payout_config.find(interaction.guild.id)
+		data = await interaction.client.payouts.get_config(interaction.guild.id)
 		view = Dropdown_Channel(interaction)
 		await interaction.response.send_message(view=view, ephemeral=True)
 		await view.wait()
@@ -185,7 +193,10 @@ class Payouts_Panel(discord.ui.View):
 				channel = f'<#{channel}>'
 			if data['payout_channel'] is None or data['payout_channel'] != view.value.id:
 				data['payout_channel'] = view.value.id
-				await interaction.client.payout_config.upsert(data)
+
+				await interaction.client.payouts.update_config(data)
+				interaction.client.payouts.config_cache[interaction.guild.id]['payout_channel'] = view.value.id
+
 				embed = await get_success_embed(f'Payouts Channel changed from {channel} to {view.value.mention}')
 				await interaction.edit_original_response(
 					content = None, embed = embed, view = None
@@ -200,7 +211,7 @@ class Payouts_Panel(discord.ui.View):
 
 	@discord.ui.button(label="Logs Channel", style=discord.ButtonStyle.gray, emoji="<:tgk_channel:1073908465405268029>",row=3)
 	async def logs_channel(self, interaction: discord.Interaction, button: discord.ui.Button):
-		data = await interaction.client.payout_config.find(interaction.guild.id)
+		data = await interaction.client.payouts.get_config(interaction.guild.id)
 		view = Dropdown_Channel(interaction)
 		await interaction.response.send_message(view=view, ephemeral=True)
 		await view.wait()
@@ -217,7 +228,10 @@ class Payouts_Panel(discord.ui.View):
 				channel = f'<#{channel}>'
 			if data['log_channel'] is None or data['log_channel'] != view.value.id:
 				data['log_channel'] = view.value.id
-				await interaction.client.payout_config.upsert(data)
+
+				await interaction.client.payouts.update_config(data)
+				interaction.client.payouts.config_cache[interaction.guild.id]['log_channel'] = view.value.id
+
 				embed = await get_success_embed(f'Logs Channel changed from {channel} to {view.value.mention}')
 				await interaction.edit_original_response(
 					content = None, embed = embed, view = None
@@ -232,7 +246,7 @@ class Payouts_Panel(discord.ui.View):
 
 	@discord.ui.button(label="Claim Time", style=discord.ButtonStyle.gray, emoji="<:tgk_clock:1150836621890031697>", row=3)
 	async def claim_time(self, interaction: discord.Interaction, button: discord.ui.Button):
-		data = await interaction.client.payout_config.find(interaction.guild.id)
+		data = await interaction.client.payouts.get_config(interaction.guild.id)
 		modal = General_Modal("Claim Time Modal", interaction=interaction)
 		modal.question = discord.ui.TextInput(label="Enter New Claim Time", placeholder="Enter New Claim Time like 1h45m", min_length=1, max_length=10)    
 		modal.value = None
@@ -245,7 +259,9 @@ class Payouts_Panel(discord.ui.View):
 			if time < 3600: 
 				return await modal.interaction.response.send_message(embed = await get_error_embed('Claim time must be greater than 1 hour'), ephemeral=True)
 			data['default_claim_time'] = time
-			await interaction.client.payout_config.update(data)
+			
+			await interaction.client.payouts.update_config(data)
+			interaction.client.payouts.config_cache[interaction.guild.id]['default_claim_time'] = time
 
 			embed = await get_success_embed(f"Successfully updated claim time to : **`{humanfriendly.format_timespan(data['default_claim_time'])}`**!")
 			embed = await update_payouts_embed(self.interaction, data)
@@ -253,7 +269,7 @@ class Payouts_Panel(discord.ui.View):
 	
 	@discord.ui.button(label="Payout Manager", style=discord.ButtonStyle.gray, emoji="<:tgk_role:1073908306713780284>", row=4)
 	async def manager_role(self, interaction: discord.Interaction, button: discord.ui.Button):
-		data = await interaction.client.payout_config.find(interaction.guild.id)
+		data = await interaction.client.payout.get_config(interaction.guild.id)
 		view = discord.ui.View()
 		view.value = False
 		view.select = Role_select("select new manager role", max_values=10, min_values=1, disabled=False)
@@ -274,7 +290,9 @@ class Payouts_Panel(discord.ui.View):
 						removed.append(ids.mention)
 				await view.select.interaction.response.edit_message(content=f"Suscessfully updated manager roles\nAdded: {', '.join(added)}\nRemoved: {', '.join(removed)}", view=None)
 
-				await interaction.client.payout_config.update(data)
+				await interaction.client.payouts.update_config(data)
+				interaction.client.payouts.config_cache[interaction.guild.id]['manager_roles'] = data["manager_roles"]
+
 				embed = await update_payouts_embed(self.interaction, data)
 				await interaction.message.edit(embed=embed)
 		else:
@@ -283,7 +301,7 @@ class Payouts_Panel(discord.ui.View):
 	@discord.ui.button(label="Staff Roles", style=discord.ButtonStyle.gray, emoji="<:tgk_role:1073908306713780284>", row=4)
 	async def event_managers(self, interaction: discord.Interaction, button: discord.ui.Button):
 		
-		data = await interaction.client.payout_config.find(interaction.guild.id)
+		data = await interaction.client.payouts.get_config(interaction.guild.id)
 		view = discord.ui.View()
 		view.value = False
 		view.select = Role_select("select new event manager role", max_values=10, min_values=1, disabled=False)
@@ -304,7 +322,8 @@ class Payouts_Panel(discord.ui.View):
 						removed.append(ids.mention)
 				await view.select.interaction.response.edit_message(content=f"Suscessfully updated event manager roles\nAdded: {', '.join(added)}\nRemoved: {', '.join(removed)}", view=None)
 
-				await interaction.client.payout_config.update(data)
+				await interaction.client.payouts.update_config(data)
+				interaction.client.payouts.config_cache[interaction.guild.id]['event_manager_roles'] = data["event_manager_roles"]
 				embed = await update_payouts_embed(self.interaction, data)
 				await interaction.message.edit(embed=embed)
 		else:
@@ -347,7 +366,7 @@ class Payout_claim(discord.ui.View):
 		loading_embed = discord.Embed(description="<a:loading:998834454292344842> | Processing claim...", color=discord.Color.yellow())
 		await interaction.response.send_message(embed=loading_embed, ephemeral=True)
 
-		data = await interaction.client.payout_queue.find(interaction.message.id)
+		data = await interaction.client.payouts.unclaimed.find(interaction.message.id)
 		if not data: return await interaction.edit_original_response(embed=discord.Embed(description="<:octane_no:1019957208466862120> | This payout has already been claimed or invalid", color=discord.Color.red()))
 
 		if data['claimed'] is True:
@@ -358,60 +377,55 @@ class Payout_claim(discord.ui.View):
 			return
 		
 		data['claimed'] = True
-		await interaction.client.payout_queue.update(data)
+		await interaction.client.payouts.unclaimed.update(data)
 
-		payout_config = await interaction.client.payout_config.find(interaction.guild.id)
-		queue_channel = interaction.guild.get_channel(payout_config['queue_channel'])
+		payout_config = await interaction.client.payouts.get_config(interaction.guild.id)
+		queue_webhook = payout_config['claimed_channel']
+		claim_webhook = payout_config['claim_channel']
 
 		queue_embed = interaction.message.embeds[0]
-		if queue_embed.description is not None:
-			queue_embed.description = queue_embed.description.replace("`Pending`", "`Awaiting Payment`")
-			queue_embed_description = queue_embed.description.split("\n")
-			queue_embed_description.pop(5)
-			queue_embed.description = "\n".join(queue_embed_description)
-
 		current_embed = interaction.message.embeds[0]
-		if current_embed.description is not None:
-			current_embed.description = current_embed.description.replace("`Pending`", "`Claimed`")
-			current_embed_description = current_embed.description.split("\n")
-			current_embed_description[5] = f"~~{current_embed_description[5]}~~"
 		current_embed.title = "Payout Claimed"
 		queue_embed.title = "Payout Queued"
 
 		await interaction.edit_original_response(content=None, embed=discord.Embed(description="<:octane_yes:1019957051721535618> | Sucessfully claimed payout", color=0x2b2d31))
 
 		view = Payout_Buttton()
-		view.add_item(self.children[-1])
-		msg = await queue_channel.send(embed=queue_embed, view=view)
+		view.add_item(discord.ui.Button(label=f'Event Message', style=discord.ButtonStyle.url, disabled=False, url=f"https://discord.com/channels/{interaction.guild.id}/{data['channel']}/{data['winner_message_id']}", emoji="<:tgk_link:1105189183523401828>"))
+		queue_message: discord.Message = await queue_webhook.send(embed=queue_embed, view=view, wait=True)
 		pending_data = data
-		pending_data['_id'] = msg.id
+		pending_data['_id'] = queue_message.id
 		pending_data['claimed_at'] = datetime.datetime.now()
-		await interaction.client.payout_pending.insert(pending_data)
-		await interaction.client.payout_queue.delete(interaction.message.id)
+		await interaction.client.payouts.claimed.insert(pending_data)
+		await interaction.client.payouts.unclaimed.delete(interaction.message.id)
 
-		for btn in self.children:
-			if btn.label.lower() in ["claim", "cancel"]:
-				self.remove_item(btn)
-		self.add_item(discord.ui.Button(label=f'Queue Message', style=discord.ButtonStyle.url, disabled=False, url=msg.jump_url, emoji="<:tgk_link:1105189183523401828>"))
-		await interaction.message.edit(embed=current_embed, view=self)
+		view = discord.ui.View()
+		view.add_item(discord.ui.Button(label=f'Event Message', style=discord.ButtonStyle.url, disabled=False, url=f"https://discord.com/channels/{interaction.guild.id}/{data['channel']}/{data['winner_message_id']}", emoji="<:tgk_link:1105189183523401828>"))
+		view.add_item(discord.ui.Button(label=f'Queue Message', style=discord.ButtonStyle.url, disabled=False, url=queue_message.jump_url, emoji="<:tgk_link:1105189183523401828>"))
+		
+		await claim_webhook.edit_message(interaction.message.id, embed=current_embed, view=view)
 		interaction.client.dispatch("payout_claim", interaction.message, interaction.user)
-		interaction.client.dispatch("payout_pending", msg)
-
+		interaction.client.dispatch("payout_pending", queue_message)
 
 	@discord.ui.button(label="Cancel", style=discord.ButtonStyle.red, custom_id="payout:cancel")
 	async def payout_cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
-		payout_data = await interaction.client.payout_queue.find(interaction.message.id)
+		payout_data = await interaction.client.payouts.unclaimed.find(interaction.message.id)
 		if not payout_data: return await interaction.edit_original_response(embed=discord.Embed(description="<:octane_no:1019957208466862120> | This payout has already been claimed or invalid", color=discord.Color.red()))
+
+		config = await interaction.client.payouts.get_config(interaction.guild.id)
 		if payout_data['set_by'] != interaction.user.id:
-			config = await interaction.client.payout_config.find(interaction.guild.id)
+
+			config = await interaction.client.payouts.get_config(interaction.guild.id)
 			user_roles = [role.id for role in interaction.user.roles]
 			authorized_roles = set(config['event_manager_roles']) | set(config['manager_roles'])
+
 			if not set(user_roles) & authorized_roles:
 				return
 				  
 		modal = General_Modal("Reason for cancelling payout?", interaction)
 		modal.reason = discord.ui.TextInput(label="Reason", placeholder="Reason for cancelling payout", min_length=3, max_length=100, required=True)
 		modal.add_item(modal.reason)
+
 		await interaction.response.send_modal(modal)
 
 		await modal.wait()
@@ -425,9 +439,11 @@ class Payout_claim(discord.ui.View):
 
 			temp_view = discord.ui.View()
 			temp_view.add_item(discord.ui.Button(label="Payout Cancelled", style=discord.ButtonStyle.gray, emoji="<a:nat_cross:1010969491347357717>",disabled=True))
-			await interaction.message.edit(embed=embed, view=temp_view, content=None)
-			await interaction.client.payout_queue.delete(interaction.message.id)
-			
+
+			unclaim_webhook = config['claim_channel']
+			await unclaim_webhook.edit_message(interaction.message.id, embed=embed, view=temp_view)
+
+			await interaction.client.payouts.unclaimed.delete(interaction.message.id)			
 			await modal.interaction.edit_original_response(embed=discord.Embed(description="Sucessfully cancelled payout", color=discord.Color.green()))
 
 
@@ -439,20 +455,25 @@ class Payout_Buttton(discord.ui.View):
 	@discord.ui.button(label="Reject", style=discord.ButtonStyle.gray, emoji="<a:nat_cross:1010969491347357717>", custom_id="reject")
 	async def reject(self, interaction: discord.Interaction, button: discord.ui.Button):
 		view = Confirm(interaction.user, 30)
+
 		await interaction.response.send_message(f"{interaction.user.mention}, Are you sure you want to reject this payout?", view=view, ephemeral=False)
 		await view.wait()
 		if view.value is None or view.value is False: 
 			return await interaction.delete_original_response()
-		data = await interaction.client.payout_pending.find(interaction.message.id)
+		
+		data = await interaction.client.payouts.claimed.find(interaction.message.id)
 		embed = interaction.message.embeds[0]
 		embed.title = "Payout Rejected"
 
 		edit_view = discord.ui.View()
 		edit_view.add_item(discord.ui.Button(label=f'Payout Denied', style=discord.ButtonStyle.gray, disabled=True, emoji="<a:nat_cross:1010969491347357717>"))
 
+		config = await interaction.client.payouts.get_config(interaction.guild.id)
+		claimed_webhook: discord.Webhook = config['claimed_channel']
+
 		await view.interaction.response.edit_message(embed=discord.Embed(description="<:octane_yes:1019957051721535618> | Payout Rejected Successfully!", color=0x2b2d31), view=None, content=None)
-		await interaction.message.edit(view=edit_view, embed=embed, content=None)
-		await interaction.client.payout_pending.delete(interaction.message.id)
+		await claimed_webhook.edit_message(interaction.message.id, embed=embed, view=edit_view)
+		await interaction.client.payouts.claimed.delete(data['_id'])
 		await view.interaction.delete_original_response()
 	
 	@discord.ui.button(label="Manual Verification", style=discord.ButtonStyle.gray, emoji="<:caution:1122473257338151003>", custom_id="manual_verification", disabled=False)
@@ -466,7 +487,7 @@ class Payout_Buttton(discord.ui.View):
 		if not view.value: return
 		msg_link = view.msg.value
 		await view.interaction.response.send_message("Verifying...", ephemeral=True)
-		data = await interaction.client.payout_pending.find(interaction.message.id)
+		data = await interaction.client.payouts.claimed.find(interaction.message.id)
 		try:
 			msg_id = int(msg_link.split("/")[-1])
 			msg_channel = int(msg_link.split("/")[-2])
@@ -501,19 +522,19 @@ class Payout_Buttton(discord.ui.View):
 				else:
 					return await view.interaction.edit_original_response(content="The prize of the provided message is not the prize of this payout")
 			
-			payot_embed = interaction.message.embeds[0]
-			payot_embed.title = "Successfully Paid"
-			if payot_embed.description is not None:
-				payot_embed.description += f"\n**Payout Location:** {message.jump_url}"
-				payot_embed.description = payot_embed.description.replace("`Initiated`", "`Successfuly Paid`")
-				payot_embed.description = payot_embed.description.replace("`Awaiting Payment`", "`Successfuly Paid`")
-				payot_embed.description += f"\n**Santioned By:** {interaction.user.mention}"
-			else:
-				payot_embed.add_field(name="Payout Location", value=f"<:nat_reply:1146498277068517386> [Click Here]({message.jump_url})", inline=True)
+			Payout_embed = interaction.message.embeds[0]
+			Payout_embed.title = "Successfully Paid"
+			Payout_embed.add_field(name="Payout Location", value=f"<:nat_reply:1146498277068517386> [Click Here]({message.jump_url})", inline=True)
+
 			view = discord.ui.View()
 			view.add_item(discord.ui.Button(label=f"Paid at", style=discord.ButtonStyle.url, url=message.jump_url, emoji="<:tgk_link:1105189183523401828>"))
-			await interaction.message.edit(embed=payot_embed, view=view)   
-			await interaction.client.payout_pending.delete(data['_id'])             
+			await interaction.message.edit(embed=Payout_embed, view=view)
+
+			config = await interaction.client.payouts.get_config(interaction.guild.id) 
+			claimed_webhook: discord.Webhook = config['claimed_channel']
+			await claimed_webhook.edit_message(interaction.message.id, embed=Payout_embed, view=view)
+			await interaction.client.payouts.claimed.delete(data['_id'])
+
 		except Exception as e:
 			print(e)
 			return await view.interaction.edit_original_response(content="Invalid Message Link")
@@ -530,7 +551,7 @@ class Payout_Buttton(discord.ui.View):
 			await interaction.edit_original_response(content=f"Error: {error}")
 
 	async def interaction_check(self, interaction: Interaction):
-		config = await interaction.client.payout_config.find(interaction.guild.id)
+		config = await interaction.client.payouts.get_config(interaction.guild.id)
 		roles = [role.id for role in interaction.user.roles]
 		if (set(roles) & set(config['manager_roles'])): 
 			retry_after = self.cd.update_rate_limit()

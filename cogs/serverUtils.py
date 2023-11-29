@@ -244,52 +244,28 @@ class Serversettings_Dropdown(discord.ui.Select):
 				mafia_view.message = await interaction.original_response()
 		
 			case "Dank Payout Management":
-				data = await interaction.client.payout_config.find(interaction.guild.id)
+				data = await interaction.client.payouts.get_config(interaction.guild.id)
 				
-				if data is None:
-					data = {
-							'_id': interaction.guild.id,
-							'queue_channel': None,
-							'pending_channel': None,
-							'payout_channel': None,
-							'manager_roles': [],
-							'event_manager_roles': [],
-							'log_channel': None,
-							'default_claim_time': 3600,
-							'express': False,
-							'enable_payouts': False,
-						}
-					await interaction.client.payout_config.insert(data)
-
 				embed = discord.Embed(title="Dank Payout Management", color=3092790)
 				
-				channel = interaction.guild.get_channel(data['pending_channel'])
-				if channel is None:
-					channel = f"`None`"
+				if isinstance(data['claim_channel'], discord.Webhook):
+					channel = f"{data['claim_channel'].channel.mention}"
 				else:
-					channel = f"{channel.mention}"
+					channel = f"`None`"
 				embed.add_field(name="Claim Channel:", value=f"> {channel}", inline=True)
 
-				channel = interaction.guild.get_channel(data['queue_channel'])
-				if channel is None:
-					channel = f"`None`"
+				if isinstance(data['claimed_channel'], discord.Webhook):
+					channel = f"{data['claimed_channel'].channel.mention}"
 				else:
-					channel = f"{channel.mention}"
+					channel = f"`None`"
 				embed.add_field(name="Queue Channel:", value=f"> {channel}", inline=True)
-
-				channel = interaction.guild.get_channel(data['payout_channel'])
-				if channel is None:
-					channel = f"`None`"
-				else:
-					channel = f"{channel.mention}"
-				embed.add_field(name="Payouts Channel:", value=f"> {channel}", inline=True)
 
 				channel = interaction.guild.get_channel(data['log_channel'])
 				if channel is None:
 					channel = f"`None`"
 				else:
 					channel = f"{channel.mention}"
-				embed.add_field(name="Log Channel:", value=f"> {channel}", inline=True)
+				embed.add_field(name="Payouts Channel:", value=f"> {channel}", inline=True)
 
 				embed.add_field(name="Claim Time:", value=f"> **{humanfriendly.format_timespan(data['default_claim_time'])}**", inline=True)
 
