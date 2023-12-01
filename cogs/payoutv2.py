@@ -74,7 +74,6 @@ class PayoutDB:
             except:
                 return None
 
-
         if guild_id in self.config_cache.keys():
             return self.config_cache[guild_id]
         else:
@@ -159,6 +158,32 @@ class PayoutDB:
         await self.unclaimed.insert(queue_data)
         return claim_message
 
+    async def reject_payout(self, host: discord.Member, payout: PayoutQueue) -> bool:
+        config = await self.get_config(payout['guild'])
+        if isinstance(config['claimed_channel'], discord.Webhook):
+            claimed_channel = config['claimed_channel'].channel
+        elif isinstance(config['claimed_channel'], int):
+            claimed_webhook = await self.bot.fetch_webhook(config['claimed_channel'])
+            claimed_channel = claimed_webhook.channel
+        else:
+            return None
+        
+        try:
+            claimed_message = await claimed_channel.fetch_message(payout['_id'])
+            embed = claimed_message.embeds[0]
+            embed.title = "Payout Rejected"
+
+            edit_view = discord.ui.View()
+            edit_view.add_item(discord.ui.Button(label=f'Payout Denied', style=discord.ButtonStyle.gray, disabled=True, emoji="<a:nat_cross:1010969491347357717>"))
+
+            await config['claimed_channel'].edit_message(claimed_message.id, embed=embed, view=edit_view)
+            await self.claimed.delete(payout['_id'])
+            return True
+        except Exception as e:
+            return None
+
+
+
 class PayoutV2(commands.GroupCog, name="payout"):
     def __init__(self, bot):
         self.bot = bot
@@ -184,7 +209,7 @@ class PayoutV2(commands.GroupCog, name="payout"):
         for guild in await self.backend.config.find_many_by_custom({'express': True}):
             if guild['express'] is True:
                 guild['express'] = False
-                await self.backend.config.update(guild)
+                await self.backend.update_config(guild)
         for item in await self.bot.dankItems.get_all(): self.bot.dank_items_cache[item['_id']] = item
         await self.backend.setup()
     
@@ -374,7 +399,7 @@ class PayoutV2(commands.GroupCog, name="payout"):
         #     await interaction.response.send_message("This command is only available for premium servers.", ephemeral=True)
         #     return
 
-        guild_config = await self.backend.get_config(interaction.guild_id)
+        guild_config = await self.backend.get_config(interaction.guild_id, new=True)
         if guild_config is None: return
         user_roles = [role.id for role in interaction.user.roles]
         if not (set(user_roles) & set(guild_config['manager_roles'])): 
@@ -401,25 +426,26 @@ class PayoutV2(commands.GroupCog, name="payout"):
             return
         
         await interaction.response.send_message(f"## Starting Payouts for oldest {len(payouts)} payouts in queue", ephemeral=True)
-        queue_webhook = guild_config['claim_channel']   
+        queue_webhook = guild_config['claimed_channel']   
         claim_channel = queue_webhook.channel
+
         guild_config['express'] = True
-        await self.backend.config.update(guild_config)
+        await self.backend.update_config(guild_config)
         self.backend.config_cache[interaction.guild.id]['express'] = True
-        for data in payouts:
+
+        for payout in payouts:
             try:
-                winner_message = await claim_channel.fetch_message(data['_id'])
+                winner_message = await claim_channel.fetch_message(payout['_id'])
             except discord.NotFound:
-                    await self.backend.claimed.delete(data['_id'])
-                    await interaction.response.send_message("One of the payouts message was deleted. Skipping...", ephemeral=True)
-                    continue
+                await self.backend.claimed.delete(payout['_id'])
+                continue
             
             def check(m: discord.Message):
                 if m.channel.id != interaction.channel.id: 
                     return False
                 if m.author.id != 270904126974590976:
                     if m.author.id == interaction.user.id:
-                        if m.content.lower() in ["skip", "next", "pass"]:
+                        if m.content.lower() in ["skip", "reject", "exit"]:
                             return True
                     return False
 
@@ -429,12 +455,12 @@ class PayoutV2(commands.GroupCog, name="payout"):
                 if embed.description is None or embed.description == "": return False
                 if embed.description.startswith("Successfully paid"):
                     found_winner = interaction.guild.get_member(int(embed.description.split(" ")[2].replace("<", "").replace(">", "").replace("!", "").replace("@", ""))) 
-                    if data['winner'] != found_winner.id: 
+                    if payout['winner'] != found_winner.id: 
                         return False
                     items = re.findall(r"\*\*(.*?)\*\*", embed.description)[0]
                     if "⏣" in items:
                         items = int(items.replace("⏣", "").replace(",", ""))
-                        if items == data['prize']:
+                        if items == payout['prize']:
                             return True
                         else:
                             return False
@@ -444,73 +470,103 @@ class PayoutV2(commands.GroupCog, name="payout"):
                         mathc = re.search(r"(\d+)x (.+)", items)
                         item_found = mathc.group(2)
                         quantity_found = int(mathc.group(1))
-                        if item_found == data['item'] and quantity_found == data['prize']:
+                        if item_found == payout['item'] and quantity_found == payout['prize']:
                             return True
 
-            embed = discord.Embed(title="Payout Info", description="")
-            embed.description += f"**Winner:** <@{data['winner']}>\n"
+            embed = discord.Embed(title="Payout Info", description="", color=0x2b2d31)
+            embed.description += f"**Winner:** <@{payout['winner']}>\n"
 
-            if data['item']:
-                embed.description += f"**Price:** {data['prize']}x{data['item']}\n"
+            if payout['item']:
+                embed.description += f"**Price:** {payout['prize']}x{payout['item']}\n"
             else:
-                embed.description += f"**Price:** ⏣ {data['prize']:,}\n"
-            embed.description += f"**Channel:** <#{data['channel']}>\n"
-            embed.description += f"**Host:** <@{data['set_by']}>\n"
-            embed.description += f"* Note: To skip this payout, type `skip`, `next` or `pass`"
-            if 'claimed_at' in data.keys():
-                embed.description += f"\n**Claimed At:** <t:{int(data['claimed_at'].timestamp())}:R>"
+                embed.description += f"**Price:** ⏣ {payout['prize']:,}\n"
+
+            embed.description += f"**Channel:** <#{payout['channel']}>\n"
+            embed.description += f"**Host:** <@{payout['set_by']}>\n"
+            embed.description += f"**Quick actions:**\n* skip: skip this payout\n* reject: reject this payout\n* exit: forcefully exit the express payout\n"
+            if 'claimed_at' in payout.keys():
+                embed.description += f"\n**Payout Claimed At:** <t:{int(payout['claimed_at'].timestamp())}:R>\n"
+            embed.description += f"**Timeout in:** <t:{int((datetime.datetime.now() + datetime.timedelta(seconds=60)).timestamp())}:R>\n"
             cmd = ""
-            if not data['item']:
-                cmd += f"/serverevents payout user:{data['winner']} quantity:{data['prize']}"
+            if not payout['item']:
+                cmd += f"/serverevents payout user:{payout['winner']} quantity:{payout['prize']}"
             else:
-                cmd += f"/serverevents payout user:{data['winner']} quantity:{data['prize']} item:{data['item']}"
+                cmd += f"/serverevents payout user:{payout['winner']} quantity:{payout['prize']} item:{payout['item']}"
+
             embed.add_field(name="Command", value=f"{cmd}")
-            embed.set_footer(text=f"Queue Number: {payouts.index(data)+1}/{len(payouts)}")
+            embed.set_footer(text=f"Queue Number: {payouts.index(payout)+1}/{len(payouts)}")
+
             await asyncio.sleep(1.25)
             link_view = discord.ui.View()
-            link_view.add_item(discord.ui.Button(label=f"Queue Link", style=discord.ButtonStyle.url, url=f"https://discord.com/channels/{interaction.guild.id}/{claim_channel.id}/{data['_id']}", emoji="<:tgk_link:1105189183523401828>"))
-            link_view.add_item(discord.ui.Button(label=f"Event Link", style=discord.ButtonStyle.url, url=f"https://discord.com/channels/{interaction.guild.id}/{data['channel']}/{data['winner_message_id']}", emoji="<:tgk_link:1105189183523401828>"))
+            link_view.add_item(discord.ui.Button(label=f"Queue Link", style=discord.ButtonStyle.url, url=f"https://discord.com/channels/{interaction.guild.id}/{claim_channel.id}/{payout['_id']}", emoji="<:tgk_link:1105189183523401828>"))
+            link_view.add_item(discord.ui.Button(label=f"Event Link", style=discord.ButtonStyle.url, url=f"https://discord.com/channels/{interaction.guild.id}/{payout['channel']}/{payout['winner_message_id']}", emoji="<:tgk_link:1105189183523401828>"))
             await interaction.followup.send(embed=embed, ephemeral=True, view=link_view)
 
             try:
-                msg: discord.Message = await self.bot.wait_for('message', check=check, timeout=60)
-                if msg.author.id == interaction.user.id:
-                    if msg.content.lower() in ["skip", "next", "pass"]:
-                        await interaction.followup.send("Skipping...", ephemeral=True)
-                        await msg.delete()
-                        continue
+                payout_message: discord.Message = await self.bot.wait_for('message', check=check, timeout=60)
+                if payout_message.author.id == interaction.user.id:
+                    match payout_message.content.lower():
+
+                        case "skip":
+                            await interaction.followup.send("Skipping this payout", ephemeral=True)
+                            await payout_message.delete()
+                            await asyncio.sleep(0.5)
+                            continue
+                            
+                        case "reject":
+                            await interaction.followup.send("Rejecting this payout", ephemeral=True)
+                            if await self.backend.reject_payout(interaction.user, payout) is True:
+                                await payout_message.delete()
+                                await asyncio.sleep(0.5)
+                                continue
+                            else:
+                                await interaction.followup.send("Failed to reject this payout exiting the express payout", ephemeral=True)
+                                await asyncio.sleep(0.5)
+                                break
+                        case "exit":
+                            await interaction.followup.send("Exiting the express payout", ephemeral=True)
+                            await payout_message.delete()
+                            await asyncio.sleep(0.5)
+                            break                            
 
                 view = discord.ui.View()
-                view.add_item(discord.ui.Button(label=f"Paid at", style=discord.ButtonStyle.url, url=msg.jump_url, emoji="<:tgk_link:1105189183523401828>"))
+                view.add_item(discord.ui.Button(label=f"Paid at", style=discord.ButtonStyle.url, url=payout_message.jump_url, emoji="<:tgk_link:1105189183523401828>"))
                 embed = winner_message.embeds[0]
                 embed.title = "Payout Paid"
-                if embed.description is not None:
-                    embed.description += f"\n**Payout Location:** {msg.jump_url}"
-                    embed.description = embed.description.replace("`Awaiting Payment`", "`Successfuly Paid`")
-                    embed.description = embed.description.replace("`Initiated`", "`Successfuly Paid`")
-
-                await msg.add_reaction("<:tgk_active:1082676793342951475>")
-
+                await payout_message.add_reaction("<:tgk_active:1082676793342951475>")
                 await queue_webhook.edit_message(winner_message.id, embed=embed, view=view)
-                self.bot.dispatch("more_pending", data)
-                if not data['item']:
-                    interaction.client.dispatch("payout_paid", msg, interaction.user, interaction.guild.get_member(data['winner']), data['prize'])
+                self.bot.dispatch("more_pending", payout)
+
+                if not payout['item']:
+                    interaction.client.dispatch("payout_paid", payout_message, interaction.user, interaction.guild.get_member(payout['winner']), payout['prize'])
                 else:
-                    interaction.client.dispatch("payout_paid", msg, interaction.user, interaction.guild.get_member(data['winner']), f"{data['prize']}x{data['item']}")
+                    interaction.client.dispatch("payout_paid", payout_message, interaction.user, interaction.guild.get_member(payout['winner']), f"{payout['prize']}x{payout['item']}")
+
+                await self.backend.claimed.delete(payout['_id'])
+
                 continue
 
             except asyncio.TimeoutError:
                 guild_config['express'] = False
-                await self.backend.config.update(guild_config)
+                await self.backend.update_config(guild_config)
                 self.backend.config_cache[interaction.guild.id]['express'] = False
                 await interaction.followup.send("Timed out you can try command again", ephemeral=True)
+
                 return
             
         guild_config['express'] = False
-        await self.backend.config.update(guild_config)
+        await self.backend.update_config(guild_config)
         self.backend.config_cache[interaction.guild.id]['express'] = False
         await interaction.followup.send("All payouts have been paid", ephemeral=True)
+    
+    @express_payout.error
+    async def express_payout_error(self, interaction: discord.Interaction, error):
+        config = await self.backend.get_config(interaction.guild_id)
+        if config is None: return
+        config['express'] = False
+        await self.backend.update_config(config)
 
+            
     @commands.Cog.listener()
     async def on_payout_queue(self, host: discord.Member,event: str, win_message: discord.Message, queue_message: discord.Message, winner: discord.Member, prize: str, item: str = None):
         embed = discord.Embed(title="Payout | Queued", color=discord.Color.green(), timestamp=datetime.datetime.now(), description="")
@@ -602,7 +658,7 @@ async def teardown(bot):
     for guild in await bot.payouts.config.find_many_by_custom({'express': True}):
         if guild['express'] is True:
             guild['express'] = False
-            await bot.payouts.config.update(guild)
+            await bot.payouts.update_config(guild)
     await bot.remove_cog(PayoutV2(bot))
 
 

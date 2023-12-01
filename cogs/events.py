@@ -115,6 +115,7 @@ class events(commands.Cog):
 			view.add_item(discord.ui.Button(emoji="<:tgk_link:1105189183523401828>",label=f'Used at', url=f"{message.jump_url}"))
 			return await log_channel.send(embed=logg, view=view)
 			# await interaction.response.send_message("You are missing the required role to use this command!", ephemeral=True)
+
 		elif isinstance(error, app_commands.MissingAnyRole):
 			return await interaction.response.send_message("You are missing the required role to use this command!", ephemeral=True)
 		else:
@@ -122,6 +123,7 @@ class events(commands.Cog):
 			try:
 				await interaction.response.send_message(embed=embed)
 			except:
+				
 				await interaction.followup.send(embed=embed, ephemeral=True)
 
 		tree_format = interaction.data.copy()
