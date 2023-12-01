@@ -468,7 +468,7 @@ class Payout_Buttton(discord.ui.View):
 		edit_view = discord.ui.View()
 		edit_view.add_item(discord.ui.Button(label=f'Payout Denied', style=discord.ButtonStyle.gray, disabled=True, emoji="<a:nat_cross:1010969491347357717>"))
 
-		config = await interaction.client.payouts.get_config(interaction.guild.id)
+		config = await interaction.client.payouts.get_config(interaction.guild.id, new=True)
 		claimed_webhook: discord.Webhook = config['claimed_channel']
 
 		await view.interaction.response.edit_message(embed=discord.Embed(description="<:octane_yes:1019957051721535618> | Payout Rejected Successfully!", color=0x2b2d31), view=None, content=None)

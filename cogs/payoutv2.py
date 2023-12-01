@@ -106,11 +106,12 @@ class PayoutDB:
             return config
         
     async def update_config(self, data: PayoutConfigCache):
+        config = data.copy()
         if isinstance(data['claim_channel'], discord.Webhook):
-            data['claim_channel'] = data['claim_channel'].id
+            config['claim_channel'] = data['claim_channel'].id
         if isinstance(data['claimed_channel'], discord.Webhook):
-            data['claimed_channel'] = data['claimed_channel'].id
-        await self.config.update(data)
+            config['claimed_channel'] = data['claimed_channel'].id
+        await self.config.update(config)
     
     async def create_pending_embed(self, event: str, winner: discord.Member, prize: int, host: discord.Member, item_data: dict=None) -> discord.Embed:
         embed = discord.Embed(title="Payout Queue", timestamp=datetime.datetime.now(), description="", color=0x2b2d31)
