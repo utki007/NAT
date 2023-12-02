@@ -81,14 +81,14 @@ class Payouts_Panel(discord.ui.View):
 		data = await interaction.client.payouts.get_config(interaction.guild.id)
 		if data['enable_payouts']:
 			data['enable_payouts'] = False
-			await interaction.client.payouts.get_config(interaction.guild.id)
+			await interaction.client.payouts.update_config(data)
 			button.style = discord.ButtonStyle.gray
 			button.label = 'Module Disabled'
 			button.emoji = "<:toggle_off:1123932890993020928>"
 			await interaction.response.edit_message(view=self)
 		else:
 			data['enable_payouts'] = True
-			await interaction.client.payouts.get_config(interaction.guild.id)
+			await interaction.client.payouts.update_config(interaction.guild.id)
 			button.style = discord.ButtonStyle.gray
 			button.label = 'Module Enabled'
 			button.emoji = "<:toggle_on:1123932825956134912>"
@@ -124,7 +124,7 @@ class Payouts_Panel(discord.ui.View):
 			data['claim_channel'] = New_webhook
 
 			await interaction.client.payouts.update_config(data)
-			interaction.client.payouts.config_cache[interaction.guild.id]['claimed_channel'] = New_webhook.id
+			interaction.client.payouts.config_cache[interaction.guild.id]['claim_channel'] = New_webhook
 
 			embed = await get_success_embed(f'Payouts Claim Channel changed from {channel} to {view.value.mention}')
 			await view.interaction.edit_original_response(
@@ -164,7 +164,7 @@ class Payouts_Panel(discord.ui.View):
 
 			data['claimed_channel'] = New_webhook
 			await interaction.client.payouts.update_config(data)
-			interaction.client.payouts.config_cache[interaction.guild.id]['claim_channel'] = New_webhook.id
+			interaction.client.payouts.config_cache[interaction.guild.id]['claimed_channel'] = New_webhook.id
 			
 			embed = await get_success_embed(f'Payouts Queue Channel changed from {channel} to {view.value.mention}')
 			await interaction.edit_original_response(
