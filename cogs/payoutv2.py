@@ -112,6 +112,8 @@ class PayoutDB:
         if isinstance(data['claimed_channel'], discord.Webhook):
             config['claimed_channel'] = data['claimed_channel'].id
         await self.config.update(config)
+        self.config_cache[data['_id']]['claim_channel'] = data['claim_channel']
+        self.config_cache[data['_id']]['claimed_channel'] = data['claimed_channel']
     
     async def create_pending_embed(self, event: str, winner: discord.Member, prize: int, host: discord.Member, item_data: dict=None) -> discord.Embed:
         embed = discord.Embed(title="Payout Queue", timestamp=datetime.datetime.now(), description="", color=0x2b2d31)
@@ -159,15 +161,16 @@ class PayoutDB:
         await self.unclaimed.insert(queue_data)
         return claim_message
 
-    async def reject_payout(self, host: discord.Member, payout: PayoutQueue) -> bool:
+    async def reject_payout(self, host: discord.Member, payout: PayoutQueue) -> bool | tuple:
         config = await self.get_config(payout['guild'])
+
         if isinstance(config['claimed_channel'], discord.Webhook):
             claimed_channel = config['claimed_channel'].channel
         elif isinstance(config['claimed_channel'], int):
             claimed_webhook = await self.bot.fetch_webhook(config['claimed_channel'])
             claimed_channel = claimed_webhook.channel
         else:
-            return None
+            return (False, "Unknown Webhook! Please reconfigure the settings.")
         
         try:
             claimed_message = await claimed_channel.fetch_message(payout['_id'])
@@ -180,8 +183,9 @@ class PayoutDB:
             await config['claimed_channel'].edit_message(claimed_message.id, embed=embed, view=edit_view)
             await self.claimed.delete(payout['_id'])
             return True
+        
         except Exception as e:
-            return None
+            return (False, e)
 
 
 
@@ -516,12 +520,17 @@ class PayoutV2(commands.GroupCog, name="payout"):
                             
                         case "reject":
                             await interaction.followup.send("Rejecting this payout", ephemeral=True)
-                            if await self.backend.reject_payout(interaction.user, payout) is True:
+                            reject = await self.backend.reject_payout(interaction.user, payout)
+                            if reject is True:
                                 await payout_message.delete()
                                 await asyncio.sleep(0.5)
                                 continue
-                            else:
-                                await interaction.followup.send("Failed to reject this payout exiting the express payout", ephemeral=True)
+                            elif isinstance(reject, tuple):
+                                await interaction.followup.send(f"Failed to reject this payout due to {reject[1]}" , ephemeral=True)
+                                await asyncio.sleep(0.5)
+                                break
+                            elif reject is False:
+                                await interaction.followup.send("Failed to reject this payout due to unknown error" , ephemeral=True)
                                 await asyncio.sleep(0.5)
                                 break
                         case "exit":
