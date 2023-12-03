@@ -662,7 +662,7 @@ class PayoutV2(commands.GroupCog, name="payout"):
             return
 
 async def setup(bot):
-    await bot.add_cog(PayoutV2(bot), guilds=[discord.Object(785839283847954433), discord.Object(999551299286732871), discord.Object(1072079211419938856)])
+    await bot.add_cog(PayoutV2(bot))
 
 async def teardown(bot):
     for guild in await bot.payouts.config.find_many_by_custom({'express': True}):
@@ -671,23 +671,4 @@ async def teardown(bot):
             await bot.payouts.update_config(guild)
     await bot.remove_cog(PayoutV2(bot))
 
-
-        
-        
-        
-
-
-        
-        
-        
-            
-            
-
-
-        
-
-
-
-
-    
 
