@@ -23,6 +23,9 @@ class PayoutConfig(TypedDict):
     express: bool
     manager_roles: List[int]
     event_manager_roles: List[int]
+    log_channel: int
+    enable_payouts: bool
+    payout_channel: int
 
 class PayoutConfigCache(TypedDict):
     _id: int
@@ -32,6 +35,10 @@ class PayoutConfigCache(TypedDict):
     express: bool
     manager_roles: List[int]
     event_manager_roles: List[int]
+    log_channel: int
+    enable_payouts: bool
+    payout_channel: int
+
 
 class PayoutQueue(TypedDict):
     _id: int
@@ -414,6 +421,10 @@ class PayoutV2(commands.GroupCog, name="payout"):
         if guild_config['claim_channel'] is None or guild_config['claimed_channel'] is None:
             embed = await get_warning_embed("Unknown Webhook! Please reconfigure the settings.")
             return await interaction.response.send_message(ephemeral=True, embed=embed)
+        
+        if interaction.channel.id !=  guild_config['payout_channel']:
+            await interaction.response.send_message(f"Please use this command in <#{guild_config['payout_channel']}>", ephemeral=True)
+            return
 
         payouts = await self.backend.claimed.find_many_by_custom({'guild': interaction.guild.id})
         if len(payouts) <= 0:
