@@ -554,16 +554,16 @@ class Payout_Buttton(discord.ui.View):
 			print(e)
 			return await view.interaction.followup.send(content=e)
 
-	# async def on_error(self, interaction: Interaction, error: Exception, item: discord.ui.Item):
-	# 	if isinstance(error, ButtonCooldown):
-	# 		seconds = int(error.retry_after)
-	# 		unit = 'second' if seconds == 1 else 'seconds'
-	# 		return await interaction.response.send_message(f"You're on cooldown for {seconds} {unit}!", ephemeral=True)
-	# 	try:
-	# 		await interaction.response.send_message(f"Error: {error}", ephemeral=True)
-	# 	except Exception as e:
-	# 		print(e)
-	# 		await interaction.edit_original_response(content=f"Error: {error}")
+	async def on_error(self, interaction: Interaction, error: Exception, item: discord.ui.Item):
+		if isinstance(error, ButtonCooldown):
+			seconds = int(error.retry_after)
+			unit = 'second' if seconds == 1 else 'seconds'
+			return await interaction.response.send_message(f"You're on cooldown for {seconds} {unit}!", ephemeral=True)
+		try:
+			await interaction.response.send_message(f"Error: {error}", ephemeral=True)
+		except Exception as e:
+			print(e)
+			await interaction.edit_original_response(content=f"Error: {error}")
 
 	async def interaction_check(self, interaction: Interaction):
 		config = await interaction.client.payouts.get_config(interaction.guild.id)
