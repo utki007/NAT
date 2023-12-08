@@ -269,7 +269,7 @@ class Payouts_Panel(discord.ui.View):
 	
 	@discord.ui.button(label="Payout Manager", style=discord.ButtonStyle.gray, emoji="<:tgk_role:1073908306713780284>", row=4)
 	async def manager_role(self, interaction: discord.Interaction, button: discord.ui.Button):
-		data = await interaction.client.payout.get_config(interaction.guild.id)
+		data = await interaction.client.payouts.get_config(interaction.guild.id)
 		view = discord.ui.View()
 		view.value = False
 		view.select = Role_select("select new manager role", max_values=10, min_values=1, disabled=False)
@@ -380,6 +380,15 @@ class Payout_claim(discord.ui.View):
 		await interaction.client.payouts.unclaimed.update(data)
 
 		payout_config = await interaction.client.payouts.get_config(interaction.guild.id)
+
+		if not isinstance(payout_config['claimed_channel'], discord.Webhook) or not isinstance(payout_config['claim_channel'], discord.Webhook): 
+			try:
+				payout_config['claimed_channel'] = await interaction.client.fetch_webhook(payout_config['claimed_channel'])
+				payout_config['claim_channel'] = await interaction.client.fetch_webhook(payout_config['claim_channel'])
+			except Exception as e:
+				print(e)
+				return await interaction.edit_original_response(embed=discord.Embed(description="<:octane_no:1019957208466862120> | Invalid webhook", color=discord.Color.red()))
+			
 		queue_webhook = payout_config['claimed_channel']
 		claim_webhook = payout_config['claim_channel']
 
@@ -478,7 +487,7 @@ class Payout_Buttton(discord.ui.View):
 	
 	@discord.ui.button(label="Manual Verification", style=discord.ButtonStyle.gray, emoji="<:caution:1122473257338151003>", custom_id="manual_verification", disabled=False)
 	async def manual_verification(self, interaction: discord.Interaction, button: discord.ui.Button):
-		view = General_Modal(title="Manual Verification", interaction=interaction)
+		view: General_Modal = General_Modal(title="Manual Verification", interaction=interaction)
 		view.msg = discord.ui.TextInput(label="Message Link", placeholder="Enter the message link of te confirmation message", max_length=100, required=True, style=discord.TextStyle.long)
 		view.add_item(view.msg)	
 

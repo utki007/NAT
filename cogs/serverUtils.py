@@ -249,13 +249,19 @@ class Serversettings_Dropdown(discord.ui.Select):
 				embed = discord.Embed(title="Dank Payout Management", color=3092790)
 				
 				if isinstance(data['claim_channel'], discord.Webhook):
-					channel = f"{data['claim_channel'].channel.mention}"
+					try:
+						channel = f"{data['claim_channel'].channel.mention}"
+					except:
+						channel = f"`None`"
 				else:
 					channel = f"`None`"
 				embed.add_field(name="Claim Channel:", value=f"> {channel}", inline=True)
 
 				if isinstance(data['claimed_channel'], discord.Webhook):
-					channel = f"{data['claimed_channel'].channel.mention}"
+					try:
+						channel = f"{data['claimed_channel'].channel.mention}"
+					except:
+						channel = f"`None`"
 				else:
 					channel = f"`None`"
 				embed.add_field(name="Queue Channel:", value=f"> {channel}", inline=True)
