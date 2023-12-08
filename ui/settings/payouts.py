@@ -497,6 +497,12 @@ class Payout_Buttton(discord.ui.View):
 		msg_link = view.msg.value
 		await view.interaction.response.send_message("Verifying...", ephemeral=True)
 		data = await interaction.client.payouts.claimed.find(interaction.message.id)
+		config = await interaction.client.payouts.get_config(interaction.guild.id, new=True)
+
+		claimed_webhook: discord.Webhook = config['claimed_channel']
+		if isinstance(claimed_webhook, int):
+			claimed_webhook = await interaction.client.fetch_webhook(claimed_webhook)
+
 		try:
 			msg_id = int(msg_link.split("/")[-1])
 			msg_channel = int(msg_link.split("/")[-2])
@@ -537,7 +543,7 @@ class Payout_Buttton(discord.ui.View):
 
 			view = discord.ui.View()
 			view.add_item(discord.ui.Button(label=f"Paid at", style=discord.ButtonStyle.url, url=message.jump_url, emoji="<:tgk_link:1105189183523401828>"))
-			await interaction.message.edit(embed=Payout_embed, view=view)
+			await claimed_webhook.edit_message(interaction.message.id, embed=Payout_embed, view=view)
 
 			config = await interaction.client.payouts.get_config(interaction.guild.id) 
 			claimed_webhook: discord.Webhook = config['claimed_channel']
@@ -546,18 +552,18 @@ class Payout_Buttton(discord.ui.View):
 
 		except Exception as e:
 			print(e)
-			return await view.interaction.edit_original_response(content="Invalid Message Link")
+			return await view.interaction.followup.send(content=e)
 
-	async def on_error(self, interaction: Interaction, error: Exception, item: discord.ui.Item):
-		if isinstance(error, ButtonCooldown):
-			seconds = int(error.retry_after)
-			unit = 'second' if seconds == 1 else 'seconds'
-			return await interaction.response.send_message(f"You're on cooldown for {seconds} {unit}!", ephemeral=True)
-		try:
-			await interaction.response.send_message(f"Error: {error}", ephemeral=True)
-		except Exception as e:
-			print(e)
-			await interaction.edit_original_response(content=f"Error: {error}")
+	# async def on_error(self, interaction: Interaction, error: Exception, item: discord.ui.Item):
+	# 	if isinstance(error, ButtonCooldown):
+	# 		seconds = int(error.retry_after)
+	# 		unit = 'second' if seconds == 1 else 'seconds'
+	# 		return await interaction.response.send_message(f"You're on cooldown for {seconds} {unit}!", ephemeral=True)
+	# 	try:
+	# 		await interaction.response.send_message(f"Error: {error}", ephemeral=True)
+	# 	except Exception as e:
+	# 		print(e)
+	# 		await interaction.edit_original_response(content=f"Error: {error}")
 
 	async def interaction_check(self, interaction: Interaction):
 		config = await interaction.client.payouts.get_config(interaction.guild.id)
