@@ -77,6 +77,7 @@ class PayoutDB:
             try:
                 guild_config['claim_channel'] = await self.bot.fetch_webhook(guild_config['claim_channel']) if guild_config['claim_channel'] is not None else None
                 guild_config['claimed_channel'] = await self.bot.fetch_webhook(guild_config['claimed_channel']) if guild_config['claimed_channel'] is not None else None
+                self.config_cache[guild_id] = guild_config
                 return guild_config
             except:
                 return None
@@ -405,8 +406,16 @@ class PayoutV2(commands.GroupCog, name="payout"):
         await interaction.response.send_message(embeds=[embed, pending_embed], ephemeral=False)
 
     @app_commands.command(name="express", description="start doing payouts for the oldest payouts with the help of me")
-    async def express_payout(self, interaction: discord.Interaction):
+    @app_commands.describe(mode="accessibility mode of the command")
+    @app_commands.choices(mode=[
+        app_commands.Choice(name="PC/Adroid", value="pc"),
+        app_commands.Choice(name="iOS", value="ios"),
+    ]) 
+    async def express_payout(self, interaction: discord.Interaction, mode: app_commands.Choice[str]=None):
+        if mode is None:
+            mode = app_commands.Choice(name="PC/Adroid", value="pc")
         premium = await self.bot.premium.find(interaction.guild.id)
+
         # if premium is None: 
         #     await interaction.response.send_message("This command is only available for premium servers.", ephemeral=True)
         #     return
@@ -509,14 +518,25 @@ class PayoutV2(commands.GroupCog, name="payout"):
             else:
                 cmd += f"/serverevents payout user:{payout['winner']} quantity:{payout['prize']} item:{payout['item']}"
 
-            embed.add_field(name="Command", value=f"{cmd}")
+            embed.add_field(name="Command", value=f"```{cmd}```", inline=False)
             embed.set_footer(text=f"Queue Number: {payouts.index(payout)+1}/{len(payouts)}")
 
             await asyncio.sleep(1.25)
             link_view = discord.ui.View()
             link_view.add_item(discord.ui.Button(label=f"Queue Link", style=discord.ButtonStyle.url, url=f"https://discord.com/channels/{interaction.guild.id}/{claim_channel.id}/{payout['_id']}", emoji="<:tgk_link:1105189183523401828>"))
             link_view.add_item(discord.ui.Button(label=f"Event Link", style=discord.ButtonStyle.url, url=f"https://discord.com/channels/{interaction.guild.id}/{payout['channel']}/{payout['winner_message_id']}", emoji="<:tgk_link:1105189183523401828>"))
-            await interaction.followup.send(embed=embed, ephemeral=True, view=link_view)
+
+            keyward = {
+                "embed": embed,
+                "view": link_view,
+                "content": None,
+                "ephemeral": True,
+            }
+
+            if mode.value == "ios":
+                keyward['content'] = cmd
+                keyward['embed'].clear_fields()
+            await interaction.followup.send(**keyward)
 
             try:
                 payout_message: discord.Message = await self.bot.wait_for('message', check=check, timeout=60)
