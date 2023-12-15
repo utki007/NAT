@@ -1,8 +1,11 @@
 import discord
 import contextlib
 import io
+import datetime
 from traceback import format_exception
 import textwrap
+
+from humanfriendly import format_timespan
 from utils.views.paginator import Contex_Paginator
 from discord import app_commands
 from discord.ext import commands
@@ -10,6 +13,7 @@ from utils.functions import clean_code
 from utils.checks import App_commands_Checks
 from utils.db import Document
 from utils.views.confirm import Confirm
+from utils.transformers import TimeConverter
 from typing import List
 import os
 
@@ -122,6 +126,44 @@ class owner(commands.Cog):
                         embed.add_field(name=f"{module}", value=f"Failure **|** {error[:100]}", inline=True)
                         await interaction.edit_original_response(embed=embed)
     
+    @dev.command(name="add-premium", description="Add premium to a guild")
+    @app_commands.default_permissions(administrator=True)
+    @app_commands.describe(guild_id="The guild id to add premium to", time="The time to add premium for")
+    async def add_premium(self, interaction: discord.Interaction, guild_id: str, time: app_commands.Transform[int | str, TimeConverter]="permanent"):
+        if interaction.user.id not in self.bot.owner_ids:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+        
+        try:
+            guild = await interaction.client.fetch_guild(int(guild_id))
+        except:
+            await interaction.response.send_message("Invalid guild id/I am not in that guild", ephemeral=True)
+            return
+
+        guild_data = await self.bot.premium.find({'_id': int(guild_id)})
+        if not guild_data:
+            guild_data = {
+                '_id': int(guild.id),
+                'premium': True,
+                'duration': (datetime.datetime.utcnow() + datetime.timedelta(seconds=time)) if time != "permanent" else "permeant",
+                'premium_by': interaction.user.id,
+                'payout_limit': 40
+            }
+            await self.bot.premium.insert(guild_data)
+        else:
+            if guild_data['duration'] == 'permeant':
+                await interaction.response.send_message("This guild is permanently premium!", ephemeral=True)
+                return
+
+            guild_data['premium'] = True
+            guild_data['duration'] += datetime.timedelta(seconds=time)
+            guild_data['premium_by'] = interaction.user.id
+            guild_data['payout_limit'] = 40
+            await self.bot.premium.update(guild_data)
+        
+        preimin_duration = (guild_data['duration'] - datetime.datetime.utcnow()).total_seconds() if guild_data['duration'] != 'permeant' else "permeant"
+
+        await interaction.response.send_message(f"{guild.name} is now premium for duration of {format_timespan(preimin_duration) if guild_data['duration'] != 'permeant' else 'permeant'}", ephemeral=True)
 
     @dev.command(name="sync", description="Syncs a guild/gobal command")
     async def sync(self, interaction: discord.Interaction, guild_id: str=None):

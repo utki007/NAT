@@ -416,10 +416,6 @@ class PayoutV2(commands.GroupCog, name="payout"):
             mode = app_commands.Choice(name="PC/Adroid", value="pc")
         premium = await self.bot.premium.find(interaction.guild.id)
 
-        # if premium is None: 
-        #     await interaction.response.send_message("This command is only available for premium servers.", ephemeral=True)
-        #     return
-
         guild_config = await self.backend.get_config(interaction.guild_id, new=True)
         if guild_config is None: return
         user_roles = [role.id for role in interaction.user.roles]
@@ -444,7 +440,9 @@ class PayoutV2(commands.GroupCog, name="payout"):
             if premium['premium'] is True:
                 payouts = payouts[:premium['payout_limit']]
         else:
-            payouts = payouts[:20]
+            if len(payouts) > 20:
+                payouts = payouts[:20]
+                
 
         if guild_config['express'] is True:
             await interaction.response.send_message("There is already a express payout in progress", ephemeral=True)
