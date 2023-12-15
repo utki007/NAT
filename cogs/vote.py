@@ -115,7 +115,7 @@ class Vote(commands.Cog):
         embed = discord.Embed(title=f"Premium status of {interaction.guild.name}", description="", color=0x2b2d31)
         embed.description += f"Premium: {guild_data['premium']}\n"
         embed.description += f"Premium by: <@{guild_data['premium_by']}>\n"
-        embed.description += f"Duration: <t:{int(guild_data['duration'].timestamp())}:R>\n"
+        embed.description += "Duration:" + (f"<t:{int(guild_data['duration'].timestamp())}:R>\n") if guild_data['duration'] != 'permeant' else "Permeant\n"
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
 async def setup(bot):
