@@ -64,6 +64,8 @@ class events(commands.Cog):
 			view.add_item(discord.ui.Button(emoji="<:tgk_link:1105189183523401828>",label=f'Used at', url=f"{message.jump_url}"))
 			return await log_channel.send(embed=logg, view=view)
 			# await interaction.response.send_message(f"You are missing the required permissions to use this command!", ephemeral=True)
+		elif isinstance(error, app_commands.errors.CheckFailure):
+			return
 		elif isinstance(error, app_commands.CheckFailure):
 			if int(interaction.data['id']) == 1150390920433381406:
 				return
