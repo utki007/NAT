@@ -306,7 +306,10 @@ class dank(commands.GroupCog, name="adventure", description="Get Fun Adventure S
 				temp_dict = {"Name": item , "Quantity":str(items[item]),"Amount": amount}
 				list_of_items.append(temp_dict)							
 			df = pd.DataFrame(list_of_items)
-			final_data.append({"user_id": user_record["_id"] , "amount" :  df["Amount"].sum()+dmc})
+			try:
+				final_data.append({"user_id": user_record["_id"] , "amount" :  df["Amount"].sum()+dmc})
+			except:
+				final_data.append({"user_id": user_record["_id"] , "amount" :  dmc})
 
 		if len(items_not_found) > 0:
 			items_not_found = list(set(items_not_found))
