@@ -73,7 +73,7 @@ class Vote(commands.Cog):
             await view.interaction.response.send_message("Applying premium...", ephemeral=True)
             guild_data = await self.bot.premium.find({'_id': interaction.guild.id})
             if not guild_data:
-                guild_data: {
+                guild_data = {
                     '_id': interaction.guild.id,
                     'premium': True,
                     'duration': datetime.datetime.utcnow() + datetime.timedelta(seconds=86400),

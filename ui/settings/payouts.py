@@ -88,7 +88,7 @@ class Payouts_Panel(discord.ui.View):
 			await interaction.response.edit_message(view=self)
 		else:
 			data['enable_payouts'] = True
-			await interaction.client.payouts.update_config(interaction.guild.id)
+			await interaction.client.payouts.update_config(data)
 			button.style = discord.ButtonStyle.gray
 			button.label = 'Module Enabled'
 			button.emoji = "<:toggle_on:1123932825956134912>"
