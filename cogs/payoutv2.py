@@ -522,7 +522,7 @@ class PayoutV2(commands.GroupCog, name="payout"):
             else:
                 cmd += f"/serverevents payout user:{payout['winner']} quantity:{payout['prize']} item:{payout['item']}"
 
-            embed.add_field(name="Command", value=f"```{cmd}```", inline=False)
+            embed.add_field(name="Command", value=cmd, inline=False)
             embed.set_footer(text=f"Queue Number: {payouts.index(payout)+1}/{len(payouts)}")
 
             await asyncio.sleep(1.25)
