@@ -215,10 +215,10 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 			return await self.bot.timer.delete(timer_data['_id'])
 		try:
 			message = await channel.fetch_message(timer_data['_id'])
-		except discord.NotFound:
+		except:
 			return await self.bot.timer.delete(timer_data['_id'])
-		except discord.HTTPException:
-			return await self.bot.timer.delete(timer_data['_id'])
+		# except discord.HTTPException:
+		# 	return await self.bot.timer.delete(timer_data['_id'])
 
 		embed = message.embeds[0]
 		if "Timer ended!" in embed.description:
