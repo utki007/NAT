@@ -67,8 +67,8 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 			warning = await get_warning_embed("Incorrect time format, please use `1h30m10s`")
 			return await interaction.response.send_message(embed=warning, ephemeral=True)
 
-		if cd < 30:
-			warning = await get_warning_embed("Time should be more than 30s")
+		if cd < 60:
+			warning = await get_warning_embed("Time should be atleast 60s")
 			return await interaction.response.send_message(embed=warning, ephemeral=True)
 		await interaction.response.defer()
 		message = await interaction.original_response()
@@ -262,7 +262,7 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 		
 		await self.bot.timer.update(timer_data)
 
-	@tasks.loop(seconds=60)
+	@tasks.loop(seconds=90)
 	async def timer_loop(self):
 		current_timer = await self.bot.timer.get_all()
 		for timer in current_timer:
