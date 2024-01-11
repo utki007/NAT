@@ -40,7 +40,7 @@ intents.presences = False
 class MyBot(commands.Bot):
 	def __init__(self, application_id):
 		super().__init__(
-			command_prefix=["nat "],
+			command_prefix=["natt "],
 			case_insensitive=True,
 			owner_ids=[488614633670967307, 301657045248114690],
 			intents=intents,
@@ -67,6 +67,7 @@ class MyBot(commands.Bot):
 		bot.premium = Document(bot.db, "premium")
 		bot.userSettings = Document(bot.db, "userSettings")
 		bot.config = Document(bot.db, "config")
+		bot.dankFish = False
 
 		# Octane DB
 		bot.octane = motor.motor_asyncio.AsyncIOMotorClient(str(bot.dankHelper))
@@ -204,7 +205,43 @@ async def on_message(message):
 									await loggingChannel.send(embed=embed, view=view)
 							except:
 								pass
+			
+			if 'fish catch' in message.interaction.name:
+				if 'fields' not in message.embeds[0].to_dict().keys():
+					return
+				if len(message.embeds[0].to_dict()['fields']) < 1:
+					return
+				fields_dict = message.embeds[0].to_dict()['fields']
+				try:
+					fish_event = next((item for item in fields_dict if item["name"] == "Active Event"), None)
+				except:
+					return
+				if fish_event is None:
+					if bot.dankFish is not False:
+						bot.dankFish = False
+					return
+				fish_event = fish_event['value']
+				fish_event = await remove_emojis(fish_event)
+				fish_event = fish_event.split("\n")
+				fish_event[0] = f"## " + fish_event[0].split(']')[0] + "](<https://dankmemer.lol/tutorial/random-timed-fishing-events>)"
+				fish_event[-1] = "<:nat_reply:1146498277068517386>" + fish_event[-1]
+				for line in fish_event[1:-1]:
+					index = fish_event.index(line)
+					fish_event[index] = "<:nat_replycont:1146496789361479741>" + fish_event[index]
+				fish_event = "\n".join(fish_event)
 
+				if bot.dankFish is False:
+					
+					bot.dankFish = True
+					
+					user_ids = [301657045248114690, 812251918537064470, 677443545656721409]
+					for user_id in user_ids:
+						user = await bot.fetch_user(user_id)
+						try:
+							await user.send(fish_event)				
+						except:
+							pass
+		
 	# return if message is from bot
 	if message.author.bot:
 		return
@@ -347,6 +384,47 @@ async def on_message_edit(before, after):
 								data['rewards'][today]['coins'][key] = 1
 				
 			return await bot.dankAdventureStats.upsert(data)
+
+		# for fish catch
+		if message.interaction is not None and message.interaction.name == 'fish catch':
+			if 'title' not in message.embeds[0].to_dict().keys():
+				return
+			if message.embeds[0].to_dict()['title'] != 'Fishing':
+				return
+			if 'fields' not in message.embeds[0].to_dict().keys():
+				return
+			if len(message.embeds[0].to_dict()['fields']) < 1:
+				return
+			fields_dict = message.embeds[0].to_dict()['fields']
+			try:
+				fish_event = next((item for item in fields_dict if item["name"] == "Active Event"), None)
+			except:
+				return
+			if fish_event is None:
+				if bot.dankFish is not False:
+					bot.dankFish = False
+				return
+			fish_event = fish_event['value']
+			fish_event = await remove_emojis(fish_event)
+			fish_event = fish_event.split("\n")
+			fish_event[0] = f"## " + fish_event[0].split(']')[0] + "](<https://dankmemer.lol/tutorial/random-timed-fishing-events>)"
+			fish_event[-1] = "<:nat_reply:1146498277068517386>" + fish_event[-1]
+			for line in fish_event[1:-1]:
+				index = fish_event.index(line)
+				fish_event[index] = "<:nat_replycont:1146496789361479741>" + fish_event[index]
+			fish_event = "\n".join(fish_event)
+
+			if bot.dankFish is False:
+				
+				bot.dankFish = True
+				
+				user_ids = [301657045248114690, 812251918537064470, 677443545656721409]
+				for user_id in user_ids:
+					user = await bot.fetch_user(user_id)
+					try:
+						await user.send(fish_event)				
+					except:
+						pass
 
 	# return if message is from bot
 	if message.author.bot:
