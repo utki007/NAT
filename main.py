@@ -131,7 +131,10 @@ async def on_message(message):
 					if data:
 						if data['enabled'] is False: return
 						if member.id not in data['whitelist'] and member.id != member.guild.owner.id: 
-							await message.delete()
+							try:
+								await message.delete()
+							except:
+								pass
 							try:
 								await member.remove_roles(message.guild.get_role(data['event_manager']), reason="Member is not a authorized Dank Manager.")
 							except:
