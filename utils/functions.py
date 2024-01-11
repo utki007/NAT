@@ -1,4 +1,5 @@
 import discord
+import re
 
 from utils.embeds import get_warning_embed
 
@@ -66,3 +67,15 @@ async def unquarantineUser(bot, user: discord.Member, quarantineRole: discord.Ro
 
         await bot.quarantinedUsers.upsert(data)
         return True
+
+# create function to remove emojis from string
+async def remove_emojis(string):
+    emojis = list(set(re.findall(":\w*:\d*", string)))
+    for emoji in emojis:
+        if emoji.replace(":", "", 2).isdigit():
+            continue
+        string = string.replace(emoji, "")
+    string = string.replace("<>", "", 100)
+    string = string.replace("<a>", "", 100)
+    string = string.replace("  "," ",100)
+    return string
