@@ -234,7 +234,7 @@ async def on_message(message):
 					
 					bot.dankFish = True
 					
-					user_ids = [301657045248114690, 812251918537064470, 677443545656721409]
+					user_ids = [301657045248114690, 812251918537064470, 677443545656721409, 804912359319142451, 570240915721945098, 996021218568306749]
 					for user_id in user_ids:
 						user = await bot.fetch_user(user_id)
 						try:
