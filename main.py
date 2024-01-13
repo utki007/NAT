@@ -40,7 +40,7 @@ intents.presences = False
 class MyBot(commands.Bot):
 	def __init__(self, application_id):
 		super().__init__(
-			command_prefix=["natt "],
+			command_prefix=["nat "],
 			case_insensitive=True,
 			owner_ids=[488614633670967307, 301657045248114690],
 			intents=intents,
