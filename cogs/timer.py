@@ -262,7 +262,7 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 		
 		await self.bot.timer.update(timer_data)
 
-	@tasks.loop(seconds=90)
+	@tasks.loop(seconds=60)
 	async def timer_loop(self):
 		current_timer = await self.bot.timer.get_all()
 		for timer in current_timer:
@@ -273,6 +273,19 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 				self.bot.dispatch('timer_end', timer, True)
 			else:
 				pass
+	
+	@timer_loop.error
+	async def timer_loop_error(self, error):
+		channel = self.bot.get_channel(867314266741407754)
+		# send text file if > 2000 characters
+		if len(error) > 2000:
+			await channel.send(file=discord.File(fp=error, filename="error.txt"), content= "<@301657045248114690>, <@488614633670967307> Timer loop error")
+		else:
+			await channel.send(f"Timer loop error: {error}")
+		
+		print("Starting timer again...\n===================================================================")
+		self.timertask.stop()
+		self.timertask.start()
 	
 	@timer_loop.before_loop
 	async def before_timer_loop(self):
