@@ -1,4 +1,5 @@
 import asyncio
+import io
 import datetime
 from itertools import islice
 from tabnanny import check
@@ -279,7 +280,7 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 		channel = self.bot.get_channel(867314266741407754)
 		# send text file if > 2000 characters
 		if len(error) > 2000:
-			await channel.send(file=discord.File(fp=error, filename="error.txt"), content= "<@301657045248114690>, <@488614633670967307> Timer loop error")
+			await channel.send(file=discord.File(io.BytesIO(error.encode()), filename="error.txt"), content= "<@301657045248114690>, <@488614633670967307> Timer loop error")
 		else:
 			await channel.send(f"Timer loop error: {error}")
 		
