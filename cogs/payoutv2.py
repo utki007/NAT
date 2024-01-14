@@ -254,7 +254,7 @@ class PayoutV2(commands.GroupCog, name="payout"):
         claim_time_seconds = guild_config['default_claim_time'] if guild_config['default_claim_time'] is not None else 86400
 
         try:
-            event_message = await interaction.channel.fetch_message(int(message_id))
+            event_message = await interaction.channel.fetch_message(message_id)
         except discord.NotFound:
             return await interaction.response.send_message("Oops! Can't find that message!\nDouble-check the message ID and make sure it's in the same channel.", ephemeral=True)
 
