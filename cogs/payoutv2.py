@@ -196,7 +196,7 @@ class PayoutDB:
             return (False, e)
 
 
-
+@app_commands.guild_only()
 class PayoutV2(commands.GroupCog, name="payout"):
     def __init__(self, bot):
         self.bot = bot
