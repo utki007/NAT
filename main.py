@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import io
 import json
@@ -68,8 +69,8 @@ class MyBot(commands.Bot):
 		bot.userSettings = Document(bot.db, "userSettings")
 		bot.config = Document(bot.db, "config")
 		bot.dankFish = {
-			"timestamp" : 0,
-			"active" : False
+			"timestamp" : 1705446000,
+			"active" : True
  		}
 
 		# Octane DB
@@ -252,11 +253,14 @@ async def on_message(message):
 					timestamp = list(set(re.findall("\<t:\w*:R\>\d*", fish_event)))
 					bot.dankFish['timestamp'] = timestamp[0].replace("<t:","",1).replace(":R>","",1)
 					
-					user_ids = [301657045248114690, 812251918537064470, 677443545656721409, 804912359319142451, 570240915721945098, 996021218568306749]
+					records = await bot.userSettings.get_all({'fish_events':True})
+					user_ids = [record["_id"] for record in records]
+
 					for user_id in user_ids:
 						user = await bot.fetch_user(user_id)
 						try:
-							await user.send(fish_event)				
+							await user.send(fish_event)
+							await asyncio.sleep(0.2)	
 						except:
 							pass
 		
@@ -451,13 +455,17 @@ async def on_message_edit(before, after):
 				timestamp = list(set(re.findall("\<t:\w*:R\>\d*", fish_event)))
 				bot.dankFish['timestamp'] = timestamp[0].replace("<t:","",1).replace(":R>","",1)
 				
-				user_ids = [301657045248114690, 812251918537064470, 677443545656721409, 804912359319142451, 570240915721945098, 996021218568306749]
+				records = await bot.userSettings.get_all({'fish_events':True})
+				user_ids = [record["_id"] for record in records]
+
 				for user_id in user_ids:
 					user = await bot.fetch_user(user_id)
 					try:
-						await user.send(fish_event)				
+						await user.send(fish_event)
+						await asyncio.sleep(0.2)			
 					except:
 						pass
+	
 	# return if message is from bot
 	if message.author.bot:
 		return
