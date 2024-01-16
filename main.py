@@ -223,7 +223,7 @@ async def on_message(message):
 				if fish_event is None:
 					if bot.dankFish['active'] is True:
 						current_timestamp = int(datetime.datetime.utcnow().timestamp())
-						if current_timestamp > bot.dankFish['timestamp'] + 600:
+						if current_timestamp > int(bot.dankFish['timestamp']) + 600:
 							bot.dankFish['active'] = False
 					return
 				fish_event = fish_event['value']
@@ -251,7 +251,7 @@ async def on_message(message):
 					
 					bot.dankFish['active'] = True
 					timestamp = list(set(re.findall("\<t:\w*:R\>\d*", fish_event)))
-					bot.dankFish['timestamp'] = timestamp[0].replace("<t:","",1).replace(":R>","",1)
+					bot.dankFish['timestamp'] = int(timestamp[0].replace("<t:","",1).replace(":R>","",1))
 					
 					records = await bot.userSettings.get_all({'fish_events':True})
 					user_ids = [record["_id"] for record in records]
@@ -430,7 +430,7 @@ async def on_message_edit(before, after):
 			if fish_event is None:
 				if bot.dankFish['active'] is True:
 					current_timestamp = int(datetime.datetime.utcnow().timestamp())
-					if current_timestamp > bot.dankFish['timestamp'] + 600:
+					if current_timestamp > int(bot.dankFish['timestamp']) + 600:
 						bot.dankFish['active'] = False
 				return
 			fish_event = fish_event['value']
@@ -458,7 +458,7 @@ async def on_message_edit(before, after):
 				
 				bot.dankFish['active'] = True
 				timestamp = list(set(re.findall("\<t:\w*:R\>\d*", fish_event)))
-				bot.dankFish['timestamp'] = timestamp[0].replace("<t:","",1).replace(":R>","",1)
+				bot.dankFish['timestamp'] = int(timestamp[0].replace("<t:","",1).replace(":R>","",1))
 				
 				records = await bot.userSettings.get_all({'fish_events':True})
 				user_ids = [record["_id"] for record in records]
