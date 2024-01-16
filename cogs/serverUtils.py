@@ -7,7 +7,7 @@ from discord.ext import commands
 import humanfriendly
 from ui.settings.mafia import Mafia_Panel
 from ui.settings.payouts import Payouts_Panel
-from ui.settings.userConfig import Changelogs_Panel
+from ui.settings.userConfig import Changelogs_Panel, Fish_Panel
 from utils.embeds import *
 from utils.convertor import *
 from utils.checks import App_commands_Checks
@@ -78,7 +78,21 @@ class serverUtils(commands.Cog):
 		view = discord.ui.View()
 		view.add_item(Serversettings_Dropdown())
 		await interaction.response.send_message(embed=embed, view=view)
-		
+
+	@app_commands.command(name="settings", description="Adjust user-specific settings! ⚙️")
+	@app_commands.guild_only()
+	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
+	async def serversettings(self, interaction:  discord.Interaction):
+		embed = discord.Embed(
+			color=3092790,
+			title="User Settings",
+			description=f"Adjust user-specific settings! ⚙️"
+		)
+		view = discord.ui.View()
+		view.add_item(Usersettings_Dropdown())
+		await interaction.response.send_message(embed=embed, view=view)
+	
+
 class Serversettings_Dropdown(discord.ui.Select):
 	def __init__(self, default = -1):
 
@@ -88,8 +102,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 			discord.SelectOption(label='Dank Pool Access', description="Who all can access Server's Donation Pool", emoji='<:tgk_bank:1073920882130558987>'),
 			discord.SelectOption(label='Mafia Logs Setup', description='Log entire game', emoji='<:tgk_amongUs:1103542462628253726>'),
 			discord.SelectOption(label='Server Lockdown', description='Configure Lockdown Profiles', emoji='<:tgk_lock:1072851190213259375>'),
-			discord.SelectOption(label="Private Voice", description='Create a private voice channel', emoji='<:tgk_voice:1156454028109168650>'),
-			discord.SelectOption(label='Nat Changelogs', description='Get DMs for patch notes', emoji='<:tgk_entries:1124995375548338176>'),
+			discord.SelectOption(label="Private Voice", description='Create a private voice channel', emoji='<:tgk_voice:1156454028109168650>')
 		]
 		if default != -1:
 			options[default].default = True
@@ -366,60 +379,111 @@ class Serversettings_Dropdown(discord.ui.Select):
 
 				pass
 			
-			case "Nat Changelogs":
-
-				if not (interaction.user.id == interaction.guild.owner.id):
-
-					embed = discord.Embed(
-						color=3092790,
-						title="Nat Changelogs",
-						description=f"- This setting is restricted to server owners only!"
-					)
-					self.view.stop()
-					nat_changelog_view = discord.ui.View()
-					nat_changelog_view.add_item(Serversettings_Dropdown(6))
-					await interaction.response.edit_message(embed=embed, view=nat_changelog_view)
-					nat_changelog_view.message = await interaction.original_response()
-				
-				else:
-
-					data = await interaction.client.userSettings.find(interaction.user.id)
-					if data is None:
-						data = {"_id": interaction.user.id, "changelog_dms": True}
-						await interaction.client.userSettings.upsert(data)
-					if 'changelog_dms' not in data:
-						data['changelog_dms'] = True
-						await interaction.client.userSettings.upsert(data)
-
-					embed = discord.Embed(
-						color=3092790,
-						title="Nat Changelogs",
-						description= 	f"- In case you own multiple servers: \n - Settings will sync across all servers.\n - Will be dm'ed once per patch note.\n"
-										f"- Join our bot's [`support server`](https://discord.gg/C44Hgr9nDQ) for latest patch notes!"
-					)
-					
-					self.view.stop()
-					nat_changelogs_view =  Changelogs_Panel(interaction, data)
-
-					# Initialize the button
-					if data['changelog_dms']:
-						nat_changelogs_view.children[0].style = discord.ButtonStyle.green
-						nat_changelogs_view.children[0].label = "Yes, I would love to know what's new!"
-						nat_changelogs_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
-					else:
-						nat_changelogs_view.children[0].style = discord.ButtonStyle.red
-						nat_changelogs_view.children[0].label = 'No, I follow the changelogs channel.'
-						nat_changelogs_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
-
-					nat_changelogs_view.add_item(Serversettings_Dropdown(6))
-
-					await interaction.response.edit_message(embed=embed, view=nat_changelogs_view)
-					nat_changelogs_view.message = await interaction.original_response()
-
 			case _:
 				self.view.stop()
 				nat_changelog_view = discord.ui.View()
 				nat_changelog_view.add_item(Serversettings_Dropdown(0))
+				embed = await get_invisible_embed(f"<:tgk_activeDevelopment:1088434070666612806> **|** This module is under development...")
+				await interaction.response.edit_message( 
+					embed=embed, 
+					view=nat_changelog_view
+				)
+				nat_changelog_view.message = await interaction.original_response()
+
+class Usersettings_Dropdown(discord.ui.Select):
+	def __init__(self, default = -1):
+
+		options = [
+			discord.SelectOption(label='Fish Events', description='Get DMs for active events', emoji='<:tgk_fishing:1196665275794325504>'),
+			discord.SelectOption(label='Nat Changelogs', description='Get DMs for patch notes', emoji='<:tgk_entries:1124995375548338176>'),
+		]
+		if default != -1:
+			options[default].default = True
+		super().__init__(placeholder='What would you like to configure today?', min_values=1, max_values=1, options=options, row=0)
+
+	async def callback(self, interaction: discord.Interaction):
+		
+		match self.values[0]:
+
+			case "Fish Events":
+
+				data = await interaction.client.userSettings.find(interaction.user.id)
+				if data is None:
+					data = {"_id": interaction.user.id, "fish_events": False}
+					await interaction.client.userSettings.upsert(data)
+				if 'fish_events' not in data:
+					data['fish_events'] = False
+					await interaction.client.userSettings.upsert(data)
+
+				embed = discord.Embed(
+					color=3092790,
+					title="Fish Events",
+					description= 	f"Want to be reminded of active dank fish events?"
+				)
+
+				self.view.stop()
+				nat_changelogs_view =  Fish_Panel(interaction, data)
+
+				# Initialize the button
+				if data['fish_events']:
+					nat_changelogs_view.children[0].style = discord.ButtonStyle.green
+					nat_changelogs_view.children[0].label = "Yes, I would love to know!"
+					nat_changelogs_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
+					label = f'<:tgk_active:1082676793342951475> Enabled'
+				else:
+					nat_changelogs_view.children[0].style = discord.ButtonStyle.red
+					nat_changelogs_view.children[0].label = "No, I don't fish."
+					nat_changelogs_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
+					label = f'<:tgk_deactivated:1082676877468119110> Disabled'
+				embed.add_field(name="Current Status:", value=f"> {label}", inline=False)
+
+				nat_changelogs_view.add_item(Usersettings_Dropdown(0))
+
+				await interaction.response.edit_message(embed=embed, view=nat_changelogs_view)
+				nat_changelogs_view.message = await interaction.original_response()
+
+			case "Nat Changelogs":
+
+				data = await interaction.client.userSettings.find(interaction.user.id)
+				if data is None:
+					data = {"_id": interaction.user.id, "changelog_dms": False}
+					await interaction.client.userSettings.upsert(data)
+				if 'changelog_dms' not in data:
+					data['changelog_dms'] = False
+					await interaction.client.userSettings.upsert(data)
+
+				embed = discord.Embed(
+					color=3092790,
+					title="Nat Changelogs",
+					description= 	f"- In case you own multiple servers: \n - Settings will sync across all servers.\n - Will be dm'ed once per patch note.\n"
+									f"- Join our bot's [`support server`](https://discord.gg/C44Hgr9nDQ) for latest patch notes!"
+				)
+
+				self.view.stop()
+				nat_changelogs_view =  Changelogs_Panel(interaction, data)
+
+				# Initialize the button
+				if data['changelog_dms']:
+					nat_changelogs_view.children[0].style = discord.ButtonStyle.green
+					nat_changelogs_view.children[0].label = "Yes, I would love to know what's new!"
+					nat_changelogs_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
+					label = f'<:tgk_active:1082676793342951475> Enabled'
+				else:
+					nat_changelogs_view.children[0].style = discord.ButtonStyle.red
+					nat_changelogs_view.children[0].label = 'No, I follow the changelogs channel.'
+					nat_changelogs_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
+					label = f'<:tgk_deactivated:1082676877468119110> Disabled'
+				embed.add_field(name="Current Status:", value=f"> {label}", inline=False)
+
+				nat_changelogs_view.add_item(Usersettings_Dropdown(1))
+
+				await interaction.response.edit_message(embed=embed, view=nat_changelogs_view)
+				nat_changelogs_view.message = await interaction.original_response()
+
+			case _:
+				self.view.stop()
+				nat_changelog_view = discord.ui.View()
+				nat_changelog_view.add_item(Usersettings_Dropdown(0))
 				embed = await get_invisible_embed(f"<:tgk_activeDevelopment:1088434070666612806> **|** This module is under development...")
 				await interaction.response.edit_message( 
 					embed=embed, 
