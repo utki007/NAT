@@ -67,7 +67,10 @@ class MyBot(commands.Bot):
 		bot.premium = Document(bot.db, "premium")
 		bot.userSettings = Document(bot.db, "userSettings")
 		bot.config = Document(bot.db, "config")
-		bot.dankFish = False
+		bot.dankFish = {
+			"timestamp" : 0,
+			"active" : False
+ 		}
 
 		# Octane DB
 		bot.octane = motor.motor_asyncio.AsyncIOMotorClient(str(bot.dankHelper))
@@ -213,26 +216,41 @@ async def on_message(message):
 					return
 				fields_dict = message.embeds[0].to_dict()['fields']
 				try:
-					fish_event = next((item for item in fields_dict if item["name"] == "Active Event"), None)
+					fish_event = next((item for item in fields_dict if item["name"] in ["Active Event", "Active Events"]), None)
 				except:
 					return
 				if fish_event is None:
-					if bot.dankFish is not False:
-						bot.dankFish = False
+					if bot.dankFish['active'] is True:
+						current_timestamp = int(datetime.datetime.utcnow().timestamp())
+						if current_timestamp > bot.dankFish['timestamp'] + 600:
+							bot.dankFish['active'] = False
 					return
 				fish_event = fish_event['value']
 				fish_event = await remove_emojis(fish_event)
 				fish_event = fish_event.split("\n")
-				fish_event[0] = f"## " + fish_event[0].split(']')[0] + "](<https://dankmemer.lol/tutorial/random-timed-fishing-events>)"
-				fish_event[-1] = "<:nat_reply:1146498277068517386>" + fish_event[-1]
-				for line in fish_event[1:-1]:
+				# fish_event[0] = f"## " + fish_event[0].split(']')[0] + "](<https://dankmemer.lol/tutorial/random-timed-fishing-events>)"
+				# fish_event[-1] = "<:nat_reply:1146498277068517386>" + fish_event[-1]
+				for line in fish_event:
 					index = fish_event.index(line)
-					fish_event[index] = "<:nat_replycont:1146496789361479741>" + fish_event[index]
+					if 'https:' in fish_event[index]:
+						fish_event[index] = f"## " + fish_event[index].split(']')[0] + "](<https://dankmemer.lol/tutorial/random-timed-fishing-events>)"
+					elif '<t:' in fish_event[index]:
+						fish_event[index] = "<:nat_reply:1146498277068517386>" + fish_event[index]
+					else:
+						fish_event[index] = "<:nat_replycont:1146496789361479741>" + fish_event[index]
 				fish_event = "\n".join(fish_event)
 
-				if bot.dankFish is False:
+				if bot.dankFish['active'] is False:
 					
-					bot.dankFish = True
+					# return if end time > current time
+					current_timestamp = int(datetime.datetime.utcnow().timestamp())
+					if bot.dankFish['timestamp'] > current_timestamp:
+						bot.dankFish['active'] = True
+						return 
+					
+					bot.dankFish['active'] = True
+					timestamp = list(set(re.findall("\<t:\w*:R\>\d*", fish_event)))
+					bot.dankFish['timestamp'] = timestamp[0].replace("<t:","",1).replace(":R>","",1)
 					
 					user_ids = [301657045248114690, 812251918537064470, 677443545656721409, 804912359319142451, 570240915721945098, 996021218568306749]
 					for user_id in user_ids:
@@ -397,35 +415,49 @@ async def on_message_edit(before, after):
 				return
 			fields_dict = message.embeds[0].to_dict()['fields']
 			try:
-				fish_event = next((item for item in fields_dict if item["name"] == "Active Event"), None)
+				fish_event = next((item for item in fields_dict if item["name"] in ["Active Event", "Active Events"]), None)
 			except:
 				return
 			if fish_event is None:
-				if bot.dankFish is not False:
-					bot.dankFish = False
+				if bot.dankFish['active'] is True:
+					current_timestamp = int(datetime.datetime.utcnow().timestamp())
+					if current_timestamp > bot.dankFish['timestamp'] + 600:
+						bot.dankFish['active'] = False
 				return
 			fish_event = fish_event['value']
 			fish_event = await remove_emojis(fish_event)
 			fish_event = fish_event.split("\n")
-			fish_event[0] = f"## " + fish_event[0].split(']')[0] + "](<https://dankmemer.lol/tutorial/random-timed-fishing-events>)"
-			fish_event[-1] = "<:nat_reply:1146498277068517386>" + fish_event[-1]
-			for line in fish_event[1:-1]:
+			# fish_event[0] = f"## " + fish_event[0].split(']')[0] + "](<https://dankmemer.lol/tutorial/random-timed-fishing-events>)"
+			# fish_event[-1] = "<:nat_reply:1146498277068517386>" + fish_event[-1]
+			for line in fish_event:
 				index = fish_event.index(line)
-				fish_event[index] = "<:nat_replycont:1146496789361479741>" + fish_event[index]
+				if 'https:' in fish_event[index]:
+					fish_event[index] = f"## " + fish_event[index].split(']')[0] + "](<https://dankmemer.lol/tutorial/random-timed-fishing-events>)"
+				elif '<t:' in fish_event[index]:
+					fish_event[index] = "<:nat_reply:1146498277068517386>" + fish_event[index]
+				else:
+					fish_event[index] = "<:nat_replycont:1146496789361479741>" + fish_event[index]
 			fish_event = "\n".join(fish_event)
 
-			if bot.dankFish is False:
+			if bot.dankFish['active'] is False:
 				
-				bot.dankFish = True
+				# return if end time > current time
+				current_timestamp = int(datetime.datetime.utcnow().timestamp())
+				if bot.dankFish['timestamp'] > current_timestamp:
+					bot.dankFish['active'] = True
+					return 
 				
-				user_ids = [301657045248114690, 812251918537064470, 677443545656721409]
+				bot.dankFish['active'] = True
+				timestamp = list(set(re.findall("\<t:\w*:R\>\d*", fish_event)))
+				bot.dankFish['timestamp'] = timestamp[0].replace("<t:","",1).replace(":R>","",1)
+				
+				user_ids = [301657045248114690, 812251918537064470, 677443545656721409, 804912359319142451, 570240915721945098, 996021218568306749]
 				for user_id in user_ids:
 					user = await bot.fetch_user(user_id)
 					try:
 						await user.send(fish_event)				
 					except:
 						pass
-
 	# return if message is from bot
 	if message.author.bot:
 		return
