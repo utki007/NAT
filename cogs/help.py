@@ -17,13 +17,17 @@ class Help(commands.Cog):
 
     @app_commands.command(name="about", description="Show information about the bot", extras={'example': '/about'})
     async def _about(self, interaction: discord.Interaction):
-        embed = discord.Embed(title=f"About Myself", description="",color=0x2b2d31)
-        embed.add_field(name="Name", value=interaction.client.user.name, inline=True)
-        embed.add_field(name="ID", value=interaction.client.user.id, inline=True)
+        embed = discord.Embed(title=f"About Myself", 
+                              description = f"",
+                              color=0x2b2d31)
+        # embed.add_field(name="Name", value=interaction.client.user.name, inline=True)
+        # embed.add_field(name="ID", value=interaction.client.user.id, inline=True)
         embed.add_field(name="Servers", value=len(interaction.client.guilds), inline=True)
+        embed.add_field(name="\u200b", value='\u200b', inline=True)
         embed.add_field(name="Users", value=len(interaction.client.users), inline=True)
-        embed.add_field(name="Developers", value=(",".join([str(f"<@{user}>") for user in self.bot.owner_ids])), inline=True)
-        embed.add_field(name="Important Links", value="[Terms of Service](https://github.com/TGK-Dev/NAT-TOS)\n[Privacy Policy](https://github.com/TGK-Dev/NAT-Privacy-Policy)", inline=True)
+        embed.add_field(name="Developers", value=f'<:nat_replycont:1146496789361479741> <@488614633670967307> ( `488614633670967307` )\n<:nat_reply:1146498277068517386> <@301657045248114690> ( `301657045248114690` )', inline=True)
+        embed.add_field(name="\u200b", value='\u200b', inline=True)
+        embed.add_field(name="Important Links", value="<:nat_replycont:1146496789361479741> [Terms of Service](https://github.com/TGK-Dev/NAT-TOS)\n<:nat_reply:1146498277068517386> [Privacy Policy](https://github.com/TGK-Dev/NAT-Privacy-Policy)", inline=True)
         await interaction.response.send_message(embed=embed)
     
     @app_commands.command(name="invite", description="Invite the bot to your server", extras={'example': '/invite'})
