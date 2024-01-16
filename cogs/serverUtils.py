@@ -41,11 +41,11 @@ class serverUtils(commands.Cog):
 			content=f"Pong! **`{round(self.bot.latency * 1000)}ms`**"			
 		)
 
-	@commands.hybrid_command(name="calculate", description="Do math! 🧮", extras={'example': '/calculate query: 2m+40k'} )
+	@commands.hybrid_command(name="calculate", description="Do math! 🧮", extras={'example': '/calculate query: 2m+40k'})
 	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 2, key=lambda i: (i.guild_id, i.user.id))
 	@app_commands.describe(query = "5 Mil -> 5e6 or 5m")
-	async def calculate(self, ctx, query: str):
+	async def calculate(self, ctx, *, query: str):
 
 		start = t.time()
 		query = await convert_to_numeral(query)
