@@ -56,17 +56,17 @@ class Changelogs_Panel(discord.ui.View):
 			data['changelog_dms'] = False
 			await interaction.client.userSettings.upsert(data)
 			embed = await update_embed(interaction, data)
-			button.style = discord.ButtonStyle.red
-			button.label = 'No, I follow the changelogs channel.'
-			button.emoji = "<:tgk_deactivated:1082676877468119110>"
+			button.style = discord.ButtonStyle.green
+			button.label = "Yes, I would love to know what's new!"
+			button.emoji = "<:tgk_active:1082676793342951475>"
 			await interaction.response.edit_message(embed=embed,view=self)
 		else:
 			data['changelog_dms'] = True
 			await interaction.client.userSettings.upsert(data)
 			embed = await update_embed(interaction, data)
-			button.style = discord.ButtonStyle.green
-			button.label = "Yes, I would love to know what's new!"
-			button.emoji = "<:tgk_active:1082676793342951475>"
+			button.style = discord.ButtonStyle.red
+			button.label = 'No, I follow the changelogs channel.'
+			button.emoji = "<:tgk_deactivated:1082676877468119110>"
 			await interaction.response.edit_message(view=self, embed=embed)
 	
 	async def interaction_check(self, interaction: discord.Interaction):
@@ -96,17 +96,17 @@ class Fish_Panel(discord.ui.View):
 			data['fish_events'] = False
 			await interaction.client.userSettings.upsert(data)
 			embed = await update_fish_embed(interaction, data)
-			button.style = discord.ButtonStyle.red
-			button.label = "No, I don't fish."
-			button.emoji = "<:tgk_deactivated:1082676877468119110>"
+			button.style = discord.ButtonStyle.green
+			button.label = "Yes, I would love to know!"
+			button.emoji = "<:tgk_active:1082676793342951475>"
 			await interaction.response.edit_message(embed=embed,view=self)
 		else:
 			data['fish_events'] = True
 			await interaction.client.userSettings.upsert(data)
 			embed = await update_fish_embed(interaction, data)
-			button.style = discord.ButtonStyle.green
-			button.label = "Yes, I would love to know!"
-			button.emoji = "<:tgk_active:1082676793342951475>"
+			button.style = discord.ButtonStyle.red
+			button.label = "No, I don't fish."
+			button.emoji = "<:tgk_deactivated:1082676877468119110>"
 			await interaction.response.edit_message(view=self, embed=embed)
 	
 	async def interaction_check(self, interaction: discord.Interaction):

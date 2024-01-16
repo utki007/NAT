@@ -426,14 +426,14 @@ class Usersettings_Dropdown(discord.ui.Select):
 
 				# Initialize the button
 				if data['fish_events']:
-					nat_changelogs_view.children[0].style = discord.ButtonStyle.green
-					nat_changelogs_view.children[0].label = "Yes, I would love to know!"
-					nat_changelogs_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
-					label = f'<:tgk_active:1082676793342951475> Enabled'
-				else:
 					nat_changelogs_view.children[0].style = discord.ButtonStyle.red
 					nat_changelogs_view.children[0].label = "No, I don't fish."
 					nat_changelogs_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
+					label = f'<:tgk_active:1082676793342951475> Enabled'
+				else:
+					nat_changelogs_view.children[0].style = discord.ButtonStyle.green
+					nat_changelogs_view.children[0].label = "Yes, I would love to know!"
+					nat_changelogs_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
 					label = f'<:tgk_deactivated:1082676877468119110> Disabled'
 				embed.add_field(name="Current Status:", value=f"> {label}", inline=False)
 
@@ -464,14 +464,14 @@ class Usersettings_Dropdown(discord.ui.Select):
 
 				# Initialize the button
 				if data['changelog_dms']:
-					nat_changelogs_view.children[0].style = discord.ButtonStyle.green
-					nat_changelogs_view.children[0].label = "Yes, I would love to know what's new!"
-					nat_changelogs_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
-					label = f'<:tgk_active:1082676793342951475> Enabled'
-				else:
 					nat_changelogs_view.children[0].style = discord.ButtonStyle.red
 					nat_changelogs_view.children[0].label = 'No, I follow the changelogs channel.'
 					nat_changelogs_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
+					label = f'<:tgk_active:1082676793342951475> Enabled'
+				else:
+					nat_changelogs_view.children[0].style = discord.ButtonStyle.green
+					nat_changelogs_view.children[0].label = "Yes, I would love to know what's new!"
+					nat_changelogs_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
 					label = f'<:tgk_deactivated:1082676877468119110> Disabled'
 				embed.add_field(name="Current Status:", value=f"> {label}", inline=False)
 
