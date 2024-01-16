@@ -263,7 +263,12 @@ async def on_message(message):
 							await asyncio.sleep(0.2)	
 						except:
 							pass
-		
+				
+				elif bot.dankFish['active'] is True:
+					current_timestamp = int(datetime.datetime.utcnow().timestamp())
+					if current_timestamp > bot.dankFish['timestamp']:
+						bot.dankFish['active'] = False
+
 	# return if message is from bot
 	if message.author.bot:
 		return
@@ -465,7 +470,11 @@ async def on_message_edit(before, after):
 						await asyncio.sleep(0.2)			
 					except:
 						pass
-	
+			
+			elif bot.dankFish['active'] is True:
+				current_timestamp = int(datetime.datetime.utcnow().timestamp())
+				if current_timestamp > bot.dankFish['timestamp']:
+					bot.dankFish['active'] = False
 	# return if message is from bot
 	if message.author.bot:
 		return
