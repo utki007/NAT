@@ -82,7 +82,7 @@ class serverUtils(commands.Cog):
 	@app_commands.command(name="settings", description="Adjust user-specific settings! ⚙️")
 	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
-	async def serversettings(self, interaction:  discord.Interaction):
+	async def usersettings(self, interaction:  discord.Interaction):
 		embed = discord.Embed(
 			color=3092790,
 			title="User Settings",
