@@ -5,9 +5,10 @@ import discord
 from discord import app_commands, Interaction
 from discord.ext import commands
 import humanfriendly
+import pytz
 from ui.settings.mafia import Mafia_Panel
 from ui.settings.payouts import Payouts_Panel
-from ui.settings.userConfig import Changelogs_Panel, Fish_Panel
+from ui.settings.userConfig import Changelogs_Panel, Fish_Panel, Timestamp_Panel
 from utils.embeds import *
 from utils.convertor import *
 from utils.checks import App_commands_Checks
@@ -64,6 +65,34 @@ class serverUtils(commands.Cog):
 		await ctx.send(
 			embed=calc_embed
 		)
+
+	# check users current time in their timezone
+	@commands.hybrid_command(name="time", description="Check your current time! ⏰")
+	@app_commands.guild_only()
+	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
+	async def time(self, ctx, user: discord.Member = None):
+		
+		if user is None:
+			user = ctx.author
+		data = await self.bot.userSettings.find(user.id)
+		if data is None or 'timezone' not in data.keys() or data['timezone'] is None:
+			if user == ctx.author:
+				return await ctx.send(embed = await get_warning_embed(f'Set your timezone first using </settings:1196688324207853590>.'))
+			else:
+				return await ctx.send(embed = await get_warning_embed(f'{user.mention} has not set their timezone yet.'))
+		
+		time = datetime.datetime.now(pytz.timezone(data['timezone'])).strftime('%I:%M %p')
+		date = datetime.datetime.now(pytz.timezone(data['timezone'])).strftime('%d %B, %Y')
+		timezone_name = datetime.datetime.now(pytz.timezone(data['timezone'])).strftime('%Z')
+		utc_diff = datetime.datetime.now(pytz.timezone(data['timezone'])).strftime('%z')
+		embed = discord.Embed(
+			color=3092790
+		)
+		embed.add_field(name="Date:", value=f"> **{date}**", inline=True)
+		embed.add_field(name="Time:", value=f"> **{time} {timezone_name} (UTC {utc_diff})**", inline=True)
+		embed.set_footer(text=f"{ctx.guild.name} • {data['timezone']}",icon_url=ctx.guild.icon)
+		embed.set_author(name=f"{user.display_name}'s time ...", icon_url=user.avatar)
+		await ctx.reply(embed=embed, mention_author=False)
 
 	@app_commands.command(name="serversettings", description="Adjust server-specific settings! ⚙️")
 	@app_commands.guild_only()
@@ -396,6 +425,7 @@ class Usersettings_Dropdown(discord.ui.Select):
 		options = [
 			discord.SelectOption(label='Fish Events', description='Get DMs for active events', emoji='<:tgk_fishing:1196665275794325504>'),
 			discord.SelectOption(label='Nat Changelogs', description='Get DMs for patch notes', emoji='<:tgk_entries:1124995375548338176>'),
+			discord.SelectOption(label='Timezone', description='Set your timezone', emoji='<:tgk_clock:1198684272446414928>'),
 		]
 		if default != -1:
 			options[default].default = True
@@ -411,7 +441,7 @@ class Usersettings_Dropdown(discord.ui.Select):
 				if data is None:
 					data = {"_id": interaction.user.id, "fish_events": False}
 					await interaction.client.userSettings.upsert(data)
-				if 'fish_events' not in data:
+				if 'fish_events' not in data.keys():
 					data['fish_events'] = False
 					await interaction.client.userSettings.upsert(data)
 
@@ -448,7 +478,7 @@ class Usersettings_Dropdown(discord.ui.Select):
 				if data is None:
 					data = {"_id": interaction.user.id, "changelog_dms": False}
 					await interaction.client.userSettings.upsert(data)
-				if 'changelog_dms' not in data:
+				if 'changelog_dms' not in data.keys():
 					data['changelog_dms'] = False
 					await interaction.client.userSettings.upsert(data)
 
@@ -480,6 +510,36 @@ class Usersettings_Dropdown(discord.ui.Select):
 				await interaction.response.edit_message(embed=embed, view=nat_changelogs_view)
 				nat_changelogs_view.message = await interaction.original_response()
 
+			case "Timezone":
+
+				data = await interaction.client.userSettings.find(interaction.user.id)
+				if data is None:
+					data = {"_id": interaction.user.id, "timezone": None}
+					await interaction.client.userSettings.upsert(data)
+				if 'timezone' not in data.keys():
+					data['timezone'] = None
+					await interaction.client.userSettings.upsert(data)
+				
+				if data['timezone'] is None:
+					timezone = f"**None**"
+				else:
+					timezone = f"**{data['timezone']}**"
+
+				embed = discord.Embed(
+					color=3092790,
+					title="Select your timezone",
+					description= 	f"Your current timezone is {timezone}.\n"
+				)
+
+				self.view.stop()
+				nat_changelogs_view =  Timestamp_Panel(interaction, data)
+
+				nat_changelogs_view.add_item(Usersettings_Dropdown(2))
+
+				await interaction.response.edit_message(embed=embed, view=nat_changelogs_view)
+				nat_changelogs_view.message = await interaction.original_response()
+
+			
 			case _:
 				self.view.stop()
 				nat_changelog_view = discord.ui.View()
