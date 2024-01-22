@@ -8,6 +8,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from utils.convertor import dict_to_tree
+from utils.embeds import get_warning_embed
 
 
 class events(commands.Cog):
@@ -190,9 +191,7 @@ class events(commands.Cog):
 			return
 		else:
 			#raise error
-			embed = discord.Embed(color=0xE74C3C, 
-				description=f"<:tgk_warning:840638147838738432> **|** Error: `{error}`")
-			await ctx.send(embed=embed)
+			await ctx.send(embed= await get_warning_embed(f"Error: `{error}`"))
 
 async def setup(bot):
 	await bot.add_cog(events(bot))
