@@ -98,9 +98,8 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 			else:
 				unlockFor = "role"
 
-			role_mention = role.mention if role != interaction.guild.default_role else role
-
 			if unlockFor == "role":
+				role_mention = role.mention if role != interaction.guild.default_role else role
 				overwrite = channel.overwrites_for(role)
 				if overwrite.send_messages == False:
 					embed = await get_warning_embed(content = f"{channel.mention} is already locked for {role_mention}.")
