@@ -562,9 +562,9 @@ async def on_message_edit(before, after):
 					return
 				extraGboost = re.findall("\((.*?)\)", boostMsgs[1])
 				if len(extraGboost) == 2:
-					extraGboost = (int(extraGboost[0].split(" ")[0][1:]))
+					bot.gboost['extraGboost'] = (int(extraGboost[0].split(" ")[0][1:]))
 				elif len(extraGboost) == 0:
-					extraGboost = 0
+					bot.gboost['extraGboost'] = 0
 				timestamp = re.findall("\<t:\w*:R\>\d*", boostMsgs[1])
 				if len(timestamp) < 1: return
 				timestamp = int(timestamp[0].replace("<t:","",1).replace(":R>","",1))
@@ -579,10 +579,6 @@ async def on_message_edit(before, after):
 
 					bot.gboost['active'] = True
 					bot.gboost['timestamp'] = timestamp
-					try:
-						bot.gboost['extraGboost'] = extraGboost
-					except:
-						pass
 					
 					records = await bot.userSettings.get_all({'gboost':True})
 					user_ids = [record["_id"] for record in records]
@@ -610,10 +606,6 @@ async def on_message_edit(before, after):
 						bot.gboost['extraGboost'] = 0
 						bot.gboost['timestamp'] = 0
 					else:
-						try:
-							bot.gboost['extraGboost'] = extraGboost
-						except:
-							pass
 						bot.gboost['timestamp'] = timestamp
 							
 						
