@@ -285,9 +285,9 @@ async def on_message(message):
 					return
 				extraGboost = re.findall("\((.*?)\)", boostMsgs[1])
 				if len(extraGboost) == 2:
-					extraGboost = (int(extraGboost[0].split(" ")[0][1:]))
+					bot.gboost['extraGboost'] = (int(extraGboost[0].split(" ")[0][1:]))
 				elif len(extraGboost) == 0:
-					extraGboost = 0
+					bot.gboost['extraGboost'] = 0
 				timestamp = re.findall("\<t:\w*:R\>\d*", boostMsgs[1])
 				if len(timestamp) < 1: return
 				timestamp = int(timestamp[0].replace("<t:","",1).replace(":R>","",1))
@@ -302,10 +302,6 @@ async def on_message(message):
 
 					bot.gboost['active'] = True
 					bot.gboost['timestamp'] = timestamp
-					try:
-						bot.gboost['extraGboost'] = extraGboost
-					except:
-						pass
 					
 					records = await bot.userSettings.get_all({'gboost':True})
 					user_ids = [record["_id"] for record in records]
@@ -313,9 +309,9 @@ async def on_message(message):
 					gboostmsg = [line for line in message.embeds[0].to_dict()['description'].split(">")]
 					gboostmsg[3] = gboostmsg[3].split('\n')[0]
 					gboostmsg[2] = (gboostmsg[2].split(']')[0] + "](<https://dankmemer.lol/store>)" + "]".join(gboostmsg[2].split(']')[1:])).replace("(https://dankmemer.lol/store)","",1)
-					gboostMsg = [list.strip() for list in gboostMsg[2:4]]
+					gboostmsg = [list.strip() for list in gboostmsg[2:4]]
 					content = "## Global Boost\n<:nat_replycont:1146496789361479741> "
-					content += f"\n<:nat_replycont:1146496789361479741> **Message:** ".join(gboostMsg)
+					content += f"\n<:nat_replycont:1146496789361479741> **Message:** ".join(gboostmsg)
 					content += f"\n<:nat_reply:1146498277068517386> **Ends at:** <t:{timestamp}:R>"
 
 					for user_id in user_ids:
@@ -333,10 +329,6 @@ async def on_message(message):
 						bot.gboost['extraGboost'] = 0
 						bot.gboost['timestamp'] = 0
 					else:
-						try:
-							bot.gboost['extraGboost'] = extraGboost
-						except:
-							pass
 						bot.gboost['timestamp'] = timestamp
 				
 	# return if message is from bot
@@ -586,9 +578,9 @@ async def on_message_edit(before, after):
 					gboostmsg = [line for line in message.embeds[0].to_dict()['description'].split(">")]
 					gboostmsg[3] = gboostmsg[3].split('\n')[0]
 					gboostmsg[2] = (gboostmsg[2].split(']')[0] + "](<https://dankmemer.lol/store>)" + "]".join(gboostmsg[2].split(']')[1:])).replace("(https://dankmemer.lol/store)","",1)
-					gboostMsg = [list.strip() for list in gboostMsg[2:4]]
+					gboostmsg = [list.strip() for list in gboostmsg[2:4]]
 					content = "## Global Boost\n<:nat_replycont:1146496789361479741> "
-					content += f"\n<:nat_replycont:1146496789361479741> **Message:** ".join(gboostMsg)
+					content += f"\n<:nat_replycont:1146496789361479741> **Message:** ".join(gboostmsg)
 					content += f"\n<:nat_reply:1146498277068517386> **Ends at:** <t:{timestamp}:R>"
 
 					for user_id in user_ids:
