@@ -38,13 +38,13 @@ class owner(commands.Cog):
     alert = app_commands.Group(name="alert", description="Alert commands", parent=dev)
 
     async def alert_autocomplete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
-        current_alert = await self.bot.alerts.find({"active": True})
-        if current_alert is None:
-            return
-
+        current_alert = await interaction.client.alerts.get_all({"active": True})
+        # if current_alert is None:
+        #     return
+        # ids = [current_alert['_id'] for current_alert in current_alert]
         return [
-            app_commands.Choice(name=alert, value=alert)
-            for alert in current_alert if current.lower() in alert.lower()
+            app_commands.Choice(name=alert['_id'], value=alert['_id'])
+            for alert in current_alert if current.lower() in alert['_id'].lower()
         ]
 
     @commands.Cog.listener()
@@ -281,11 +281,11 @@ class owner(commands.Cog):
         
         old_alert = await self.bot.alerts.find({"_id": alert})
         if old_alert is not None:
-            await self.bot.alerts.delete(old_alert)
-            await interaction.response.send(embed = await get_success_embed("Alert has been removed."))
+            old_alert['active'] = False
+            await interaction.client.alerts.upsert(old_alert)
+            await interaction.response.send_message(embed = await get_success_embed("Alert has been removed."))
         else:
-            
-            await interaction.response.send(embed = await get_error_embed("Alert not found in db."))
+            await interaction.response.send_message(embed = await get_error_embed("Alert not found in db."))
 
 async def setup(bot):
     await bot.add_cog(
