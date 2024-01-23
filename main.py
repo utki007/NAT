@@ -303,7 +303,7 @@ async def on_message(message):
 
 					gboostMsg = [line for line in message.embeds[0].to_dict()['description'].split(">")]
 					gboostMsg[3] = gboostMsg[3].split('\n')[0]
-					gboostMsg[0] = gboostMsg[0].split(']')[0] + "](<https://dankmemer.lol/store>)"
+					gboostMsg[2] = gboostMsg[2].split(']')[0] + "](<https://dankmemer.lol/store>)"
 					gboostMsg = [list.strip() for list in gboostMsg[2:4]]
 					content = "## Global Boost\n<:nat_replycont:1146496789361479741> "
 					content += f"\n<:nat_replycont:1146496789361479741> **Message:** ".join(gboostMsg)
