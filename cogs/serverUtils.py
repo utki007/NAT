@@ -423,7 +423,7 @@ class Usersettings_Dropdown(discord.ui.Select):
 	def __init__(self, default = -1):
 
 		options = [
-			discord.SelectOption(label='Fish Events', description='Get DMs for active events', emoji='<:tgk_fishing:1196665275794325504>'),
+			discord.SelectOption(label='Dank Reminders', description='Get DMs for dank-related events!', emoji='<:tgk_announce:1123919566427406437>'),
 			discord.SelectOption(label='Nat Changelogs', description='Get DMs for patch notes', emoji='<:tgk_entries:1124995375548338176>'),
 			discord.SelectOption(label='Timezone', description='Set your timezone', emoji='<:tgk_clock:1198684272446414928>'),
 		]
@@ -435,20 +435,27 @@ class Usersettings_Dropdown(discord.ui.Select):
 		
 		match self.values[0]:
 
-			case "Fish Events":
+			case "Dank Reminders":
 
 				data = await interaction.client.userSettings.find(interaction.user.id)
+				flag = 0
 				if data is None:
-					data = {"_id": interaction.user.id, "fish_events": False}
-					await interaction.client.userSettings.upsert(data)
+					data = {"_id": interaction.user.id, "fish_events": False, "gboost": False}
+					flag = 1
 				if 'fish_events' not in data.keys():
 					data['fish_events'] = False
+					flag = 1
+				if 'gboost' not in data.keys():
+					data['gboost'] = False
+					flag = 1
+				
+				if flag == 1:
 					await interaction.client.userSettings.upsert(data)
 
 				embed = discord.Embed(
 					color=3092790,
-					title="Fish Events",
-					description= 	f"Want to be reminded of active dank fish events?"
+					title="Dank Reminders",
+					description= f"Want to be dm'ed for dank-related events?"
 				)
 
 				self.view.stop()
@@ -457,15 +464,28 @@ class Usersettings_Dropdown(discord.ui.Select):
 				# Initialize the button
 				if data['fish_events']:
 					nat_changelogs_view.children[0].style = discord.ButtonStyle.red
-					nat_changelogs_view.children[0].label = "No, I don't fish."
+					nat_changelogs_view.children[0].label = "Disable Fish Events."
 					nat_changelogs_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
 					label = f'<:tgk_active:1082676793342951475> Enabled'
 				else:
 					nat_changelogs_view.children[0].style = discord.ButtonStyle.green
-					nat_changelogs_view.children[0].label = "Yes, I would love to know!"
+					nat_changelogs_view.children[0].label = "Enable Fish Events."
 					nat_changelogs_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
 					label = f'<:tgk_deactivated:1082676877468119110> Disabled'
-				embed.add_field(name="Current Status:", value=f"> {label}", inline=False)
+				embed.add_field(name="Fish Event:", value=f"> {label}", inline=True)
+
+				if data['gboost']:
+					nat_changelogs_view.children[1].style = discord.ButtonStyle.red
+					nat_changelogs_view.children[1].label = "Disable Global Boost."
+					nat_changelogs_view.children[1].emoji = "<:tgk_deactivated:1082676877468119110>"
+					label = f'<:tgk_active:1082676793342951475> Enabled'
+				else:
+					nat_changelogs_view.children[1].style = discord.ButtonStyle.green
+					nat_changelogs_view.children[1].label = "Enable Global Boost."
+					nat_changelogs_view.children[1].emoji = "<:tgk_active:1082676793342951475>"
+					label = f'<:tgk_deactivated:1082676877468119110> Disabled'
+				embed.add_field(name="Global Boost:", value=f"> {label}", inline=True)
+				embed.add_field(name="\u200b", value='\u200b', inline=True)
 
 				nat_changelogs_view.add_item(Usersettings_Dropdown(0))
 

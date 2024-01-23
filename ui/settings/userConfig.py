@@ -38,15 +38,21 @@ async def update_fish_embed(interaction: Interaction, data: dict):
 
 	embed = discord.Embed(
 		color=3092790,
-		title="Fish Events",
-		description= 	f"Want to be reminded of active dank fish events?"
+		title="Dank Reminders",
+		description= f"Want to be dm'ed for dank-related events?"
 	)
 	if data['fish_events']:
-		value = f'<:tgk_active:1082676793342951475> Enabled'
+		label = f'<:tgk_active:1082676793342951475> Enabled'
 	else:
-		value = f'<:tgk_deactivated:1082676877468119110> Disabled'
-	embed.add_field(name="Current Status:", value=f"> {value}", inline=False)
+		label = f'<:tgk_deactivated:1082676877468119110> Disabled'
+	embed.add_field(name="Fish Event:", value=f"> {label}", inline=True)
 
+	if data['gboost']:
+		label = f'<:tgk_active:1082676793342951475> Enabled'
+	else:
+		label = f'<:tgk_deactivated:1082676877468119110> Disabled'
+	embed.add_field(name="Global Boost:", value=f"> {label}", inline=True)
+	embed.add_field(name="\u200b", value='\u200b', inline=True)
 	return embed
 
 async def update_timestamp_embed(interaction: Interaction, data: dict):
@@ -114,14 +120,14 @@ class Fish_Panel(discord.ui.View):
 		self.data = data
 
 	@discord.ui.button(label='toggle_button_label' ,row=1)
-	async def toggle(self, interaction: discord.Interaction, button: discord.ui.Button):
+	async def fishEvent(self, interaction: discord.Interaction, button: discord.ui.Button):
 		data = await interaction.client.userSettings.find(interaction.user.id)
 		if data['fish_events']:
 			data['fish_events'] = False
 			await interaction.client.userSettings.upsert(data)
 			embed = await update_fish_embed(interaction, data)
 			button.style = discord.ButtonStyle.green
-			button.label = "Yes, I would love to know!"
+			button.label = "Enable Fish Event."
 			button.emoji = "<:tgk_active:1082676793342951475>"
 			await interaction.response.edit_message(embed=embed,view=self)
 		else:
@@ -129,9 +135,30 @@ class Fish_Panel(discord.ui.View):
 			await interaction.client.userSettings.upsert(data)
 			embed = await update_fish_embed(interaction, data)
 			button.style = discord.ButtonStyle.red
-			button.label = "No, I don't fish."
+			button.label = "Disable Fish Event."
 			button.emoji = "<:tgk_deactivated:1082676877468119110>"
 			await interaction.response.edit_message(view=self, embed=embed)
+	
+	@discord.ui.button(label='toggle_button_label' ,row=1)
+	async def gboost(self, interaction: discord.Interaction, button: discord.ui.Button):
+		data = await interaction.client.userSettings.find(interaction.user.id)
+		if data['gboost']:
+			data['gboost'] = False
+			await interaction.client.userSettings.upsert(data)
+			embed = await update_fish_embed(interaction, data)
+			button.style = discord.ButtonStyle.green
+			button.label = "Enable Global Boost."
+			button.emoji = "<:tgk_active:1082676793342951475>"
+			await interaction.response.edit_message(embed=embed,view=self)
+		else:
+			data['gboost'] = True
+			await interaction.client.userSettings.upsert(data)
+			embed = await update_fish_embed(interaction, data)
+			button.style = discord.ButtonStyle.red
+			button.label = "Disable Global Boost."
+			button.emoji = "<:tgk_deactivated:1082676877468119110>"
+			await interaction.response.edit_message(view=self, embed=embed)
+	
 	
 	async def interaction_check(self, interaction: discord.Interaction):
 		if interaction.user.id != self.interaction.user.id:
