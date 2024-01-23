@@ -41,7 +41,7 @@ intents.presences = False
 class MyBot(commands.Bot):
 	def __init__(self, application_id):
 		super().__init__(
-			command_prefix=["nat "],
+			command_prefix=["nat ", "Nat ", "nAt", "naT ", "NAt ", "NaT ", "nAT ", "NAT "],
 			case_insensitive=True,
 			owner_ids=[488614633670967307, 301657045248114690],
 			intents=intents,
@@ -72,6 +72,10 @@ class MyBot(commands.Bot):
 			"timestamp" : 1705583700,
 			"active" : True
  		}
+		bot.gboost = {
+			"timestamp" : 1705583700,
+			"active" : True
+		}
 
 		# Octane DB
 		bot.octane = motor.motor_asyncio.AsyncIOMotorClient(str(bot.dankHelper))
@@ -229,8 +233,6 @@ async def on_message(message):
 				fish_event = fish_event['value']
 				fish_event = await remove_emojis(fish_event)
 				fish_event = fish_event.split("\n")
-				# fish_event[0] = f"## " + fish_event[0].split(']')[0] + "](<https://dankmemer.lol/tutorial/random-timed-fishing-events>)"
-				# fish_event[-1] = "<:nat_reply:1146498277068517386>" + fish_event[-1]
 				for line in fish_event:
 					index = fish_event.index(line)
 					if 'https:' in fish_event[index]:
@@ -269,6 +271,57 @@ async def on_message(message):
 					if current_timestamp > bot.dankFish['timestamp']:
 						bot.dankFish['active'] = False
 
+			if 'multipliers xp' in message.interaction.name:
+				
+				boostMsgs = [line for line in message.embeds[0].to_dict()['description'].split("\n") if "Global Boost" in line]
+				if len(boostMsgs) < 2: 
+					if len(boostMsgs) == 0:
+						if bot.gboost['active'] is True:
+							current_timestamp = int(datetime.datetime.utcnow().timestamp())
+							if current_timestamp > int(bot.gboost['timestamp']) + 600:
+								bot.gboost['active'] = False
+								bot.gboost['timestamp'] = 1705583700
+					return
+				timestamp = re.findall("\<t:\w*:R\>\d*", boostMsgs[1])
+				if len(timestamp) < 1: return
+				timestamp = int(timestamp[0].replace("<t:","",1).replace(":R>","",1))
+
+
+				if bot.gboost['active'] is False:
+					
+					# return if end time > current time
+					current_timestamp = int(datetime.datetime.utcnow().timestamp())
+					if bot.gboost['timestamp'] > current_timestamp:
+						bot.gboost['active'] = True
+						return 
+					
+					bot.gboost['active'] = True
+					bot.gboost['timestamp'] = timestamp
+					
+					records = await bot.userSettings.get_all({'gboost':True})
+					user_ids = [record["_id"] for record in records]
+
+					gboostMsg = [line for line in message.embeds[0].to_dict()['description'].split(">")]
+					gboostMsg[3] = gboostMsg[3].split('\n')[0]
+					gboostMsg[0] = gboostMsg[0].split(']')[0] + "](<https://dankmemer.lol/store>)"
+					gboostMsg = [list.strip() for list in gboostMsg[2:4]]
+					content = "## Global Boost\n<:nat_replycont:1146496789361479741> "
+					content += f"\n<:nat_replycont:1146496789361479741> **Message:** ".join(gboostMsg)
+					content += f"\n<:nat_reply:1146498277068517386> **Ends at:** <t:{timestamp}:R>"
+
+					for user_id in user_ids:
+						user = await bot.fetch_user(user_id)
+						try:
+							await user.send(content)
+							await asyncio.sleep(0.2)	
+						except:
+							pass
+				
+				elif bot.gboost['active'] is True:
+					current_timestamp = int(datetime.datetime.utcnow().timestamp())
+					if current_timestamp > bot.gboost['timestamp']:
+						bot.gboost['timestamp'] = timestamp
+				
 	# return if message is from bot
 	if message.author.bot:
 		return
