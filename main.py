@@ -320,7 +320,10 @@ async def on_message(message):
 				elif bot.gboost['active'] is True:
 					current_timestamp = int(datetime.datetime.utcnow().timestamp())
 					if current_timestamp > bot.gboost['timestamp']:
-						bot.gboost['timestamp'] = timestamp
+						if current_timestamp > bot.gboost['timestamp'] + 18000:
+							bot.gboost['active'] = False
+						else:
+							bot.gboost['timestamp'] = timestamp
 				
 	# return if message is from bot
 	if message.author.bot:
