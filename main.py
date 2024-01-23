@@ -74,7 +74,8 @@ class MyBot(commands.Bot):
  		}
 		bot.gboost = {
 			"timestamp" : 1705583700,
-			"active" : True
+			"active" : True,
+			"extraGboost" : 0
 		}
 
 		# Octane DB
@@ -278,32 +279,40 @@ async def on_message(message):
 					if len(boostMsgs) == 0:
 						if bot.gboost['active'] is True:
 							current_timestamp = int(datetime.datetime.utcnow().timestamp())
-							if current_timestamp > int(bot.gboost['timestamp']) + 600:
+							if current_timestamp > int(bot.gboost['timestamp']) + (1800 * (bot.gboost['extraGboost'])):
 								bot.gboost['active'] = False
-								bot.gboost['timestamp'] = 1705583700
+								bot.gboost['timestamp'] = 0
 					return
+				extraGboost = re.findall("\((.*?)\)", boostMsgs[1])
+				if len(extraGboost) == 2:
+					extraGboost = (int(extraGboost[0].split(" ")[0][1:]))
+				elif len(extraGboost) == 0:
+					extraGboost = 0
 				timestamp = re.findall("\<t:\w*:R\>\d*", boostMsgs[1])
 				if len(timestamp) < 1: return
 				timestamp = int(timestamp[0].replace("<t:","",1).replace(":R>","",1))
-
 
 				if bot.gboost['active'] is False:
 					
 					# return if end time > current time
 					current_timestamp = int(datetime.datetime.utcnow().timestamp())
-					if bot.gboost['timestamp'] > current_timestamp:
+					if bot.gboost['timestamp'] + (1800 * (bot.gboost['extraGboost'])) > current_timestamp:
 						bot.gboost['active'] = True
-						return 
-					
+						return
+
 					bot.gboost['active'] = True
 					bot.gboost['timestamp'] = timestamp
+					try:
+						bot.gboost['extraGboost'] = extraGboost
+					except:
+						pass
 					
 					records = await bot.userSettings.get_all({'gboost':True})
 					user_ids = [record["_id"] for record in records]
 
-					gboostMsg = [line for line in message.embeds[0].to_dict()['description'].split(">")]
-					gboostMsg[3] = gboostMsg[3].split('\n')[0]
-					gboostMsg[2] = gboostMsg[2].split(']')[0] + "](<https://dankmemer.lol/store>)"
+					gboostmsg = [line for line in message.embeds[0].to_dict()['description'].split(">")]
+					gboostmsg[3] = gboostmsg[3].split('\n')[0]
+					gboostmsg[2] = (gboostmsg[2].split(']')[0] + "](<https://dankmemer.lol/store>)" + "]".join(gboostmsg[2].split(']')[1:])).replace("(https://dankmemer.lol/store)","",1)
 					gboostMsg = [list.strip() for list in gboostMsg[2:4]]
 					content = "## Global Boost\n<:nat_replycont:1146496789361479741> "
 					content += f"\n<:nat_replycont:1146496789361479741> **Message:** ".join(gboostMsg)
@@ -319,11 +328,16 @@ async def on_message(message):
 				
 				elif bot.gboost['active'] is True:
 					current_timestamp = int(datetime.datetime.utcnow().timestamp())
-					if current_timestamp > bot.gboost['timestamp']:
-						if current_timestamp > bot.gboost['timestamp'] + 18000:
-							bot.gboost['active'] = False
-						else:
-							bot.gboost['timestamp'] = timestamp
+					if current_timestamp > bot.gboost['timestamp'] + (1800 * (bot.gboost['extraGboost'])):
+						bot.gboost['active'] = False
+						bot.gboost['extraGboost'] = 0
+						bot.gboost['timestamp'] = 0
+					else:
+						try:
+							bot.gboost['extraGboost'] = extraGboost
+						except:
+							pass
+						bot.gboost['timestamp'] = timestamp
 				
 	# return if message is from bot
 	if message.author.bot:
@@ -336,41 +350,60 @@ async def on_message_edit(before, after):
 
 	if message.author.id == 270904126974590976 and len(message.embeds)>0:
 		
-		# for serversettings in dank
-		if message.interaction is not None and message.interaction.name == 'serversettings':
-			if message.embeds[0].to_dict()['title'] == 'Events Manager':
-				managerRole = None
-				description = message.embeds[0].to_dict()['fields'][0]['value']
-				idList = re.findall("(\d{18,19})", description)
-				if len(idList) > 0:
-					managerRole = int(idList[0])
-					data = await bot.dankSecurity.find(message.guild.id)
-					if not data:
-						data = {"_id": message.guild.id, "event_manager": None, "whitelist": [], "quarantine": None, "enabled": False}
-					if data['event_manager'] != managerRole:
-						data['event_manager'] = managerRole
-						await bot.dankSecurity.upsert(data)
-		
-		# For adventure stats
-		if message.interaction is not None and message.interaction.name == 'adventure':
-						
-			if 'author' not in message.embeds[0].to_dict().keys():
-				return
+		if message.interaction is not None:
 			
-			if 'name' not in message.embeds[0].to_dict()['author'].keys():
-				return
+			# for serversettings in dank
+			if message.interaction.name == 'serversettings':
+				if message.embeds[0].to_dict()['title'] == 'Events Manager':
+					managerRole = None
+					description = message.embeds[0].to_dict()['fields'][0]['value']
+					idList = re.findall("(\d{18,19})", description)
+					if len(idList) > 0:
+						managerRole = int(idList[0])
+						data = await bot.dankSecurity.find(message.guild.id)
+						if not data:
+							data = {"_id": message.guild.id, "event_manager": None, "whitelist": [], "quarantine": None, "enabled": False}
+						if data['event_manager'] != managerRole:
+							data['event_manager'] = managerRole
+							await bot.dankSecurity.upsert(data)
+		
+			# For adventure stats
+			if message.interaction.name == 'adventure':
+							
+				if 'author' not in message.embeds[0].to_dict().keys():
+					return
+				
+				if 'name' not in message.embeds[0].to_dict()['author'].keys():
+					return
 
-			if message.embeds[0].to_dict()['author']['name'] != 'Adventure Summary':
-				return
-					
-			user = message.interaction.user
-			today = str(datetime.date.today())
-			data = await bot.dankAdventureStats.find(user.id)
-			if data is None:
-				data = {
-					"_id": user.id,
-					"rewards": {
-						today : {
+				if message.embeds[0].to_dict()['author']['name'] != 'Adventure Summary':
+					return
+						
+				user = message.interaction.user
+				today = str(datetime.date.today())
+				data = await bot.dankAdventureStats.find(user.id)
+				if data is None:
+					data = {
+						"_id": user.id,
+						"rewards": {
+							today : {
+								"total_adv": 0,
+								"reward_adv": 0,
+								"dmc_from_adv": 0,
+								"frags": 0,
+								"dmc": {},
+								"items": {},
+								"luck": {},
+								"xp": {},
+								"coins":	{}
+							}
+						}
+					}
+				else:
+					if today not in data['rewards'].keys():
+						while len(data['rewards']) >= 3:
+							del data['rewards'][list(data['rewards'].keys())[0]]
+						data['rewards'][today] = {
 							"total_adv": 0,
 							"reward_adv": 0,
 							"dmc_from_adv": 0,
@@ -381,156 +414,209 @@ async def on_message_edit(before, after):
 							"xp": {},
 							"coins":	{}
 						}
-					}
-				}
-			else:
-				if today not in data['rewards'].keys():
-					while len(data['rewards']) >= 3:
-						del data['rewards'][list(data['rewards'].keys())[0]]
-					data['rewards'][today] = {
-						"total_adv": 0,
-						"reward_adv": 0,
-						"dmc_from_adv": 0,
-						"frags": 0,
-						"dmc": {},
-						"items": {},
-						"luck": {},
-						"xp": {},
-						"coins":	{}
-					}
 
-			if 'total_adv' not in data['rewards'][today].keys():
-				data['rewards'][today]['total_adv'] = 0
-			rewards = next((item for item in message.embeds[0].to_dict()['fields'] if item["name"] == "Rewards"), None)
-			if rewards is None:
-				data['rewards'][today]['total_adv'] += 1
-				return await bot.dankAdventureStats.upsert(data)
-			else:
-				data['rewards'][today]['total_adv'] += 1
-				data['rewards'][today]['reward_adv'] += 1
-				rewards = rewards['value'].replace('-','',100).split('\n')
-				rewards = [rewards.strip() for rewards in rewards]
-				
-				# parse rewards
-				for items in rewards:
-					item_list = items.split(" ")
-
-					# for dmc
-					if item_list[0] == '⏣':
-						data['rewards'][today]['dmc_from_adv'] += int(item_list[1].replace(',','',100))
-
-						key = item_list[1].replace(',','',100)
-						if key in data['rewards'][today]['dmc']:
-							data['rewards'][today]['dmc'][key] += 1
-						else:
-							data['rewards'][today]['dmc'][key] = 1
-
-					# for items
-					elif items[0].isdigit():
-
-						# remove emojis from item name
-						emojis = list(set(re.findall(":\w*:\d*", items)))
-						for emoji in emojis:
-							items = items.replace(emoji,"",100)
-						items = items.replace("<>","",100)
-						items = items.replace("<a>","",100)
-						items = items.replace("  "," ",100)
-
-						if '.' in items:
-							key = " ".join(item_list[0:1])
-							if key in data['rewards'][today]['xp'] :
-								data['rewards'][today]['xp'][key] += 1
-							else:
-								data['rewards'][today]['xp'][key] = 1
-						elif 'Skin Fragments' in items:
-							data['rewards'][today]['frags'] += int(item_list[0][:-1])
-						else:
-							quantity = int(item_list[0][:-1])
-							key = (" ".join(items.split(" ")[1:])).strip()
-							if key in data['rewards'][today]['items']:
-								data['rewards'][today]['items'][key] += quantity
-							else:
-								data['rewards'][today]['items'][key] = quantity
-								
-					else:
-						if 'Luck Multiplier' in items:
-							key = item_list[0][1:-1]
-							if key in data['rewards'][today]['luck']:
-								data['rewards'][today]['luck'][key] += 1
-							else:
-								data['rewards'][today]['luck'][key] = 1
-						elif ' Coin Multiplier' in items:
-							key = item_list[0][1:-1]
-							if key in data['rewards'][today]['coins']:
-								data['rewards'][today]['coins'][key] += 1
-							else:
-								data['rewards'][today]['coins'][key] = 1
-				
-			return await bot.dankAdventureStats.upsert(data)
-
-		# for fish catch
-		if message.interaction is not None and message.interaction.name == 'fish catch':
-			if 'title' not in message.embeds[0].to_dict().keys():
-				return
-			if message.embeds[0].to_dict()['title'] != 'Fishing':
-				return
-			if 'fields' not in message.embeds[0].to_dict().keys():
-				return
-			if len(message.embeds[0].to_dict()['fields']) < 1:
-				return
-			fields_dict = message.embeds[0].to_dict()['fields']
-			try:
-				fish_event = next((item for item in fields_dict if item["name"] in ["Active Event", "Active Events"]), None)
-			except:
-				return
-			if fish_event is None:
-				if bot.dankFish['active'] is True:
-					current_timestamp = int(datetime.datetime.utcnow().timestamp())
-					if current_timestamp > int(bot.dankFish['timestamp']) + 600:
-						bot.dankFish['active'] = False
-				return
-			fish_event = fish_event['value']
-			fish_event = await remove_emojis(fish_event)
-			fish_event = fish_event.split("\n")
-			# fish_event[0] = f"## " + fish_event[0].split(']')[0] + "](<https://dankmemer.lol/tutorial/random-timed-fishing-events>)"
-			# fish_event[-1] = "<:nat_reply:1146498277068517386>" + fish_event[-1]
-			for line in fish_event:
-				index = fish_event.index(line)
-				if 'https:' in fish_event[index]:
-					fish_event[index] = f"## " + fish_event[index].split(']')[0] + "](<https://dankmemer.lol/tutorial/random-timed-fishing-events>)"
-				elif '<t:' in fish_event[index]:
-					fish_event[index] = "<:nat_reply:1146498277068517386>" + fish_event[index]
+				if 'total_adv' not in data['rewards'][today].keys():
+					data['rewards'][today]['total_adv'] = 0
+				rewards = next((item for item in message.embeds[0].to_dict()['fields'] if item["name"] == "Rewards"), None)
+				if rewards is None:
+					data['rewards'][today]['total_adv'] += 1
+					return await bot.dankAdventureStats.upsert(data)
 				else:
-					fish_event[index] = "<:nat_replycont:1146496789361479741>" + fish_event[index]
-			fish_event = "\n".join(fish_event)
+					data['rewards'][today]['total_adv'] += 1
+					data['rewards'][today]['reward_adv'] += 1
+					rewards = rewards['value'].replace('-','',100).split('\n')
+					rewards = [rewards.strip() for rewards in rewards]
+					
+					# parse rewards
+					for items in rewards:
+						item_list = items.split(" ")
 
-			if bot.dankFish['active'] is False:
-				
-				# return if end time > current time
-				current_timestamp = int(datetime.datetime.utcnow().timestamp())
-				if bot.dankFish['timestamp'] > current_timestamp:
+						# for dmc
+						if item_list[0] == '⏣':
+							data['rewards'][today]['dmc_from_adv'] += int(item_list[1].replace(',','',100))
+
+							key = item_list[1].replace(',','',100)
+							if key in data['rewards'][today]['dmc']:
+								data['rewards'][today]['dmc'][key] += 1
+							else:
+								data['rewards'][today]['dmc'][key] = 1
+
+						# for items
+						elif items[0].isdigit():
+
+							# remove emojis from item name
+							emojis = list(set(re.findall(":\w*:\d*", items)))
+							for emoji in emojis:
+								items = items.replace(emoji,"",100)
+							items = items.replace("<>","",100)
+							items = items.replace("<a>","",100)
+							items = items.replace("  "," ",100)
+
+							if '.' in items:
+								key = " ".join(item_list[0:1])
+								if key in data['rewards'][today]['xp'] :
+									data['rewards'][today]['xp'][key] += 1
+								else:
+									data['rewards'][today]['xp'][key] = 1
+							elif 'Skin Fragments' in items:
+								data['rewards'][today]['frags'] += int(item_list[0][:-1])
+							else:
+								quantity = int(item_list[0][:-1])
+								key = (" ".join(items.split(" ")[1:])).strip()
+								if key in data['rewards'][today]['items']:
+									data['rewards'][today]['items'][key] += quantity
+								else:
+									data['rewards'][today]['items'][key] = quantity
+									
+						else:
+							if 'Luck Multiplier' in items:
+								key = item_list[0][1:-1]
+								if key in data['rewards'][today]['luck']:
+									data['rewards'][today]['luck'][key] += 1
+								else:
+									data['rewards'][today]['luck'][key] = 1
+							elif ' Coin Multiplier' in items:
+								key = item_list[0][1:-1]
+								if key in data['rewards'][today]['coins']:
+									data['rewards'][today]['coins'][key] += 1
+								else:
+									data['rewards'][today]['coins'][key] = 1
+					
+				return await bot.dankAdventureStats.upsert(data)
+
+			# for fish catch
+			if message.interaction.name == 'fish catch':
+				if 'title' not in message.embeds[0].to_dict().keys():
+					return
+				if message.embeds[0].to_dict()['title'] != 'Fishing':
+					return
+				if 'fields' not in message.embeds[0].to_dict().keys():
+					return
+				if len(message.embeds[0].to_dict()['fields']) < 1:
+					return
+				fields_dict = message.embeds[0].to_dict()['fields']
+				try:
+					fish_event = next((item for item in fields_dict if item["name"] in ["Active Event", "Active Events"]), None)
+				except:
+					return
+				if fish_event is None:
+					if bot.dankFish['active'] is True:
+						current_timestamp = int(datetime.datetime.utcnow().timestamp())
+						if current_timestamp > int(bot.dankFish['timestamp']) + 600:
+							bot.dankFish['active'] = False
+					return
+				fish_event = fish_event['value']
+				fish_event = await remove_emojis(fish_event)
+				fish_event = fish_event.split("\n")
+				# fish_event[0] = f"## " + fish_event[0].split(']')[0] + "](<https://dankmemer.lol/tutorial/random-timed-fishing-events>)"
+				# fish_event[-1] = "<:nat_reply:1146498277068517386>" + fish_event[-1]
+				for line in fish_event:
+					index = fish_event.index(line)
+					if 'https:' in fish_event[index]:
+						fish_event[index] = f"## " + fish_event[index].split(']')[0] + "](<https://dankmemer.lol/tutorial/random-timed-fishing-events>)"
+					elif '<t:' in fish_event[index]:
+						fish_event[index] = "<:nat_reply:1146498277068517386>" + fish_event[index]
+					else:
+						fish_event[index] = "<:nat_replycont:1146496789361479741>" + fish_event[index]
+				fish_event = "\n".join(fish_event)
+
+				if bot.dankFish['active'] is False:
+					
+					# return if end time > current time
+					current_timestamp = int(datetime.datetime.utcnow().timestamp())
+					if bot.dankFish['timestamp'] > current_timestamp:
+						bot.dankFish['active'] = True
+						return 
+					
 					bot.dankFish['active'] = True
-					return 
-				
-				bot.dankFish['active'] = True
-				timestamp = list(set(re.findall("\<t:\w*:R\>\d*", fish_event)))
-				bot.dankFish['timestamp'] = int(timestamp[0].replace("<t:","",1).replace(":R>","",1))
-				
-				records = await bot.userSettings.get_all({'fish_events':True})
-				user_ids = [record["_id"] for record in records]
+					timestamp = list(set(re.findall("\<t:\w*:R\>\d*", fish_event)))
+					bot.dankFish['timestamp'] = int(timestamp[0].replace("<t:","",1).replace(":R>","",1))
+					
+					records = await bot.userSettings.get_all({'fish_events':True})
+					user_ids = [record["_id"] for record in records]
 
-				for user_id in user_ids:
-					user = await bot.fetch_user(user_id)
+					for user_id in user_ids:
+						user = await bot.fetch_user(user_id)
+						try:
+							await user.send(fish_event)
+							await asyncio.sleep(0.2)			
+						except:
+							pass
+				
+				elif bot.dankFish['active'] is True:
+					current_timestamp = int(datetime.datetime.utcnow().timestamp())
+					if current_timestamp > bot.dankFish['timestamp']:
+						bot.dankFish['active'] = False
+
+			# for global boost
+			if message.interaction.name == 'multipliers xp':
+				
+				boostMsgs = [line for line in message.embeds[0].to_dict()['description'].split("\n") if "Global Boost" in line]
+				if len(boostMsgs) < 2: 
+					if len(boostMsgs) == 0:
+						if bot.gboost['active'] is True:
+							current_timestamp = int(datetime.datetime.utcnow().timestamp())
+							if current_timestamp > int(bot.gboost['timestamp']) + (1800 * (bot.gboost['extraGboost'])):
+								bot.gboost['active'] = False
+								bot.gboost['timestamp'] = 0
+					return
+				extraGboost = re.findall("\((.*?)\)", boostMsgs[1])
+				if len(extraGboost) == 2:
+					extraGboost = (int(extraGboost[0].split(" ")[0][1:]))
+				elif len(extraGboost) == 0:
+					extraGboost = 0
+				timestamp = re.findall("\<t:\w*:R\>\d*", boostMsgs[1])
+				if len(timestamp) < 1: return
+				timestamp = int(timestamp[0].replace("<t:","",1).replace(":R>","",1))
+
+				if bot.gboost['active'] is False:
+					
+					# return if end time > current time
+					current_timestamp = int(datetime.datetime.utcnow().timestamp())
+					if bot.gboost['timestamp'] + (1800 * (bot.gboost['extraGboost'])) > current_timestamp:
+						bot.gboost['active'] = True
+						return
+
+					bot.gboost['active'] = True
+					bot.gboost['timestamp'] = timestamp
 					try:
-						await user.send(fish_event)
-						await asyncio.sleep(0.2)			
+						bot.gboost['extraGboost'] = extraGboost
 					except:
 						pass
-			
-			elif bot.dankFish['active'] is True:
-				current_timestamp = int(datetime.datetime.utcnow().timestamp())
-				if current_timestamp > bot.dankFish['timestamp']:
-					bot.dankFish['active'] = False
+					
+					records = await bot.userSettings.get_all({'gboost':True})
+					user_ids = [record["_id"] for record in records]
+
+					gboostmsg = [line for line in message.embeds[0].to_dict()['description'].split(">")]
+					gboostmsg[3] = gboostmsg[3].split('\n')[0]
+					gboostmsg[2] = (gboostmsg[2].split(']')[0] + "](<https://dankmemer.lol/store>)" + "]".join(gboostmsg[2].split(']')[1:])).replace("(https://dankmemer.lol/store)","",1)
+					gboostMsg = [list.strip() for list in gboostMsg[2:4]]
+					content = "## Global Boost\n<:nat_replycont:1146496789361479741> "
+					content += f"\n<:nat_replycont:1146496789361479741> **Message:** ".join(gboostMsg)
+					content += f"\n<:nat_reply:1146498277068517386> **Ends at:** <t:{timestamp}:R>"
+
+					for user_id in user_ids:
+						user = await bot.fetch_user(user_id)
+						try:
+							await user.send(content)
+							await asyncio.sleep(0.2)	
+						except:
+							pass
+				
+				elif bot.gboost['active'] is True:
+					current_timestamp = int(datetime.datetime.utcnow().timestamp())
+					if current_timestamp > bot.gboost['timestamp'] + (1800 * (bot.gboost['extraGboost'])):
+						bot.gboost['active'] = False
+						bot.gboost['extraGboost'] = 0
+						bot.gboost['timestamp'] = 0
+					else:
+						try:
+							bot.gboost['extraGboost'] = extraGboost
+						except:
+							pass
+						bot.gboost['timestamp'] = timestamp
+							
+						
 	# return if message is from bot
 	if message.author.bot:
 		return
@@ -629,7 +715,7 @@ async def on_guild_join(guild: discord.Guild):
 
 	channel = bot.get_channel(1145314908599222342)
 	await channel.send(
-		f"## ★｡ﾟ☆ﾟ{guild.name.title()}☆ﾟ｡★\n"
+		f"## ★｡ﾟ☆ﾟ Joined{guild.name.title()}☆ﾟ｡★\n"
 		f'- **ID:** {guild.id}\n'
 		f'- **Owner:** {guild.owner.mention} (ID: `{guild.owner.id}`)\n'
 		f'- **Members:** {guild.member_count}\n'
@@ -644,7 +730,7 @@ async def on_guild_join(guild: discord.Guild):
 async def on_guild_remove(guild: discord.Guild):
 	channel = bot.get_channel(1145314908599222342)
 	await channel.send(
-		f"## ★｡ﾟ☆ﾟ{guild.name.title()}☆ﾟ｡★\n"
+		f"## ★｡ﾟ☆ﾟ Left {guild.name.title()}☆ﾟ｡★\n"
 		f'- **ID:** {guild.id}\n'
 		f'- **Owner:** {guild.owner.mention} (ID: `{guild.owner.id}`)\n'
 		f'- **Members:** {guild.member_count}\n'
