@@ -6,6 +6,7 @@ from traceback import format_exception
 import textwrap
 
 from humanfriendly import format_timespan
+from utils.embeds import get_error_embed, get_success_embed
 from utils.views.paginator import Contex_Paginator
 from discord import app_commands
 from discord.ext import commands
@@ -35,6 +36,16 @@ class owner(commands.Cog):
 
     dev = app_commands.Group(name="dev", description="Developer commands")
     alert = app_commands.Group(name="alert", description="Alert commands", parent=dev)
+
+    async def alert_autocomplete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
+        current_alert = await self.bot.alerts.find({"active": True})
+        if current_alert is None:
+            return
+
+        return [
+            app_commands.Choice(name=alert, value=alert)
+            for alert in current_alert if current.lower() in alert.lower()
+        ]
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -185,7 +196,6 @@ class owner(commands.Cog):
             await interaction.client.tree.sync(guild=guild)
             await interaction.edit_original_response(embed=discord.Embed(description=f"Successfully synced guild commands for `{guild.name}`", color=2829617))
 
-
     @dev.command(name="member_lock_bypass", description="Bypass member lock")
     @app_commands.default_permissions(administrator=True)
     async def member_lock_bypass(self, interaction: discord.Interaction, guild_id: str):
@@ -261,6 +271,21 @@ class owner(commands.Cog):
         
         await self.bot.alerts.insert(data)
         await interaction.edit_original_response(content="Alert has been added.")
+
+    @alert.command(name="remove", description="Add an alert")
+    @app_commands.describe(alert="The alert to remove")
+    @app_commands.autocomplete(alert=alert_autocomplete)
+    async def _remove(self, interaction: discord.Interaction, alert: str):
+        if interaction.user.id not in interaction.client.owner_ids:
+            return await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+        
+        old_alert = await self.bot.alerts.find({"_id": alert})
+        if old_alert is not None:
+            await self.bot.alerts.delete(old_alert)
+            await interaction.response.send(embed = await get_success_embed("Alert has been removed."))
+        else:
+            
+            await interaction.response.send(embed = await get_error_embed("Alert not found in db."))
 
 async def setup(bot):
     await bot.add_cog(
