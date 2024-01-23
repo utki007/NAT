@@ -1,5 +1,7 @@
+import asyncio
 import discord
 import re
+import datetime
 
 from utils.embeds import get_warning_embed
 
@@ -79,3 +81,62 @@ async def remove_emojis(string):
     string = string.replace("<a>", "", 100)
     string = string.replace("  "," ",100)
     return string
+
+async def check_gboost(bot, message):
+    boostMsgs = [line for line in message.embeds[0].to_dict()['description'].split("\n") if "Global Boost" in line]
+    if len(boostMsgs) < 2: 
+        if len(boostMsgs) == 0:
+            if bot.gboost['active'] is True:
+                current_timestamp = int(datetime.datetime.utcnow().timestamp())
+                if current_timestamp > int(bot.gboost['timestamp']):
+                    bot.gboost['active'] = False
+                    bot.gboost['timestamp'] = 0
+        return
+    
+    extraGboost = re.findall("\((.*?)\)", boostMsgs[1])
+    if len(extraGboost) == 2:
+        gboost = (int(extraGboost[0].split(" ")[0][1:]))
+    elif len(extraGboost) == 0:
+        gboost = 0
+    timestamp = re.findall("\<t:\w*:R\>\d*", boostMsgs[1])
+    if len(timestamp) < 1: return
+    timestamp = int(timestamp[0].replace("<t:","",1).replace(":R>","",1))
+
+    if bot.gboost['active'] is False:
+        
+        # return if end time > current time
+        current_timestamp = int(datetime.datetime.utcnow().timestamp())
+        if bot.gboost['timestamp'] > current_timestamp:
+            bot.gboost['active'] = True
+            return
+
+        bot.gboost['active'] = True
+        bot.gboost['timestamp'] = timestamp
+        
+        records = await bot.userSettings.get_all({'gboost':True})
+        user_ids = [record["_id"] for record in records]
+        user_ids = [301657045248114690]
+
+        gboostmsg = [line for line in message.embeds[0].to_dict()['description'].split(">")]
+        gboostmsg[3] = gboostmsg[3].split('\n')[0]
+        gboostmsg[2] = (gboostmsg[2].split(']')[0] + "](<https://dankmemer.lol/store>)" + "]".join(gboostmsg[2].split(']')[1:])).replace("(https://dankmemer.lol/store)","",1)
+        gboostmsg = [list.strip() for list in gboostmsg[2:4]]
+        content = "## Global Boost\n<:nat_replycont:1146496789361479741> "
+        content += f"\n<:nat_replycont:1146496789361479741> **Message:** ".join(gboostmsg)
+        content += f"\n<:nat_reply:1146498277068517386> **Ends at:** <t:{timestamp}:R>"
+
+        for user_id in user_ids:
+            user = await bot.fetch_user(user_id)
+            try:
+                await user.send(content)
+                await asyncio.sleep(0.2)	
+            except:
+                pass
+    
+    elif bot.gboost['active'] is True:
+        current_timestamp = int(datetime.datetime.utcnow().timestamp())
+        if current_timestamp > bot.gboost['timestamp']:
+            bot.gboost['active'] = False
+            bot.gboost['timestamp'] = 0
+        else:
+            bot.gboost['timestamp'] = timestamp
