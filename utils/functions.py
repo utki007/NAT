@@ -118,7 +118,6 @@ async def check_gboost(bot, message):
         
         records = await bot.userSettings.get_all({'gboost':True})
         user_ids = [record["_id"] for record in records]
-        user_ids = [301657045248114690]
 
         gboostmsg = [line for line in message.embeds[0].to_dict()['description'].split(">")]
         gboostmsg[3] = gboostmsg[3].split('\n')[0]
@@ -127,7 +126,6 @@ async def check_gboost(bot, message):
         content = "## Global Boost\n<:nat_replycont:1146496789361479741> "
         content += f"\n<:nat_replycont:1146496789361479741> **Message:** ".join(gboostmsg)
         content += f"\n<:nat_reply:1146498277068517386> **Ends at:** <t:{timestamp}:R>"
-        content += f"\n<:nat_reply:1146498277068517386> **Current:** <t:{current_timestamp}> {current_timestamp} TImestamp: <t:{timestamp}> {timestamp}"
 
         for user_id in user_ids:
             user = await bot.fetch_user(user_id)
