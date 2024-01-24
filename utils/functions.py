@@ -4,6 +4,7 @@ import re
 import datetime
 
 from pytz import timezone
+import pytz
 
 from utils.embeds import get_warning_embed
 
@@ -107,7 +108,7 @@ async def check_gboost(bot, message):
     if bot.gboost['active'] is False:
         
         # return if end time > current time
-        current_timestamp = int(datetime.datetime.utcnow().timestamp())
+        current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
         if bot.gboost['timestamp'] > current_timestamp:
             bot.gboost['active'] = True
             return
@@ -126,18 +127,18 @@ async def check_gboost(bot, message):
         content = "## Global Boost\n<:nat_replycont:1146496789361479741> "
         content += f"\n<:nat_replycont:1146496789361479741> **Message:** ".join(gboostmsg)
         content += f"\n<:nat_reply:1146498277068517386> **Ends at:** <t:{timestamp}:R>"
-        content += f"\n<:nat_reply:1146498277068517386> **Current:** <t:{current_timestamp}> \{current_timestamp} TImestamp: <t:{timestamp}> \{timestamp}"
+        content += f"\n<:nat_reply:1146498277068517386> **Current:** <t:{current_timestamp}> {current_timestamp} TImestamp: <t:{timestamp}> {timestamp}"
 
         for user_id in user_ids:
             user = await bot.fetch_user(user_id)
             try:
                 await user.send(content)
-                await asyncio.sleep(0.2)	
+                await asyncio.sleep(0.2)
             except:
                 pass
     
     elif bot.gboost['active'] is True:
-        current_timestamp = int(datetime.datetime.now(timezone('Asia/Kolkata')).timestamp())
+        current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
         if current_timestamp > bot.gboost['timestamp']:
             bot.gboost['active'] = False
             bot.gboost['timestamp'] = 0
