@@ -3,6 +3,8 @@ import discord
 import re
 import datetime
 
+from pytz import timezone
+
 from utils.embeds import get_warning_embed
 
 def clean_code(content):
@@ -87,7 +89,7 @@ async def check_gboost(bot, message):
     if len(boostMsgs) < 2: 
         if len(boostMsgs) == 0:
             if bot.gboost['active'] is True:
-                current_timestamp = int(datetime.datetime.utcnow().timestamp())
+                current_timestamp = int(datetime.datetime.now(timezone('Asia/Kolkata')).timestamp())
                 if current_timestamp > int(bot.gboost['timestamp']):
                     bot.gboost['active'] = False
                     bot.gboost['timestamp'] = 0
@@ -124,6 +126,7 @@ async def check_gboost(bot, message):
         content = "## Global Boost\n<:nat_replycont:1146496789361479741> "
         content += f"\n<:nat_replycont:1146496789361479741> **Message:** ".join(gboostmsg)
         content += f"\n<:nat_reply:1146498277068517386> **Ends at:** <t:{timestamp}:R>"
+        content += f"\n<:nat_reply:1146498277068517386> **Current:** <t:{current_timestamp}> \{current_timestamp} TImestamp: <t:{timestamp}> \{timestamp}"
 
         for user_id in user_ids:
             user = await bot.fetch_user(user_id)
@@ -134,7 +137,7 @@ async def check_gboost(bot, message):
                 pass
     
     elif bot.gboost['active'] is True:
-        current_timestamp = int(datetime.datetime.utcnow().timestamp())
+        current_timestamp = int(datetime.datetime.now(timezone('Asia/Kolkata')).timestamp())
         if current_timestamp > bot.gboost['timestamp']:
             bot.gboost['active'] = False
             bot.gboost['timestamp'] = 0
