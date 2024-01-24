@@ -2,6 +2,7 @@ import datetime
 import discord
 from discord.ext import commands, tasks
 from discord import app_commands, Interaction
+import pytz
 from utils.db import Document
 from utils.views.confirm import Confirm
 from humanfriendly import format_timespan
@@ -18,7 +19,7 @@ class Vote(commands.Cog):
     @tasks.loop(minutes=30)
     async def check_preimum(self):
         guild_data: dict = await self.bot.premium.get_all()
-        now = datetime.datetime.now(pytz.utc)
+        now = datetime.datetime.utcnow()
         for data in guild_data:
             if data['duration'] == 'permeant':
                 continue
@@ -76,7 +77,7 @@ class Vote(commands.Cog):
                 guild_data = {
                     '_id': interaction.guild.id,
                     'premium': True,
-                    'duration': datetime.datetime.now(pytz.utc) + datetime.timedelta(seconds=86400),
+                    'duration': datetime.datetime.utcnow() + datetime.timedelta(seconds=86400),
                     'premium_by': interaction.user.id,
                     'payout_limit': 40
                 }
@@ -96,7 +97,7 @@ class Vote(commands.Cog):
             
             user_data['votes'] -= 5
             await self.votes.update(user_data)
-            preimin_duration = (guild_data['duration'] - datetime.datetime.now(pytz.utc)).total_seconds()
+            preimin_duration = (guild_data['duration'] - datetime.datetime.utcnow()).total_seconds()
             await view.interaction.edit_original_response(content=f"{interaction.guild.name} is now premium for duration of {format_timespan(preimin_duration)}", view=None)
 
     @app_commands.command(name="vote", description="Vote for the bot")
