@@ -6,6 +6,7 @@ import aiohttp
 import discord
 from discord import app_commands
 from discord.ext import commands
+import pytz
 
 from utils.convertor import dict_to_tree
 from utils.embeds import get_warning_embed
@@ -50,7 +51,7 @@ class events(commands.Cog):
 				f'` - `   **User:** {interaction.user.mention}(`{interaction.user.id}`)\n'
 				f'` - `   **Missing:** {perm}\n',
 				colour=discord.Color.random(),
-				timestamp=datetime.datetime.utcnow()
+				timestamp=datetime.datetime.now(pytz.utc)
 			)
 
 			logg.set_footer(
@@ -103,7 +104,7 @@ class events(commands.Cog):
 				f'` - `   **User:** {interaction.user.mention}(`{interaction.user.id}`)\n'
 				f'` - `   **Missing:** {perm}\n',
 				colour=discord.Color.random(),
-				timestamp=datetime.datetime.utcnow()
+				timestamp=datetime.datetime.now(pytz.utc)
 			)
 
 			logg.set_footer(

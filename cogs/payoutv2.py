@@ -7,6 +7,7 @@ import humanfriendly
 from pymongo.results import DeleteResult
 from discord import app_commands, Interaction
 from discord.ext import commands, tasks
+import pytz
 from utils.db import Document
 from typing import List
 from ui.settings.payouts import Payout_Buttton, Payout_claim
@@ -150,7 +151,7 @@ class PayoutDB:
             'claimed': False,
             'set_by': host.id,
             'winner_message_id': message.id,
-            'queued_at': datetime.datetime.utcnow(),
+            'queued_at': datetime.datetime.now(pytz.utc),
             'claim_time': config['default_claim_time']
         }
 

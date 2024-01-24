@@ -28,7 +28,7 @@ class Voice(commands.Cog):
 
     @tasks.loop(minutes=5)
     async def voice_expire(self):
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(pytz.utc)
         for data in await self.channels.get_all():
             if data['last_activity'] is None: continue
             if now > data['last_activity'] + datetime.timedelta(minutes=5):
@@ -53,7 +53,7 @@ class Voice(commands.Cog):
             data = await self.channels.find({"_id": before.channel.id})
             if not data: return
             if len(before.channel.members) == 0:
-                data['last_activity'] = datetime.datetime.utcnow()
+                data['last_activity'] = datetime.datetime.now(pytz.utc)
                 await self.channels.update(data)
 
         if before.channel is None and after.channel is not None:

@@ -62,7 +62,7 @@ class server(commands.GroupCog, name="server", description="Run server based com
 				title=f"{embed['title']}",
 				description=embed['description'],
 				color=0xDA2A2A,
-				timestamp=datetime.datetime.utcnow()
+				timestamp=datetime.datetime.now(pytz.utc)
 		)
 		if interaction.guild.icon:
 			lockdown_embed.set_footer(text=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
@@ -123,7 +123,7 @@ class server(commands.GroupCog, name="server", description="Run server based com
 				title=f"{embed['title']}",
 				description=embed['description'],
 				color=0x78AB46,
-				timestamp=datetime.datetime.utcnow()
+				timestamp=datetime.datetime.now(pytz.utc)
 		)
 		if interaction.guild.icon:
 			lockdown_embed.set_footer(text=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)

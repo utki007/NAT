@@ -124,7 +124,7 @@ async def on_message(message):
 					channel, messages=messages, tz_info="Asia/Kolkata", 
 					guild=guild, bot=client, fancy_times=True, support_dev=False)
 				transcript_file = discord.File(io.BytesIO(transcript_file.encode()), filename=f"Mafia Logs.html")
-				link_msg  = await log_channel.send(content = f"**Mafia Logs:** <t:{int(datetime.datetime.utcnow().timestamp())}>", file=transcript_file, allowed_mentions=discord.AllowedMentions.none())
+				link_msg  = await log_channel.send(content = f"**Mafia Logs:** <t:{int(datetime.datetime.now(pytz.utc).timestamp())}>", file=transcript_file, allowed_mentions=discord.AllowedMentions.none())
 				link_view = discord.ui.View()
 				link_view.add_item(discord.ui.Button(emoji="<:nat_mafia:1102305100527042622>",label="Mafia Evidence", style=discord.ButtonStyle.link, url=f"https://mahto.id/chat-exporter?url={link_msg.attachments[0].url}"))
 				await link_msg.edit(view=link_view)
@@ -226,7 +226,7 @@ async def on_message(message):
 					return
 				if fish_event is None:
 					if bot.dankFish['active'] is True:
-						current_timestamp = int(datetime.datetime.utcnow().timestamp())
+						current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
 						if current_timestamp > int(bot.dankFish['timestamp']) + 600:
 							bot.dankFish['active'] = False
 					return
@@ -246,7 +246,7 @@ async def on_message(message):
 				if bot.dankFish['active'] is False:
 					
 					# return if end time > current time
-					current_timestamp = int(datetime.datetime.utcnow().timestamp())
+					current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
 					if bot.dankFish['timestamp'] > current_timestamp:
 						bot.dankFish['active'] = True
 						return 
@@ -267,7 +267,7 @@ async def on_message(message):
 							pass
 				
 				elif bot.dankFish['active'] is True:
-					current_timestamp = int(datetime.datetime.utcnow().timestamp())
+					current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
 					if current_timestamp > bot.dankFish['timestamp']:
 						bot.dankFish['active'] = False
 
@@ -436,7 +436,7 @@ async def on_message_edit(before, after):
 					return
 				if fish_event is None:
 					if bot.dankFish['active'] is True:
-						current_timestamp = int(datetime.datetime.utcnow().timestamp())
+						current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
 						if current_timestamp > int(bot.dankFish['timestamp']) + 600:
 							bot.dankFish['active'] = False
 					return
@@ -458,7 +458,7 @@ async def on_message_edit(before, after):
 				if bot.dankFish['active'] is False:
 					
 					# return if end time > current time
-					current_timestamp = int(datetime.datetime.utcnow().timestamp())
+					current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
 					if bot.dankFish['timestamp'] > current_timestamp:
 						bot.dankFish['active'] = True
 						return 
@@ -479,7 +479,7 @@ async def on_message_edit(before, after):
 							pass
 				
 				elif bot.dankFish['active'] is True:
-					current_timestamp = int(datetime.datetime.utcnow().timestamp())
+					current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
 					if current_timestamp > bot.dankFish['timestamp']:
 						bot.dankFish['active'] = False
 
@@ -590,7 +590,7 @@ async def on_guild_join(guild: discord.Guild):
 		f'- **Owner:** {guild.owner.mention} (ID: `{guild.owner.id}`)\n'
 		f'- **Members:** {guild.member_count}\n'
 		f'- **Created At:** <t:{int(guild.created_at.timestamp())}>\n'
-		f'- **Joined At:** <t:{int(datetime.datetime.utcnow().timestamp())}>\n'
+		f'- **Joined At:** <t:{int(datetime.datetime.now(pytz.utc).timestamp())}>\n'
   		f'- **Bot is in:** {len(bot.guilds)} guilds.\n'
 		f'## ☆ﾟ｡★｡ﾟ☆ﾟ｡★｡ﾟ☆ﾟ｡★｡ﾟ☆ﾟ｡ﾟ☆ﾟ｡★｡ﾟ☆ﾟ\n**\n**',
 		allowed_mentions=discord.AllowedMentions.none()
@@ -605,7 +605,7 @@ async def on_guild_remove(guild: discord.Guild):
 		f'- **Owner:** {guild.owner.mention} (ID: `{guild.owner.id}`)\n'
 		f'- **Members:** {guild.member_count}\n'
 		f'- **Created At:** <t:{int(guild.created_at.timestamp())}>\n'
-		f'- **Left At:** <t:{int(datetime.datetime.utcnow().timestamp())}>\n'
+		f'- **Left At:** <t:{int(datetime.datetime.now(pytz.utc).timestamp())}>\n'
   		f'- **Bot is in:** {len(bot.guilds)} guilds.\n'
 		f'## ☆ﾟ｡★｡ﾟ☆ﾟ｡★｡ﾟ☆ﾟ｡★｡ﾟ☆ﾟ｡ﾟ☆ﾟ｡★｡ﾟ☆ﾟ\n**\n**',
 		allowed_mentions=discord.AllowedMentions.none()

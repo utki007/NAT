@@ -156,7 +156,7 @@ class owner(commands.Cog):
             guild_data = {
                 '_id': int(guild.id),
                 'premium': True,
-                'duration': (datetime.datetime.utcnow() + datetime.timedelta(seconds=time)) if time != "permanent" else "permeant",
+                'duration': (datetime.datetime.now(pytz.utc) + datetime.timedelta(seconds=time)) if time != "permanent" else "permeant",
                 'premium_by': interaction.user.id,
                 'payout_limit': 40
             }
@@ -172,7 +172,7 @@ class owner(commands.Cog):
             guild_data['payout_limit'] = 40
             await self.bot.premium.update(guild_data)
         
-        preimin_duration = (guild_data['duration'] - datetime.datetime.utcnow()).total_seconds() if guild_data['duration'] != 'permeant' else "permeant"
+        preimin_duration = (guild_data['duration'] - datetime.datetime.now(pytz.utc)).total_seconds() if guild_data['duration'] != 'permeant' else "permeant"
 
         await interaction.response.send_message(f"{guild.name} is now premium for duration of {format_timespan(preimin_duration) if guild_data['duration'] != 'permeant' else 'permeant'}", ephemeral=True)
 
