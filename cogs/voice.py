@@ -54,7 +54,7 @@ class Voice(commands.Cog):
             data = await self.channels.find({"_id": before.channel.id})
             if not data: return
             if len(before.channel.members) == 0:
-                data['last_activity'] = datetime.datetime.now(pytz.utc)
+                data['last_activity'] = datetime.datetime.utcnow()
                 await self.channels.update(data)
 
         if before.channel is None and after.channel is not None:
