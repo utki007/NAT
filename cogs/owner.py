@@ -1,4 +1,5 @@
 import discord
+from discord.ext import commands, tasks
 import contextlib
 import io
 import datetime
@@ -22,6 +23,10 @@ class owner(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.bot.alerts = Document(bot.db, "alerts")
+        self.reload_timer.start()
+
+    async def cog_unload(self) -> None:
+        self.reload_timer.cancel()
     
     async def cog_autocomplete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
         current_cogs = []
@@ -46,6 +51,27 @@ class owner(commands.Cog):
             app_commands.Choice(name=alert['_id'], value=alert['_id'])
             for alert in current_alert if current.lower() in alert['_id'].lower()
         ]
+
+    # create a loop to reload timer cog
+    # @tasks.loop(hours=3)
+    @tasks.loop(seconds=30)
+    async def reload_timer(self):
+        await self.bot.wait_until_ready()
+        await self.bot.unload_extension("cogs.timer")
+        await self.bot.load_extension("cogs.timer")
+        print("Reloaded timer cog")
+    
+    # loop error
+    @reload_timer.error
+    async def reload_timer_error(self, error):
+        print(f"Error in reload_timer loop: {error}")
+        channel = self.bot.get_channel(867314266741407754)
+        # send text file if > 2000 characters
+        if len(error) > 2000:
+            await channel.send(file=discord.File(io.BytesIO(error.encode()), filename="error.txt"), content= "<@301657045248114690>, <@488614633670967307> Timer loop error")
+        else:
+            await channel.send(f"Timer loop error: {error}")
+        
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -99,10 +125,10 @@ class owner(commands.Cog):
             page.append(discord.Embed(description=f'```py\n{result[i:i + 2000]}\n```', color=ctx.author.color))
         
         custom_button = [
-			discord.ui.Button(label="<", style=discord.ButtonStyle.gray),
-			discord.ui.Button(label="◼", style=discord.ButtonStyle.gray),
-			discord.ui.Button(label=">", style=discord.ButtonStyle.gray)
-		]
+            discord.ui.Button(label="<", style=discord.ButtonStyle.gray),
+            discord.ui.Button(label="◼", style=discord.ButtonStyle.gray),
+            discord.ui.Button(label=">", style=discord.ButtonStyle.gray)
+        ]
         await Contex_Paginator(ctx, page, custom_button).start(embeded=True, quick_navigation=False)
     
     @dev.command(name="reload", description="Reload a cog")
@@ -156,7 +182,7 @@ class owner(commands.Cog):
             guild_data = {
                 '_id': int(guild.id),
                 'premium': True,
-                'duration': (datetime.datetime.now(pytz.utc) + datetime.timedelta(seconds=time)) if time != "permanent" else "permeant",
+                'duration': (datetime.datetime.now() + datetime.timedelta(seconds=time)) if time != "permanent" else "permeant",
                 'premium_by': interaction.user.id,
                 'payout_limit': 40
             }
@@ -172,7 +198,7 @@ class owner(commands.Cog):
             guild_data['payout_limit'] = 40
             await self.bot.premium.update(guild_data)
         
-        preimin_duration = (guild_data['duration'] - datetime.datetime.now(pytz.utc)).total_seconds() if guild_data['duration'] != 'permeant' else "permeant"
+        preimin_duration = (guild_data['duration'] - datetime.datetime.now()).total_seconds() if guild_data['duration'] != 'permeant' else "permeant"
 
         await interaction.response.send_message(f"{guild.name} is now premium for duration of {format_timespan(preimin_duration) if guild_data['duration'] != 'permeant' else 'permeant'}", ephemeral=True)
 
