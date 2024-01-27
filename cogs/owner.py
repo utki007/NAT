@@ -1,11 +1,9 @@
-from asyncio import tasks
 import discord
 import contextlib
 import io
 import datetime
 from traceback import format_exception
 import textwrap
-import pytz
 
 from humanfriendly import format_timespan
 from utils.embeds import get_error_embed, get_success_embed
@@ -24,10 +22,6 @@ class owner(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.bot.alerts = Document(bot.db, "alerts")
-        self.reload_timer_cog_loop.start()
-    
-    def cog_unload(self) -> None:
-        self.reload_timer_cog_loop.cancel()
     
     async def cog_autocomplete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
         current_cogs = []
@@ -60,22 +54,6 @@ class owner(commands.Cog):
             self.bot.current_alert = alert
 
         print(f"{self.__class__.__name__} Cog has been loaded\n-----")
-
-    @tasks.loop(hours=3)
-    async def reload_timer_cog_loop(self):
-        await self.bot.wait_until_ready()
-        await self.bot.unload_extension(f"cogs.timer")
-        await self.bot.load_extension(f"cogs.timer")
-
-    @reload_timer_cog_loop.error
-    async def reload_timer_cog_loop_error(self, error):
-        print(f"reload_timer_cog_loop error: {error}")
-        channel = self.bot.get_channel(867314266741407754)
-        # send text file if > 2000 characters
-        if len(error) > 2000:
-            await channel.send(file=discord.File(io.BytesIO(error.encode()), filename="error.txt"), content= "<@301657045248114690>, <@488614633670967307> reload_timer_cog_loop error")
-        else:
-            await channel.send(f"reload_timer_cog_loop error: {error}")
 
     @dev.command(name="get-logs", description="Get the logs of bot")
     @App_commands_Checks.is_owner()
@@ -121,10 +99,10 @@ class owner(commands.Cog):
             page.append(discord.Embed(description=f'```py\n{result[i:i + 2000]}\n```', color=ctx.author.color))
         
         custom_button = [
-            discord.ui.Button(label="<", style=discord.ButtonStyle.gray),
-            discord.ui.Button(label="◼", style=discord.ButtonStyle.gray),
-            discord.ui.Button(label=">", style=discord.ButtonStyle.gray)
-        ]
+			discord.ui.Button(label="<", style=discord.ButtonStyle.gray),
+			discord.ui.Button(label="◼", style=discord.ButtonStyle.gray),
+			discord.ui.Button(label=">", style=discord.ButtonStyle.gray)
+		]
         await Contex_Paginator(ctx, page, custom_button).start(embeded=True, quick_navigation=False)
     
     @dev.command(name="reload", description="Reload a cog")
