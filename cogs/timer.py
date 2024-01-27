@@ -277,6 +277,7 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 	
 	@timer_loop.error
 	async def timer_loop_error(self, error):
+		print(f"timer_loop_error : {error}")
 		channel = self.bot.get_channel(867314266741407754)
 		# send text file if > 2000 characters
 		if len(error) > 2000:
