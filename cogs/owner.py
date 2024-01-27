@@ -53,8 +53,7 @@ class owner(commands.Cog):
         ]
 
     # create a loop to reload timer cog
-    # @tasks.loop(hours=3)
-    @tasks.loop(seconds=30)
+    @tasks.loop(hours=3)
     async def reload_timer(self):
         await self.bot.wait_until_ready()
         await self.bot.unload_extension("cogs.timer")
