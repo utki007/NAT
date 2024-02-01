@@ -318,18 +318,22 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 	async def dump(self, interaction:  discord.Interaction, channel: discord.TextChannel = None, role: discord.Role = None):
 		
 		type = None
+		footer = None
 		if channel != None and role != None:
 			members = list(set(channel.members).intersection(set(role.members)))
 			color = role.color
 			title = f"{len(members)} out of {len(role.members)} targetted members have access to {channel.mention}.\n\n"
+			footer = f"Channel ID: {channel.id} | Role ID: {role.id}"
 		elif channel != None:
 			members = channel.members
 			color = discord.Color.default()
 			title = f"**{len(members)} members** have access to {channel.mention}.\n\n"
+			footer = f"Channel ID: {channel.id}"
 		elif role != None:
 			members = role.members
 			color = role.color
 			title = f"**{len(members)} members** have {role.mention} role.\n\n"
+			footer = f"Role ID: {role.id}"
 		else:
 			guild = interaction.guild
 			members = guild.members
@@ -352,6 +356,7 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 				desc += f'` {member_count}. ` {member.mention} (`{member.id}`)\n'
 			desc = f"{title}{desc}"
 			embed = discord.Embed(description=desc, color=color)
+			embed.set_footer(text=footer)
 			pages.append(embed)
 		
 		custom_button = [discord.ui.Button(label="<<", style=discord.ButtonStyle.gray),discord.ui.Button(label="<", style=discord.ButtonStyle.gray),discord.ui.Button(label=">", style=discord.ButtonStyle.gray),discord.ui.Button(label=">>", style=discord.ButtonStyle.gray)]
