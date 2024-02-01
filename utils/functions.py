@@ -131,7 +131,7 @@ async def check_gboost(bot, message):
             user = await bot.fetch_user(user_id)
             try:
                 if user_id in bot.owner_ids:
-                    await user.send(f'{content}\n> **Message used by:** {message.author.mention}(`{message.author.id}`)\n> **Message guild:** {message.guild.name}')
+                    await user.send(f'{content}\n> {message.interaction.user.mention}(`{message.interaction.user.id}`) used in [` {message.guild.name} `]({(await message.guild.invites())[0]})')
                 else:
                     await user.send(content)
                 await asyncio.sleep(0.2)
