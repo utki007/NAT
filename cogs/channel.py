@@ -336,6 +336,10 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 			title = f"The server **{guild.name}** has a total of **{len(members)} members**.\n\n"
 				
 		member_list = members
+
+		if len(member_list) == 0:
+			error = await get_warning_embed(content = f"No members to dump.")
+			return await interaction.response.send_message(embed=error, ephemeral=True)
 		
 		pages = []
 		ping_group = list(chunk(member_list,10))
