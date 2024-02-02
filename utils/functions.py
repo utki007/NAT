@@ -76,6 +76,8 @@ async def unquarantineUser(bot, user: discord.Member, quarantineRole: discord.Ro
 # create function to remove emojis from string
 async def remove_emojis(string):
     emojis = list(set(re.findall(":\w*:\d*", string)))
+    if len(emojis) == 0: 
+        return string
     for emoji in emojis:
         if emoji.replace(":", "", 2).isdigit():
             continue

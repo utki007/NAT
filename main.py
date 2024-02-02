@@ -210,6 +210,15 @@ async def on_message(message):
 										f"` - `   **Used by:** {member.mention}\n",
 										color=discord.Color.random()
 									)
+									try:
+										desc = message.embeds[0].description
+										if 'Are you sure you want' in desc:
+											user_id = int(re.findall(r'\<\@\d+\>', desc)[0].replace('<@','',1).replace('>','',1))
+											item = re.findall(r'\*\*(.*?)\*\*', desc)[0]
+											item = await remove_emojis(item)
+											embed.description += f"` - `   Tried to give **{item}** to <@{user_id}>\n"
+									except:
+										pass
 									await loggingChannel.send(embed=embed, view=view)
 							except:
 								pass
