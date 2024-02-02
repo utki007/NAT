@@ -297,7 +297,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 						channel = f"`None`"
 				else:
 					channel = f"`None`"
-				embed.add_field(name="Claim Channel:", value=f"> {channel}", inline=True)
+				embed.add_field(name="Claim Channel:", value=f"<:nat_reply:1146498277068517386> {channel}", inline=True)
 
 				if isinstance(data['claimed_channel'], discord.Webhook):
 					try:
@@ -306,32 +306,38 @@ class Serversettings_Dropdown(discord.ui.Select):
 						channel = f"`None`"
 				else:
 					channel = f"`None`"
-				embed.add_field(name="Queue Channel:", value=f"> {channel}", inline=True)
+				embed.add_field(name="Queue Channel:", value=f"<:nat_reply:1146498277068517386> {channel}", inline=True)
+
+				channel = interaction.guild.get_channel(data['payout_channel'])
+				if channel is None:
+					channel = f"`None`"
+				else:
+					channel = f"{channel.mention}"
+				embed.add_field(name="Payout Channel:", value=f"<:nat_reply:1146498277068517386> {channel}", inline=True)
 
 				channel = interaction.guild.get_channel(data['log_channel'])
 				if channel is None:
 					channel = f"`None`"
 				else:
 					channel = f"{channel.mention}"
-				embed.add_field(name="Payouts Channel:", value=f"> {channel}", inline=True)
-
-				embed.add_field(name="Claim Time:", value=f"> **{humanfriendly.format_timespan(data['default_claim_time'])}**", inline=True)
+				embed.add_field(name="Log Payouts:", value=f"<:nat_reply:1146498277068517386> {channel}", inline=True)
+				embed.add_field(name="Claim Time:", value=f"<:nat_reply:1146498277068517386> **{humanfriendly.format_timespan(data['default_claim_time'])}**", inline=True)
 
 				roles = data['manager_roles']
 				roles = [interaction.guild.get_role(role) for role in roles if interaction.guild.get_role(role) is not None]
-				roles = [role.mention for role in roles]
-				role = ", ".join(roles)
+				roles = [f'1. {role.mention}' for role in roles]
+				role = "\n".join(roles)
 				if len(roles) == 0 :
 					role = f"`None`"
-				embed.add_field(name="Payout Managers (Admin):", value=f"> {role}", inline=False)
+				embed.add_field(name="Payout Managers (Admin):", value=f">>> {role}", inline=False)
 
 				roles = data['event_manager_roles']
 				roles = [interaction.guild.get_role(role) for role in roles if interaction.guild.get_role(role) is not None]
-				roles = [role.mention for role in roles]
-				role = ", ".join(roles)
+				roles = [f'1. {role.mention}' for role in roles]
+				role = "\n".join(roles)
 				if len(roles) == 0:
 					role = f"`None`"
-				embed.add_field(name="Staff Roles (Queue Payouts):", value=f"> {role}", inline=False)
+				embed.add_field(name="Staff Roles (Queue Payouts):", value=f">>> {role}", inline=False)
 				
 				self.view.stop()
 				payouts_view = Payouts_Panel(interaction , data)
