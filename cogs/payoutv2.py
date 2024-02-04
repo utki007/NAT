@@ -347,14 +347,14 @@ class PayoutV2(commands.GroupCog, name="payout"):
         await event_message.add_reaction(self.backend.pending_emoji)
         await interaction.edit_original_response(embed=loading_embed)
 
-    @app_commands.command(name="search", description="Search for a payout message")
-    @app_commands.describe(message_id="The message ID of the event message.", user="user's payouts you want to search for")
-    async def payout_search(self, interaction: discord.Interaction, message_id: str=None, user: discord.Member=None):
+    @app_commands.command(name="clear", description="Search for a payout message")
+    @app_commands.describe(message_id="The message ID of the event message.")
+    async def payout_search(self, interaction: discord.Interaction, message_id: str=None):
         data = await self.backend.get_config(interaction.guild_id)
         if data is None: return await interaction.response.send_message("Payout system is not configured yet!", ephemeral=True)
 
         user_roles = [role.id for role in interaction.user.roles]
-        if (set(user_roles) & set(data['event_manager_roles'])) or (set(user_roles) & set(data['manager_roles'])):
+        if (set(user_roles) & set(data['manager_roles'])):
             pass
         else:
             return await interaction.response.send_message("You are not allowed to use this command!", ephemeral=True)
@@ -579,8 +579,15 @@ class PayoutV2(commands.GroupCog, name="payout"):
                 view.add_item(discord.ui.Button(label=f"Paid at", style=discord.ButtonStyle.url, url=payout_message.jump_url, emoji="<:tgk_link:1105189183523401828>"))
                 embed = winner_message.embeds[0]
                 embed.title = "Payout Paid"
+                
                 await payout_message.add_reaction("<:tgk_active:1082676793342951475>")
-                await queue_webhook.edit_message(winner_message.id, embed=embed, view=view)
+                try:
+                    await queue_webhook.edit_message(winner_message.id, embed=embed, view=view)
+                except Exception as e:
+                    await interaction.followup.send(f"Failed to edit the message due webhooks are changed, there no need to worry about this as payout has been registered as paid", ephemeral=True)
+                    await winner_message.add_reaction(self.backend.paid_emoji)
+
+
                 self.bot.dispatch("more_pending", payout)
 
                 if not payout['item']:
