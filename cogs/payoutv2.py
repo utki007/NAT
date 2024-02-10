@@ -272,10 +272,10 @@ class PayoutV2(commands.GroupCog, name="payout"):
             view.add_item(discord.ui.Button(label="Claim time expired", style=discord.ButtonStyle.gray, disabled=True, emoji="<a:nat_cross:1010969491347357717>"))
             view.add_item(discord.ui.Button(label="Event Link", style=discord.ButtonStyle.link, url=f"https://discord.com/channels/{guild.id}/{payout['channel']}/{payout['winner_message_id']}", emoji="<:tgk_link:1105189183523401828>"))
             await config['claim_channel'].edit_message(message.id, embed=embed, view=view, content=None)
-            # host: discord.Member = guild.get_member(payout['set_by'])
-            # host_view = discord.ui.View()
-            # host_view.add_item(discord.ui.Button(label="Payout Link", style=discord.ButtonStyle.link, url=message.jump_url, emoji="<:tgk_link:1105189183523401828>"))
-            # await host.send(f"Your payout for **{payout['event']}** has expired, please requeue it again.", view=host_view)
+            host: discord.Member = guild.get_member(payout['set_by'])
+            host_view = discord.ui.View()
+            host_view.add_item(discord.ui.Button(label="Payout Link", style=discord.ButtonStyle.link, url=message.jump_url, emoji="<:tgk_link:1105189183523401828>"))
+            await host.send(f"Your payout for **{payout['event']}** has expired, please requeue it again.", view=host_view)
         except:
             pass
         await self.backend.unclaimed.delete(payout['_id'])
