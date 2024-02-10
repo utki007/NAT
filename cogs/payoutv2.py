@@ -245,6 +245,7 @@ class PayoutV2(commands.GroupCog, name="payout"):
             payout: PayoutQueue = payout
             if datetime.datetime.utcnow() >= payout['queued_at'] + datetime.timedelta(seconds=payout['claim_time']):
                 self.bot.dispatch("payout_claim_expired", payout)
+                await asyncio.sleep(1.25)
         
         self.check_claim_task = False
     
