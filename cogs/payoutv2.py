@@ -238,7 +238,6 @@ class PayoutV2(commands.GroupCog, name="payout"):
     
     @tasks.loop(seconds=10)
     async def check_claim(self):
-        print("Checking for expired payouts")
         if self.check_claim_task: return
         self.claim_task = True
         for payout in await self.backend.unclaimed.get_all():
