@@ -204,6 +204,9 @@ class PayoutV2(commands.GroupCog, name="payout"):
         self.backend = PayoutDB(bot)
         self.bot.payouts = self.backend
         self.bot.dank_items_cache = {}
+        self.check_claim.start()
+        self.check_claim_task = False
+        self.in_expire_task = []
 
     async def item_autocomplete(self, interaction: discord.Interaction, string: str) -> List[app_commands.Choice[str]]:
         choices = []
@@ -233,6 +236,51 @@ class PayoutV2(commands.GroupCog, name="payout"):
         for item in await self.bot.dankItems.get_all(): self.bot.dank_items_cache[item['_id']] = item
         await self.backend.setup()
     
+    @tasks.loop(seconds=10)
+    async def check_claim(self):
+        print("Checking for expired payouts")
+        if self.check_claim_task: return
+        self.claim_task = True
+        for payout in await self.backend.unclaimed.get_all():
+            payout: PayoutQueue = payout
+            if datetime.datetime.utcnow() >= payout['queued_at'] + datetime.timedelta(seconds=payout['claim_time']):
+                self.bot.dispatch("payout_claim_expired", payout)
+        
+        self.check_claim_task = False
+    
+    @check_claim.before_loop
+    async def before_check_claim(self):
+        await self.bot.wait_until_ready()
+    
+    @commands.Cog.listener()
+    async def on_payout_claim_expired(self, payout: PayoutQueue):
+        if payout['_id'] in self.in_expire_task: return
+        self.in_expire_task.append(payout['_id'])
+        config: PayoutConfigCache = await self.backend.get_config(payout['guild'])
+        
+        if config is None: 
+            await self.backend.unclaimed.delete(payout['_id'])
+            return
+        try:
+            guild: discord.Guild = self.bot.get_guild(payout['guild'])
+            claim_channel: discord.TextChannel = config['claim_channel'].channel
+            message: discord.Message = await claim_channel.fetch_message(payout['_id'])
+            embed = message.embeds[0]
+            embed.title = "Payout Expired"
+            embed.color = discord.Color.red()
+            view = discord.ui.View()
+            view.add_item(discord.ui.Button(label="Claim time expired", style=discord.ButtonStyle.gray, disabled=True, emoji="<a:nat_cross:1010969491347357717>"))
+            view.add_item(discord.ui.Button(label="Event Link", style=discord.ButtonStyle.link, url=f"https://discord.com/channels/{guild.id}/{payout['channel']}/{payout['winner_message_id']}", emoji="<:tgk_link:1105189183523401828>"))
+            await config['claim_channel'].edit_message(message.id, embed=embed, view=view, content=None)
+            # host: discord.Member = guild.get_member(payout['set_by'])
+            # host_view = discord.ui.View()
+            # host_view.add_item(discord.ui.Button(label="Payout Link", style=discord.ButtonStyle.link, url=message.jump_url, emoji="<:tgk_link:1105189183523401828>"))
+            # await host.send(f"Your payout for **{payout['event']}** has expired, please requeue it again.", view=host_view)
+        except:
+            pass
+        await self.backend.unclaimed.delete(payout['_id'])
+        self.in_expire_task.remove(payout['_id'])
+
     @app_commands.command(name="create", description="Create a new payout")
     @app_commands.describe(event="event name", message_id="winner message id", winners="winner of the event", quantity='A constant number like "123" or a shorthand like "5m"', item="what item did they win?")
     @app_commands.autocomplete(item=item_autocomplete)
