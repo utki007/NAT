@@ -106,7 +106,7 @@ def dict_to_tree(data, indent=0):
     return tree
 
 time_regex = re.compile("(?:(\d{1,5})(h|s|m|d))+?")
-time_dict = {"h": 3600, "s": 1, "m": 60, "d": 86400}
+time_dict = {"h": 3600, "s": 1, "m": 60, "d": 86400, "w": 604800, "y": 31536000}
 
 
 class TimeConverter(commands.Converter):
@@ -121,3 +121,20 @@ class TimeConverter(commands.Converter):
             except ValueError:
                 raise commands.BadArgument("{} is not a number!".format(v))
         return time
+
+class DMCConverter(commands.Converter):
+    async def convert(self, ctx, value: str):
+
+        value = value.lower()
+        value = value.replace("⏣", "").replace(",", "").replace("k", "e3").replace("m", "e6").replace(" mil", "e6").replace("mil", "e6").replace("b", "e9")
+        if 'e' not in value:
+            return int(value)
+        value = value.split("e")
+
+        if len(value) > 2: raise Exception(f"Invalid number format try using 1e3 or 1k: {value}")
+
+        price = value[0]
+        multi = int(value[1])
+        price = float(price) * (10 ** multi)
+
+        return int(price)

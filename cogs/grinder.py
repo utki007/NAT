@@ -4,20 +4,8 @@ from typing import List, Dict, Union, TypedDict
 from discord import app_commands, Interaction
 from utils.db import Document
 from ui.settings.grinder import GrinderConfigPanel
-
-class GrinderProfile(TypedDict):
-    name: str
-    role: int
-    payment: int
-    frequency: int
-
-
-class GrinderConfig(TypedDict):
-    _id: int
-    payment_channel: int
-    manager_roles: List[int]
-    max_profiles: int
-    profile: Dict[str, GrinderProfile]
+from utils.types import GrinderConfig, GrinderProfile
+from utils.embeds import get_formated_embed
 
 class GrinderDB:
     def __init__(self, bot):
@@ -49,12 +37,15 @@ class GrinderDB:
 
     async def get_config_embed(self, guild: discord.Guild, config: GrinderConfig) -> discord.Embed:
         embed = discord.Embed(color=0x2b2d31, description="")
+        arguments = ["Payment Channel", "Manager Roles", "Max Profiles", "Profiles"]
+        formated_args = await get_formated_embed(arguments)
+        
         embed.description += "<:tgk_cc:1150394902585290854> `Grinder System`"
         embed.description += "\n\n"
-        embed.description += " ` Payment Channel  `  " + f"{'<#' + str(config['payment_channel']) + '>' if config['payment_channel'] else 'None'}\n"
-        embed.description += " ` Manager Roles    `  " + f"{','.join([f'<@&{role}>' for role in config['manager_roles']]) if len(config['manager_roles']) > 1 else 'None'}\n"
-        embed.description += " ` Max Profiles     `  " + str(config['max_profiles']) + "\n"
-        embed.description += " ` Profile          `  " + f"{len(config['profile'])}/{config['max_profiles']}\n\n"
+        embed.description += f"{formated_args['Payment Channel']}" + f"{'<#' + str(config['payment_channel']) + '>' if config['payment_channel'] else 'None'}\n"
+        embed.description += f"{formated_args['Manager Roles']}" + f"{','.join([f'<@&{role}>' for role in config['manager_roles']]) if len(config['manager_roles']) > 1 else 'None'}\n"
+        embed.description += f"{formated_args['Max Profiles']}" + str(config['max_profiles']) + "\n"
+        embed.description += f"{formated_args['Profiles']}" + f"{len(config['profile'])}/{config['max_profiles']}\n\n"
         embed.description += "<:tgk_hint:1206282482744561744> Use buttons below to changes the settings"
         return embed
 
