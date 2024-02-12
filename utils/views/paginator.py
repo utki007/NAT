@@ -109,9 +109,10 @@ class _view(View):
 		await self.update_children(interaction)
 
 class Paginator:
-	def __init__(self, interaction: Interaction, pages: list, custom_children: Optional[List[Union[Button, Select]]] = []):
+	def __init__(self, interaction: Interaction, pages: list, custom_children: Optional[List[Union[Button, Select]]] = [], ephemeral: bool = False):
 		self.custom_children = custom_children
 		self.interaction = interaction
+		self.ephemeral = ephemeral
 		self.pages = pages
 
 
@@ -171,7 +172,7 @@ class Paginator:
 
 			view.add_item(_select(options))
 
-		kwargs = {'content': self.pages[view.current_page]} if not (embeded) else {'embed': self.pages[view.current_page]}
+		kwargs = {'content': self.pages[view.current_page]} if not (embeded) else {'embed': self.pages[view.current_page], 'ephemeral': self.ephemeral}
 		kwargs['view'] = view
 
 		await self.interaction.response.send_message(**kwargs)
