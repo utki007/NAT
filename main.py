@@ -69,8 +69,8 @@ class MyBot(commands.Bot):
 		bot.userSettings = Document(bot.db, "userSettings")
 		bot.config = Document(bot.db, "config")
 		bot.dankFish = {
-			"timestamp" : 1705583700,
-			"active" : True
+			"timestamp" : 0,
+			"active" : False
  		}
 		bot.gboost = {
 			"timestamp" : 0,
