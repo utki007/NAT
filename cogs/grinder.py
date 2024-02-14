@@ -6,6 +6,7 @@ from utils.db import Document
 from ui.settings.grinder import GrinderConfigPanel
 from utils.types import GrinderConfig, GrinderProfile
 from utils.embeds import get_formated_embed
+from utils.dank import DonationsInfo, get_doantion_from_message
 
 class GrinderDB:
     def __init__(self, bot):
@@ -61,6 +62,19 @@ class Grinders(commands.GroupCog, name="grinders"):
         view = GrinderConfigPanel(config, interaction.user, interaction.message)
         await interaction.response.send_message(embed=await self.backend.get_config_embed(interaction.guild, config), view=view)
         view.message = await interaction.original_response()
+
+    @app_commands.command(name="check-dono", description="Check the donation of a user")
+    @app_commands.describe(message="The message that contains the donation")
+    async def check_dono(self, interaction: Interaction, message: str):
+        try:
+            message = await interaction.channel.fetch_message(int(message))
+        except discord.HTTPException:
+            await interaction.response.send_message("Message not found", ephemeral=True)
+            return
+        
+        donations = await get_doantion_from_message(message)
+        await interaction.response.send_message(str(donations), ephemeral=True)
+
 
 async def setup(bot):
     await bot.add_cog(Grinders(bot), guilds=[discord.Object(999551299286732871)])
