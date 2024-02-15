@@ -232,9 +232,8 @@ async def on_message(message):
 					return
 				data = await bot.dank.find('dankFish')
 				if data is None:
-					user = await bot.fetch_user(301657045248114690)
-					await user.send("dankFish is not found in dank database.")
-					return
+					data = {"_id":"dankFish","dankFish":{}}
+					await bot.dank.upsert(data)
 				if fish_event is None:
 					if data['dankFish'] != {}:
 						data['dankFish'] = {}
