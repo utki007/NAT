@@ -69,10 +69,6 @@ class MyBot(commands.Bot):
 		bot.userSettings = Document(bot.db, "userSettings")
 		bot.config = Document(bot.db, "config")
 		bot.dank = Document(bot.db, "dank")
-		bot.gboost = {
-			"timestamp" : 0,
-			"active" : False
-		}
 
 		# Octane DB
 		bot.octane = motor.motor_asyncio.AsyncIOMotorClient(str(bot.dankHelper))
