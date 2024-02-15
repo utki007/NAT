@@ -68,10 +68,7 @@ class MyBot(commands.Bot):
 		bot.premium = Document(bot.db, "premium")
 		bot.userSettings = Document(bot.db, "userSettings")
 		bot.config = Document(bot.db, "config")
-		bot.dankFish = {
-			"timestamp" : 0,
-			"active" : False
- 		}
+		bot.dank = Document(bot.db, "dank")
 		bot.gboost = {
 			"timestamp" : 0,
 			"active" : False
@@ -233,37 +230,38 @@ async def on_message(message):
 					fish_event = next((item for item in fields_dict if item["name"] in ["Active Event", "Active Events"]), None)
 				except:
 					return
+				data = await bot.dank.find('dankFish')
+				if data is None:
+					user = await bot.fetch_user(301657045248114690)
+					await user.send("dankFish is not found in dank database.")
+					return
 				if fish_event is None:
-					if bot.dankFish['active'] is True:
-						current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
-						if current_timestamp > int(bot.dankFish['timestamp']) + 600:
-							bot.dankFish['active'] = False
+					if data['dankFish'] != {}:
+						data['dankFish'] = {}
+						await bot.dank.upsert(data)
 					return
 				fish_event = fish_event['value']
+				event_names = re.findall(r'\[(.*?)\]',fish_event)
+				timestamp = re.findall("\<t:\w*:\d*", fish_event)# [0].replace("<t:","",1).replace(":","",1))
+				timestamp = [int(t.replace("<t:","",1).replace(":","",1)) for t in timestamp]
+				dict = {event_names[i]:timestamp[i] for i in range(len(event_names))}
+
 				fish_event = await remove_emojis(fish_event)
 				fish_event = fish_event.split("\n")
 				for line in fish_event:
 					index = fish_event.index(line)
 					if 'https:' in fish_event[index]:
 						fish_event[index] = f"## " + fish_event[index].split(']')[0] + "](<https://dankmemer.lol/tutorial/random-timed-fishing-events>)"
-					elif '<t:' in fish_event[index]:
+					elif index == len(fish_event)-1:
 						fish_event[index] = "<:nat_reply:1146498277068517386>" + fish_event[index]
 					else:
 						fish_event[index] = "<:nat_replycont:1146496789361479741>" + fish_event[index]
 				fish_event = "\n".join(fish_event)
 
-				if bot.dankFish['active'] is False:
-					
-					# return if end time > current time
-					current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
-					if bot.dankFish['timestamp'] > current_timestamp:
-						bot.dankFish['active'] = True
-						return 
-					
-					bot.dankFish['active'] = True
-					timestamp = list(set(re.findall("\<t:\w*:R\>\d*", fish_event)))
-					bot.dankFish['timestamp'] = int(timestamp[0].replace("<t:","",1).replace(":R>","",1))
-					
+				if data['dankFish'] == {} or data['dankFish'] != dict:
+					data['dankFish'] = dict
+					await bot.dank.upsert(data)
+
 					records = await bot.userSettings.get_all({'fish_events':True})
 					user_ids = [record["_id"] for record in records]
 
@@ -274,11 +272,27 @@ async def on_message(message):
 							await asyncio.sleep(0.2)	
 						except:
 							pass
-				
-				elif bot.dankFish['active'] is True:
+				elif bot.dankFish == dict:
+					change_in_event = False
 					current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
-					if current_timestamp > bot.dankFish['timestamp']:
-						bot.dankFish['active'] = False
+					for key in data['dankFish']:
+						if data['dankFish'][key] < current_timestamp:
+							change_in_event = True
+							del data['dankFish'][key]
+					if change_in_event:
+						await bot.dank.upsert(data)
+						records = await bot.userSettings.get_all({'fish_events':True})
+						user_ids = [record["_id"] for record in records]
+
+						for user_id in user_ids:
+							user = await bot.fetch_user(user_id)
+							try:
+								await user.send(fish_event)
+								await asyncio.sleep(0.2)	
+							except:
+								pass
+				else:
+					return
 
 			if 'multipliers xp' in message.interaction.name:
 				await check_gboost(bot, message)
@@ -443,39 +457,38 @@ async def on_message_edit(before, after):
 					fish_event = next((item for item in fields_dict if item["name"] in ["Active Event", "Active Events"]), None)
 				except:
 					return
+				data = await bot.dank.find('dankFish')
+				if data is None:
+					user = await bot.fetch_user(301657045248114690)
+					await user.send("dankFish is not found in dank database.")
+					return
 				if fish_event is None:
-					if bot.dankFish['active'] is True:
-						current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
-						if current_timestamp > int(bot.dankFish['timestamp']) + 600:
-							bot.dankFish['active'] = False
+					if data['dankFish'] != {}:
+						data['dankFish'] = {}
+						await bot.dank.upsert(data)
 					return
 				fish_event = fish_event['value']
+				event_names = re.findall(r'\[(.*?)\]',fish_event)
+				timestamp = re.findall("\<t:\w*:\d*", fish_event)# [0].replace("<t:","",1).replace(":","",1))
+				timestamp = [int(t.replace("<t:","",1).replace(":","",1)) for t in timestamp]
+				dict = {event_names[i]:timestamp[i] for i in range(len(event_names))}
+
 				fish_event = await remove_emojis(fish_event)
 				fish_event = fish_event.split("\n")
-				# fish_event[0] = f"## " + fish_event[0].split(']')[0] + "](<https://dankmemer.lol/tutorial/random-timed-fishing-events>)"
-				# fish_event[-1] = "<:nat_reply:1146498277068517386>" + fish_event[-1]
 				for line in fish_event:
 					index = fish_event.index(line)
 					if 'https:' in fish_event[index]:
 						fish_event[index] = f"## " + fish_event[index].split(']')[0] + "](<https://dankmemer.lol/tutorial/random-timed-fishing-events>)"
-					elif '<t:' in fish_event[index]:
+					elif index == len(fish_event)-1:
 						fish_event[index] = "<:nat_reply:1146498277068517386>" + fish_event[index]
 					else:
 						fish_event[index] = "<:nat_replycont:1146496789361479741>" + fish_event[index]
 				fish_event = "\n".join(fish_event)
 
-				if bot.dankFish['active'] is False:
-					
-					# return if end time > current time
-					current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
-					if bot.dankFish['timestamp'] > current_timestamp:
-						bot.dankFish['active'] = True
-						return 
-					
-					bot.dankFish['active'] = True
-					timestamp = list(set(re.findall("\<t:\w*:R\>\d*", fish_event)))
-					bot.dankFish['timestamp'] = int(timestamp[0].replace("<t:","",1).replace(":R>","",1))
-					
+				if data['dankFish'] == {} or data['dankFish'] != dict:
+					data['dankFish'] = dict
+					await bot.dank.upsert(data)
+
 					records = await bot.userSettings.get_all({'fish_events':True})
 					user_ids = [record["_id"] for record in records]
 
@@ -483,14 +496,30 @@ async def on_message_edit(before, after):
 						user = await bot.fetch_user(user_id)
 						try:
 							await user.send(fish_event)
-							await asyncio.sleep(0.2)			
+							await asyncio.sleep(0.2)	
 						except:
 							pass
-				
-				elif bot.dankFish['active'] is True:
+				elif bot.dankFish == dict:
+					change_in_event = False
 					current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
-					if current_timestamp > bot.dankFish['timestamp']:
-						bot.dankFish['active'] = False
+					for key in data['dankFish']:
+						if data['dankFish'][key] < current_timestamp:
+							change_in_event = True
+							del data['dankFish'][key]
+					if change_in_event:
+						await bot.dank.upsert(data)
+						records = await bot.userSettings.get_all({'fish_events':True})
+						user_ids = [record["_id"] for record in records]
+
+						for user_id in user_ids:
+							user = await bot.fetch_user(user_id)
+							try:
+								await user.send(fish_event)
+								await asyncio.sleep(0.2)	
+							except:
+								pass
+				else:
+					return
 
 			# for multipliers xp
 			if message.interaction.name == 'multipliers xp':
