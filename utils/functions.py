@@ -88,14 +88,18 @@ async def remove_emojis(string):
     return string
 
 async def check_gboost(bot, message):
+    gboost = await bot.dank.find('gboost')
+    if gboost is None:
+        gboost = {"_id":"gboost","active":False,"timestamp":0}
+        await bot.dank.upsert(gboost)
     boostMsgs = [line for line in message.embeds[0].to_dict()['description'].split("\n") if "Global Boost" in line]
     if len(boostMsgs) < 2: 
         if len(boostMsgs) == 0:
-            if bot.gboost['active'] is True:
+            if gboost['active'] is True:
                 current_timestamp = int(datetime.datetime.now(timezone('Asia/Kolkata')).timestamp())
-                if current_timestamp > int(bot.gboost['timestamp']):
-                    bot.gboost['active'] = False
-                    bot.gboost['timestamp'] = 0
+                if current_timestamp > int(gboost['timestamp']):
+                    gboost['active'] = False
+                    await bot.dank.upsert(gboost)
         return
     
     extraGboost = re.findall("\((.*?)\)", boostMsgs[1])
@@ -107,16 +111,18 @@ async def check_gboost(bot, message):
     if len(timestamp) < 1: return
     timestamp = int(timestamp[0].replace("<t:","",1).replace(":R>","",1))
 
-    if bot.gboost['active'] is False:
+    if gboost['active'] is False:
         
         # return if end time > current time
         current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
-        if bot.gboost['timestamp'] > current_timestamp:
-            bot.gboost['active'] = True
+        if gboost['timestamp'] > current_timestamp:
+            gboost['active'] = True
+            await bot.dank.upsert(gboost)
             return
 
-        bot.gboost['active'] = True
-        bot.gboost['timestamp'] = timestamp
+        gboost['active'] = True
+        gboost['timestamp'] = timestamp
+        await bot.dank.upsert(gboost)
         
         records = await bot.userSettings.get_all({'gboost':True})
         user_ids = [record["_id"] for record in records]
@@ -140,10 +146,8 @@ async def check_gboost(bot, message):
             except:
                 pass
     
-    elif bot.gboost['active'] is True:
+    elif gboost['active'] is True:
         current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
-        if current_timestamp > bot.gboost['timestamp']:
-            bot.gboost['active'] = False
-            bot.gboost['timestamp'] = 0
-        else:
-            bot.gboost['timestamp'] = timestamp
+        if current_timestamp > gboost['timestamp']:
+            gboost['active'] = False
+            await bot.dank.upsert(gboost)

@@ -271,7 +271,7 @@ async def on_message(message):
 							await asyncio.sleep(0.2)	
 						except:
 							pass
-				elif bot.dankFish == dict:
+				elif data['dankFish'] == dict:
 					change_in_event = False
 					current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
 					for key in data['dankFish']:
@@ -497,7 +497,7 @@ async def on_message_edit(before, after):
 							await asyncio.sleep(0.2)	
 						except:
 							pass
-				elif bot.dankFish == dict:
+				elif data['dankFish'] == dict:
 					change_in_event = False
 					current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
 					for key in data['dankFish']:
