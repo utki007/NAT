@@ -515,9 +515,9 @@ async def on_message_edit(before, after):
 				else:
 					return
 
-			# # for multipliers xp
-			# if message.interaction.name == 'multipliers xp':
-			# 	await check_gboost(bot, message)
+			# for multipliers xp
+			if message.interaction.name == 'multipliers xp':
+				await check_gboost(bot, message)
 
 	# return if message is from bot
 	if message.author.bot:
