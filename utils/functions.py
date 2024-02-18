@@ -73,6 +73,18 @@ async def unquarantineUser(bot, user: discord.Member, quarantineRole: discord.Ro
         await bot.quarantinedUsers.upsert(data)
         return True
 
+# set emojis based on new_line
+async def set_emojis(content):
+    content = content.split("\n")
+    for line in content:
+        index = content.index(line)
+        if index + 1 == len(content):
+            emoji = "<:nat_reply:1146498277068517386>"
+        else:
+            emoji = "<:nat_replycont:1146496789361479741>"
+        content[index] = f"{emoji} {line}"
+    return "\n".join(content)
+
 # create function to remove emojis from string
 async def remove_emojis(string):
     emojis = list(set(re.findall(":\w*:\d*", string)))
