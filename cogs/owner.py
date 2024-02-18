@@ -368,7 +368,7 @@ class owner(commands.Cog):
         # top 7 roles of user in that guild
         roles = list(reversed(user.roles))
         roles = roles[:7]
-        roles = '\n'.join([role.name for role in roles])
+        roles = '\n'.join([role.name[:20] for role in roles])
         roles = await set_emojis(roles)
         embed.add_field(name="Roles", value=roles, inline=True)
         embed.add_field(name="\u200b", value='\u200b', inline=True)
