@@ -7,11 +7,11 @@ from traceback import format_exception
 import textwrap
 
 from humanfriendly import format_timespan
-from utils.embeds import get_error_embed, get_success_embed
+from utils.embeds import get_error_embed, get_invisible_embed, get_success_embed
 from utils.views.paginator import Contex_Paginator
 from discord import app_commands
 from discord.ext import commands
-from utils.functions import clean_code
+from utils.functions import clean_code, set_emojis
 from utils.checks import App_commands_Checks
 from utils.db import Document
 from utils.views.confirm import Confirm
@@ -311,6 +311,70 @@ class owner(commands.Cog):
             await interaction.response.send_message(embed = await get_success_embed("Alert has been removed."))
         else:
             await interaction.response.send_message(embed = await get_error_embed("Alert not found in db."))
+
+    # Info of user in a guild
+    @app_commands.command(name="user-info", description="Get info of a user")
+    @app_commands.describe(user="The user to get info of", guild_id="The server to get info of")
+    async def user_info(self, interaction: discord.Interaction, user: discord.User, guild_id: str):
+        server = interaction.client.get_guild(int(guild_id))
+        if server is None:
+            return await interaction.response.send_message(embed = await get_error_embed("Invalid guild id"), ephemeral=True)
+        user = server.get_member(user.id)
+        embed = await get_invisible_embed('')
+        embed.color = discord.Color.random()
+        embed.title = f"{user.name}'s Credentials in {server.name.title()}"
+        embed.add_field(name="User", value=f"<:nat_replycont:1146496789361479741> {user.name}\n<:nat_reply:1146498277068517386> `{user.id}`", inline=True)
+        embed.add_field(name="Server Owner", value=f"<:nat_replycont:1146496789361479741> {server.owner.name}\n<:nat_reply:1146498277068517386> `{server.owner.id}`", inline=True)
+        embed.add_field(name="\u200b", value='\u200b', inline=True)
+        embed.add_field(name="User created:", value=f"<t:{int(datetime.datetime.timestamp(user.created_at))}>", inline=True)
+        embed.add_field(name="Joined guild:", value=f"<t:{int(datetime.datetime.timestamp(user.joined_at))}>", inline=True)
+        embed.add_field(name="\u200b", value='\u200b', inline=True)
+        # various user permissions in that guild
+
+        correct_emoji = '<:tgk_active:1082676793342951475>'
+        wrong_emoji = '<:tgk_deactivated:1082676877468119110>'
+        permissions = user.guild_permissions
+        perms = ''
+        if permissions.administrator:
+            perms += f"{correct_emoji} Administrator\n"
+        else:
+            perms += f"{wrong_emoji} Administrator\n"
+        if permissions.manage_guild:
+            perms += f"{correct_emoji} Manage Server\n"
+        else:
+            perms += f"{wrong_emoji} Manage Server\n"
+        if permissions.manage_channels:
+            perms += f"{correct_emoji} Manage Channels\n"
+        else:
+            perms += f"{wrong_emoji} Manage Channels\n"
+        if permissions.manage_roles:
+            perms += f"{correct_emoji} Manage Roles\n"
+        else:
+            perms += f"{wrong_emoji} Manage Roles\n"
+        if permissions.manage_messages:
+            perms += f"{correct_emoji} Manage Messages\n"
+        else:
+            perms += f"{wrong_emoji} Manage Messages\n"
+        if permissions.kick_members:
+            perms += f"{correct_emoji} Kick Members\n"
+        else:
+            perms += f"{wrong_emoji} Kick Members\n"
+        if permissions.ban_members:
+            perms += f"{correct_emoji} Ban Members\n"
+        else:
+            perms += f"{wrong_emoji} Ban Members\n"
+        # print only the important permissions
+        embed.add_field(name="Permissions", value=perms, inline=True)
+        # top 7 roles of user in that guild
+        roles = list(reversed(user.roles))
+        roles = roles[:7]
+        roles = '\n'.join([role.name for role in roles])
+        roles = await set_emojis(roles)
+        embed.add_field(name="Roles", value=roles, inline=True)
+        embed.add_field(name="\u200b", value='\u200b', inline=True)
+        if user.avatar is not None:
+            embed.set_thumbnail(url=user.avatar.url)
+        await interaction.response.send_message(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(
