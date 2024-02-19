@@ -23,6 +23,8 @@ from utils.functions import *
 from utils.convertor import dict_to_tree
 from io import BytesIO
 
+from utils.init import init_dankSecurity
+
 logger = logging.getLogger('discord')
 handler = logging.handlers.RotatingFileHandler(
 	filename='bot.log',
@@ -132,7 +134,14 @@ async def on_message(message):
 					member = message.interaction.user
 					if data:
 						if data['enabled'] is False: return
-						if member.id not in data['whitelist'] and member.id != member.guild.owner.id: 
+						owner = message.guild.owner
+						owner_list = [owner.id]
+						if 'psuedo_owner' in data.keys():
+							owner_list.append(data['psuedo_owner'])
+							owner = message.guild.get_member(data['psuedo_owner'])
+						if owner is None:
+							owner = message.guild.owner
+						if member.id not in data['whitelist'] and member.id not in owner_list: 
 							try:
 								await message.delete()
 							except:
@@ -195,6 +204,8 @@ async def on_message(message):
 								view = discord.ui.View()
 								view.add_item(discord.ui.Button(label=f'Used at', url=f"{message.jump_url}"))
 								await message.guild.owner.send(embed = embed, view=view)
+								if owner.id != message.guild.owner.id:
+									await owner.send(embed = embed, view=view)
 								if loggingChannel is not None and isLogEnabled is True:
 									embed = discord.Embed(
 										title = f"Security Breach!",
@@ -315,7 +326,7 @@ async def on_message_edit(before, after):
 						managerRole = int(idList[0])
 						data = await bot.dankSecurity.find(message.guild.id)
 						if not data:
-							data = {"_id": message.guild.id, "event_manager": None, "whitelist": [], "quarantine": None, "enabled": False}
+							data = await init_dankSecurity(message)
 						if data['event_manager'] != managerRole:
 							data['event_manager'] = managerRole
 							await bot.dankSecurity.upsert(data)
@@ -524,10 +535,11 @@ async def on_audit_log_entry_create(entry: discord.AuditLogEntry):
 	match entry.action:
 		case discord.AuditLogAction.member_role_update:
 			if entry.changes.after.roles:
-				added_to = entry.target
 				added_by = entry.user
 				roles = entry.changes.after.roles
 				member = entry.target
+
+				if member is None: return
 
 				# check if dank manager role is added
 				data = await bot.dankSecurity.find(entry.target.guild.id)
@@ -535,7 +547,14 @@ async def on_audit_log_entry_create(entry: discord.AuditLogEntry):
 				if data:
 					if data['enabled'] is False: return
 					event_manager = member.guild.get_role(data['event_manager'])
-					if event_manager is not None and event_manager in roles and member.id not in data['whitelist'] and member.id != member.guild.owner.id: 
+					owner = member.guild.owner
+					owner_list = [owner.id]
+					if 'psuedo_owner' in data.keys():
+						owner = member.guild.get_member(data['psuedo_owner'])
+						owner_list.append(owner.id)
+					if owner is None:
+						owner = member.guild.owner
+					if event_manager is not None and event_manager in roles and member.id not in data['whitelist'] and added_by.id not in owner_list: 
 						try:
 							await member.remove_roles(member.guild.get_role(data['event_manager']), reason="Member is not a authorized Dank Manager.")
 						except:
@@ -545,7 +564,7 @@ async def on_audit_log_entry_create(entry: discord.AuditLogEntry):
 							role = member.guild.get_role(data['quarantine'])
 						try:
 							await quarantineUser(bot, member, role, f"{member.name}(ID: {member.id}) has made an unauthorized attempt to get Dank Manager role.")	
-							if added_by.id != member.guild.owner.id:								
+							if added_by.id not in owner_list:								
 								await quarantineUser(bot, added_by, role, f"{added_by.name}(ID: {added_by.id}) has made an unauthorized attempt to give Dank Manager role to {member.name} (ID: {member.id}).")					
 						except:
 							pass
@@ -589,8 +608,21 @@ async def on_audit_log_entry_create(entry: discord.AuditLogEntry):
 						embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to get Dank Manager role in {member.guild.name}")
 						try:
 							await member.guild.owner.send(embed = embed)
+							if owner.id != member.guild.owner.id:
+								await owner.send(embed = embed)
 						except:
 							pass
+						if loggingChannel is not None and isLogEnabled:
+							embed = discord.Embed(
+								title = f"Security Breach!",
+								description=
+								f"` - `   **Added to:** {member.mention}\n"
+								f"` - `   **Added by:** {added_by.mention}\n"
+								f"` - `   {added_by.mention} tried to add {role.mention} to {member.mention}\n",
+								color=discord.Color.random()
+							)
+							await loggingChannel.send(embed=embed)
+							
 
 @bot.event
 async def on_guild_join(guild: discord.Guild):
