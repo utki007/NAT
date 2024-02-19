@@ -55,7 +55,7 @@ class GrinderConfigPanel(ui.View):
         await view.channel_select.interaction.delete_original_response()
         await self.message.edit(embed=await interaction.client.grinder.get_config_embed(interaction.guild, self.config), view=self)        
 
-    @ui.button(label="Manager Roles", style=discord.ButtonStyle.gray, emoji="<:tgk_role:1073908465405268029>")
+    @ui.button(label="Manager Roles", style=discord.ButtonStyle.gray, emoji="<:tgk_role:1073908306713780284>")
     async def manager_roles(self, interaction: Interaction, button: ui.Button):
         view = discord.ui.View()
         view.value = None
@@ -84,7 +84,83 @@ class GrinderConfigPanel(ui.View):
 
         await self.message.edit(embed=await interaction.client.grinder.get_config_embed(interaction.guild, self.config), view=self)
     
-    @ui.button(label="Profiles", style=discord.ButtonStyle.gray, emoji="<:tgk_entries:1124995375548338176>")
+    @ui.button(label="Trail", style=discord.ButtonStyle.gray, emoji="<:tgk_partner:1072850156355072033>", row=1)
+    async def trail(self, interaction: Interaction, button: ui.Button):
+        modal = General_Modal(title="Trail Configuration", interaction=interaction)
+        modal.duration = ui.TextInput(custom_id="duration", label="Duration",placeholder="Enter the duration of the trail", max_length=50, style=discord.TextStyle.short)
+
+        modal.add_item(modal.duration)
+        await interaction.response.send_modal(modal)
+        await modal.wait()
+
+        if modal.value is None or modal.value is False:
+            return await interaction.delete_original_response()
+        
+        duration = await TimeConverter().convert(modal.interaction, modal.duration.value)
+
+        role_view = discord.ui.View()
+        role_view.value = None
+        role_view.select = Role_select(placeholder="Select role for the trail", min_values=1, max_values=1)
+        role_view.add_item(role_view.select)
+
+        await modal.interaction.response.send_message(view=role_view, ephemeral=True)
+        await role_view.wait()
+
+        if role_view.value is None or role_view.value is False:
+            return await interaction.delete_original_response()
+        
+        role = role_view.select.values[0]
+
+        args = await get_formated_embed(["Role", "Duration"])
+        embed = discord.Embed(color=0x2b2d31, description="")
+        embed.description += f"### <:tgk_message_reload:1073908878774906940> `Review Trail`"
+        embed.description += "\n<:tgk_blank:1072224743266193459>\n"
+        embed.description += f"{args['Role']}{role.mention}\n"
+        embed.description += f"{args['Duration']}{format_timespan(duration)}\n\n"
+
+        confirm_view = Confirm(user=interaction.user, timeout=30)
+        await role_view.select.interaction.response.edit_message(embed=embed, view=confirm_view)
+        await confirm_view.wait()
+
+        if confirm_view.value is None or confirm_view.value is False:
+            return await interaction.delete_original_response()
+        
+        self.config["trail"] = {
+            "role": role.id,
+            "duration": duration
+        }
+        await interaction.client.grinder.update_config(interaction.guild.id, self.config)
+        embed.color = discord.Color.green()
+        confirm_view.children[0].style = discord.ButtonStyle.green
+        confirm_view.children[0].disabled = True
+        confirm_view.children[1].disabled = True
+
+        await confirm_view.interaction.response.edit_message(embed=embed, view=confirm_view)
+        await asyncio.sleep(1.5)
+        await confirm_view.interaction.delete_original_response()
+    
+    @ui.button(label="Base Role", style=discord.ButtonStyle.gray, emoji="<:tgk_role:1073908306713780284>", row=1)
+    async def base_role(self, interaction: Interaction, button: ui.Button):
+        view = discord.ui.View()
+        view.value = None
+        view.role_select = Role_select(placeholder="Select your base role", min_values=1, max_values=1)
+        view.add_item(view.role_select)
+        await interaction.response.send_message(view=view, ephemeral=True)
+
+        await view.wait()
+
+        if view.value is None or view.value is False:
+            return await interaction.delete_original_response()
+        
+        role = view.role_select.values[0]
+        self.config["base_role"] = role.id
+        await interaction.client.grinder.update_config(interaction.guild.id, self.config)
+        await view.role_select.interaction.response.edit_message(content=f"Base Role updated to {role.mention}", view=None)
+        await view.role_select.interaction.delete_original_response()
+        await self.message.edit(embed=await interaction.client.grinder.get_config_embed(interaction.guild, self.config), view=self)
+
+
+    @ui.button(label="Profiles", style=discord.ButtonStyle.gray, emoji="<:tgk_entries:1124995375548338176>", row=1)
     async def profiles(self, interaction: Interaction, button: ui.Button):
         op_view = discord.ui.View()
         op_view.value = None
@@ -124,8 +200,8 @@ class GrinderConfigPanel(ui.View):
                     return await interaction.delete_original_response()
                 
                 profile_name = profile_modal.profile_name.value
-                profile_amount = f"⏣ {await DMCConverter().convert(profile_modal.interaction, profile_modal.profile_amount.value)}"
-                profile_time = f"{format_timespan(await TimeConverter().convert(profile_modal.interaction, profile_modal.profile_time.value))}"
+                profile_amount = int(await DMCConverter().convert(profile_modal.interaction, profile_modal.profile_amount.value))
+                profile_time = int(await TimeConverter().convert(profile_modal.interaction, profile_modal.profile_time.value))
 
                 embed = discord.Embed(color=0x2b2d31, description="")
                 formated_args = await get_formated_embed(["Profile Name", "Payment", "Frquency", "Role"])
@@ -150,8 +226,8 @@ class GrinderConfigPanel(ui.View):
                 embed.description += "### <:tgk_message_reload:1073908878774906940> `Review Profile`"
                 embed.description += "\n<:tgk_blank:1072224743266193459>\n"
                 embed.description += f"{formated_args['Profile Name']}{profile_name}\n" 
-                embed.description += f"{formated_args['Payment']}{profile_amount}\n"
-                embed.description += f"{formated_args['Frquency']}{profile_time}\n"
+                embed.description += f"{formated_args['Payment']}⏣ {profile_amount}\n"
+                embed.description += f"{formated_args['Frquency']}{format_timespan(profile_time)}\n"
                 embed.description += f"{formated_args['Role']}{profile_role.mention}\n\n"
                 embed.description += "<:tgk_hint:1206282482744561744> Use buttons below to confirm or cancel the operation"
 
@@ -222,8 +298,6 @@ class GrinderConfigPanel(ui.View):
                 await interaction.delete_original_response()
 
                 await self.message.edit(embed=await interaction.client.grinder.get_config_embed(interaction.guild, self.config), view=self)
-
-
 
             case "list":
                 if len(self.config['profile']) == 0:
