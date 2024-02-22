@@ -140,12 +140,23 @@ async def check_gboost(bot, message):
         gboostmsg = [list.strip() for list in gboostmsg[2:4]]
         content = "## Global Boost\n<:nat_replycont:1146496789361479741> "
         content += f"\n<:nat_replycont:1146496789361479741> **Message:** ".join(gboostmsg)
+        try:
+            extraGboost = re.findall("\((.*?)\)", boostMsgs[1])
+            if len(extraGboost) == 2:
+                boost_count = (int(extraGboost[0].split(" ")[0][1:]))
+                content += f"\n<:nat_replycont:1146496789361479741> **Boosts Stacked:** {boost_count}"
+        except:
+            pass
         content += f"\n<:nat_reply:1146498277068517386> **Ends at:** <t:{timestamp}:R>"
 
         for user_id in user_ids:
             user = await bot.fetch_user(user_id)
             try:
                 if user_id in bot.owner_ids:
+                    view = discord.ui.View()
+                    view.add_item(discord.ui.link(label="Jump to message", url=message.jump_url, emoji="<:tgk_link:1105189183523401828>"))
+                    # add s link to server
+                    view.add_item(discord.ui.link(label=f"{message.guild.name}", url=(await message.guild.invites())[0], emoji="<:tgk_link:1105189183523401828>"))
                     await user.send(f'{content}\n> {message.interaction.user.mention}(`{message.interaction.user.id}`) used in [` {message.guild.name} `]({(await message.guild.invites())[0]})')
                 else:
                     await user.send(content)
