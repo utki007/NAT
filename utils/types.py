@@ -64,15 +64,15 @@ class GrinderPayment(TypedDict):
     Attributes
     ------------
     `total:` total payment
-    `missed:` missed payment
-    `extra:` extra payment
+    `due:` due payment
+    `credits:` credits
     `last_payment:` last payment date
     `next_payment:` next payment date
     """
 
     total: int
-    missed: int
-    extra: int
+    due: int
+    credits: int
     last_payment: datetime.datetime
     next_payment: datetime.datetime
 

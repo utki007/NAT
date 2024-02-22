@@ -20,6 +20,12 @@ class DonationsInfo:
             return f"{self.donor} donated {self.quantity} {self.items}"
         else:
             return f"{self.donor} donated {self.quantity}"
+    
+    def format(self) -> str:
+        if self.items:
+            return f"`{self.quantity}x {self.items}`"
+        else:
+            return f"`⏣ {self.quantity:,}`"
 
 async def get_doantion_from_message(message: discord.Message) -> DonationsInfo:
     """
