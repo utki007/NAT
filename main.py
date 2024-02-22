@@ -448,83 +448,83 @@ async def on_message_edit(before, after):
 					
 				return await bot.dankAdventureStats.upsert(data)
 
-			# for fish catch
-			if message.interaction.name == 'fish catch':
-				if 'title' not in message.embeds[0].to_dict().keys():
-					return
-				if message.embeds[0].to_dict()['title'] != 'Fishing':
-					return
-				if 'fields' not in message.embeds[0].to_dict().keys():
-					return
-				if len(message.embeds[0].to_dict()['fields']) < 1:
-					return
-				fields_dict = message.embeds[0].to_dict()['fields']
-				try:
-					fish_event = next((item for item in fields_dict if item["name"] in ["Active Event", "Active Events"]), None)
-				except:
-					return
-				data = await bot.dank.find('dankFish')
-				if data is None:
-					data = {"_id":"dankFish","dankFish":{}}
-					await bot.dank.upsert(data)
-				if fish_event is None:
-					if data['dankFish'] != {}:
-						data['dankFish'] = {}
-						await bot.dank.upsert(data)
-					return
-				fish_event = fish_event['value']
-				event_names = re.findall(r'\[(.*?)\]',fish_event)
-				timestamp = re.findall("\<t:\w*:\d*", fish_event)# [0].replace("<t:","",1).replace(":","",1))
-				timestamp = [int(t.replace("<t:","",1).replace(":","",1)) for t in timestamp]
-				dict = {event_names[i]:timestamp[i] for i in range(len(event_names))}
+			# # for fish catch
+			# if message.interaction.name == 'fish catch':
+			# 	if 'title' not in message.embeds[0].to_dict().keys():
+			# 		return
+			# 	if message.embeds[0].to_dict()['title'] != 'Fishing':
+			# 		return
+			# 	if 'fields' not in message.embeds[0].to_dict().keys():
+			# 		return
+			# 	if len(message.embeds[0].to_dict()['fields']) < 1:
+			# 		return
+			# 	fields_dict = message.embeds[0].to_dict()['fields']
+			# 	try:
+			# 		fish_event = next((item for item in fields_dict if item["name"] in ["Active Event", "Active Events"]), None)
+			# 	except:
+			# 		return
+			# 	data = await bot.dank.find('dankFish')
+			# 	if data is None:
+			# 		data = {"_id":"dankFish","dankFish":{}}
+			# 		await bot.dank.upsert(data)
+			# 	if fish_event is None:
+			# 		if data['dankFish'] != {}:
+			# 			data['dankFish'] = {}
+			# 			await bot.dank.upsert(data)
+			# 		return
+			# 	fish_event = fish_event['value']
+			# 	event_names = re.findall(r'\[(.*?)\]',fish_event)
+			# 	timestamp = re.findall("\<t:\w*:\d*", fish_event)# [0].replace("<t:","",1).replace(":","",1))
+			# 	timestamp = [int(t.replace("<t:","",1).replace(":","",1)) for t in timestamp]
+			# 	dict = {event_names[i]:timestamp[i] for i in range(len(event_names))}
 
-				fish_event = await remove_emojis(fish_event)
-				fish_event = fish_event.split("\n")
-				for line in fish_event:
-					index = fish_event.index(line)
-					if 'https:' in fish_event[index]:
-						fish_event[index] = f"## " + fish_event[index].split(']')[0] + "](<https://dankmemer.lol/tutorial/random-timed-fishing-events>)"
-					elif index == len(fish_event)-1:
-						fish_event[index] = "<:nat_reply:1146498277068517386>" + fish_event[index]
-					else:
-						fish_event[index] = "<:nat_replycont:1146496789361479741>" + fish_event[index]
-				fish_event = "\n".join(fish_event)
+			# 	fish_event = await remove_emojis(fish_event)
+			# 	fish_event = fish_event.split("\n")
+			# 	for line in fish_event:
+			# 		index = fish_event.index(line)
+			# 		if 'https:' in fish_event[index]:
+			# 			fish_event[index] = f"## " + fish_event[index].split(']')[0] + "](<https://dankmemer.lol/tutorial/random-timed-fishing-events>)"
+			# 		elif index == len(fish_event)-1:
+			# 			fish_event[index] = "<:nat_reply:1146498277068517386>" + fish_event[index]
+			# 		else:
+			# 			fish_event[index] = "<:nat_replycont:1146496789361479741>" + fish_event[index]
+			# 	fish_event = "\n".join(fish_event)
 
-				if data['dankFish'] == {} or data['dankFish'] != dict:
-					data['dankFish'] = dict
-					await bot.dank.upsert(data)
+			# 	if data['dankFish'] == {} or data['dankFish'] != dict:
+			# 		data['dankFish'] = dict
+			# 		await bot.dank.upsert(data)
 
-					records = await bot.userSettings.get_all({'fish_events':True})
-					user_ids = [record["_id"] for record in records]
+			# 		records = await bot.userSettings.get_all({'fish_events':True})
+			# 		user_ids = [record["_id"] for record in records]
 
-					for user_id in user_ids:
-						user = await bot.fetch_user(user_id)
-						try:
-							await user.send(fish_event)
-							await asyncio.sleep(0.2)	
-						except:
-							pass
-				elif data['dankFish'] == dict:
-					change_in_event = False
-					current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
-					for key in data['dankFish']:
-						if data['dankFish'][key] < current_timestamp:
-							change_in_event = True
-							del data['dankFish'][key]
-					if change_in_event:
-						await bot.dank.upsert(data)
-						records = await bot.userSettings.get_all({'fish_events':True})
-						user_ids = [record["_id"] for record in records]
+			# 		for user_id in user_ids:
+			# 			user = await bot.fetch_user(user_id)
+			# 			try:
+			# 				await user.send(fish_event)
+			# 				await asyncio.sleep(0.2)	
+			# 			except:
+			# 				pass
+			# 	elif data['dankFish'] == dict:
+			# 		change_in_event = False
+			# 		current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
+			# 		for key in data['dankFish']:
+			# 			if data['dankFish'][key] < current_timestamp:
+			# 				change_in_event = True
+			# 				del data['dankFish'][key]
+			# 		if change_in_event:
+			# 			await bot.dank.upsert(data)
+			# 			records = await bot.userSettings.get_all({'fish_events':True})
+			# 			user_ids = [record["_id"] for record in records]
 
-						for user_id in user_ids:
-							user = await bot.fetch_user(user_id)
-							try:
-								await user.send(fish_event)
-								await asyncio.sleep(0.2)	
-							except:
-								pass
-				else:
-					return
+			# 			for user_id in user_ids:
+			# 				user = await bot.fetch_user(user_id)
+			# 				try:
+			# 					await user.send(fish_event)
+			# 					await asyncio.sleep(0.2)	
+			# 				except:
+			# 					pass
+			# 	else:
+			# 		return
 
 	# return if message is from bot
 	if message.author.bot:
