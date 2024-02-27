@@ -551,6 +551,8 @@ async def on_audit_log_entry_create(entry: discord.AuditLogEntry):
 					if data['enabled'] is False: return
 					event_manager = member.guild.get_role(data['event_manager'])
 					owner = member.guild.owner
+					if owner is None:
+						return
 					owner_list = [owner.id]
 					if 'psuedo_owner' in data.keys():
 						owner = member.guild.get_member(data['psuedo_owner'])
