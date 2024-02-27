@@ -542,7 +542,10 @@ async def on_audit_log_entry_create(entry: discord.AuditLogEntry):
 				if member is None: return
 
 				# check if dank manager role is added
-				data = await bot.dankSecurity.find(entry.target.guild.id)
+				try:
+					data = await bot.dankSecurity.find(entry.target.guild.id)
+				except:
+					data = None
 
 				if data:
 					if data['enabled'] is False: return

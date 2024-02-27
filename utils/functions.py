@@ -160,9 +160,14 @@ async def check_gboost(bot, message):
                     view.add_item(discord.ui.Button(label=f"{message.guild.name}", style=discord.ButtonStyle.url, url=str((await message.guild.invites())[0]), emoji="<:tgk_link:1105189183523401828>"))
                     await user.send(f'{content}\n> {message.interaction.user.mention}(`{message.interaction.user.id}`) used in [` {message.guild.name} `]({(await message.guild.invites())[0]})', view=view)
                 else:
-                    await user.send(content)
-            
-                await asyncio.sleep(0.2)
+                    try:
+                        await user.send(content)
+                        await asyncio.sleep(0.2)
+                    except:
+                        data = await bot.userSettings.find(user.id)
+                        data['gboost'] = False
+                        await bot.userSettings.upsert(data)
+                        pass
             except:
                 pass
     
