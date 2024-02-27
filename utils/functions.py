@@ -134,19 +134,21 @@ async def check_gboost(bot, message):
         records = await bot.userSettings.get_all({'gboost':True})
         user_ids = [record["_id"] for record in records]
 
-        gboostmsg = [line for line in message.embeds[0].to_dict()['description'].split(">")]
-        gboostmsg[3] = gboostmsg[3].split('\n')[0]
+        gboostmsg = [line for line in message.embeds[0].to_dict()['description'].split("\n")]
+        gboostmsg = [line[2:] for line in gboostmsg if line.startswith('>')]
         gboostmsg[2] = (gboostmsg[2].split(']')[0] + "](<https://dankmemer.lol/store>)" + "]".join(gboostmsg[2].split(']')[1:])).replace("(https://dankmemer.lol/store)","",1)
         gboostmsg = [list.strip() for list in gboostmsg[2:4]]
-        content = "## Global Boost\n<:nat_replycont:1146496789361479741> "
-        content += f"\n<:nat_replycont:1146496789361479741> **Message:** ".join(gboostmsg)
+        content = ""
         try:
             extraGboost = re.findall("\((.*?)\)", boostMsgs[1])
             if len(extraGboost) == 2:
                 boost_count = (int(extraGboost[0].split(" ")[0][1:]))
-                content += f"\n<:nat_replycont:1146496789361479741> **Boosts Stacked:** {boost_count}"
+                content = "## Global Boost (+{boost_count} pending)\n<:nat_replycont:1146496789361479741> "
         except:
             pass
+        if content == '':
+            content = "## Global Boost\n<:nat_replycont:1146496789361479741> "
+        content += f"\n<:nat_replycont:1146496789361479741> **Message:** ".join(gboostmsg)
         content += f"\n<:nat_reply:1146498277068517386> **Ends at:** <t:{timestamp}:R>"
 
         for user_id in user_ids:
