@@ -151,15 +151,18 @@ async def check_gboost(bot, message):
 
         for user_id in user_ids:
             user = await bot.fetch_user(user_id)
-            # try:
-            if user_id in bot.owner_ids:
-                view = discord.ui.View()
-                view.add_item(discord.ui.Button(label="Jump to message", style=discord.ButtonStyle.url, url=message.jump_url, emoji="<:tgk_link:1105189183523401828>"))
-                view.add_item(discord.ui.Button(label=f"{message.guild.name}", style=discord.ButtonStyle.url, url=str((await message.guild.invites())[0]), emoji="<:tgk_link:1105189183523401828>"))
-                await user.send(f'{content}\n> {message.interaction.user.mention}(`{message.interaction.user.id}`) used in [` {message.guild.name} `]({(await message.guild.invites())[0]})', view=view)
-            else:
-                await user.send(content)
-            await asyncio.sleep(0.2)
+            try:
+                if user_id in bot.owner_ids:
+                    view = discord.ui.View()
+                    view.add_item(discord.ui.Button(label="Jump to message", style=discord.ButtonStyle.url, url=message.jump_url, emoji="<:tgk_link:1105189183523401828>"))
+                    view.add_item(discord.ui.Button(label=f"{message.guild.name}", style=discord.ButtonStyle.url, url=str((await message.guild.invites())[0]), emoji="<:tgk_link:1105189183523401828>"))
+                    await user.send(f'{content}\n> {message.interaction.user.mention}(`{message.interaction.user.id}`) used in [` {message.guild.name} `]({(await message.guild.invites())[0]})', view=view)
+                else:
+                    await user.send(content)
+            
+                await asyncio.sleep(0.2)
+            except:
+                pass
     
     elif data['active'] is True:
         current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
