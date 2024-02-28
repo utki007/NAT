@@ -243,9 +243,11 @@ async def on_message(message):
 					await bot.dank.upsert(data)
 				if fish_event is None:
 					if data['dankFish'] != {}:
-						data['dankFish'] = {}
-						await bot.dank.upsert(data)
-					return
+						current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
+						for key in data['dankFish']:
+							if data['dankFish'][key] < current_timestamp:
+								del data['dankFish'][key]							
+					return await bot.dank.upsert(data)
 				fish_event = fish_event['value']
 				event_names = re.findall(r'\[(.*?)\]',fish_event)
 				timestamp = re.findall("\<t:\w*:\d*", fish_event)# [0].replace("<t:","",1).replace(":","",1))
