@@ -7,11 +7,12 @@ from traceback import format_exception
 import textwrap
 
 from humanfriendly import format_timespan
-from utils.embeds import get_error_embed, get_success_embed
+from utils.embeds import get_error_embed, get_invisible_embed, get_success_embed
+from utils.init import init_dankSecurity
 from utils.views.paginator import Contex_Paginator
 from discord import app_commands
 from discord.ext import commands
-from utils.functions import clean_code
+from utils.functions import clean_code, set_emojis
 from utils.checks import App_commands_Checks
 from utils.db import Document
 from utils.views.confirm import Confirm
@@ -40,6 +41,7 @@ class owner(commands.Cog):
         return new_options[:24]
 
     dev = app_commands.Group(name="dev", description="Developer commands")
+    pool = app_commands.Group(name="pool", description="Server pool commands")
     alert = app_commands.Group(name="alert", description="Alert commands", parent=dev)
 
     async def alert_autocomplete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
@@ -265,6 +267,7 @@ class owner(commands.Cog):
         await interaction.followup.send(embed=embed, ephemeral=True)
 
     @alert.command(name="add", description="Add an alert")
+    @app_commands.default_permissions(administrator=True)
     @app_commands.describe(message="The message to send when the alert is triggered", title="title of the alert")
     async def _add(self, interaction: discord.Interaction, title: str,message: str):
         if interaction.user.id not in interaction.client.owner_ids:
@@ -297,7 +300,8 @@ class owner(commands.Cog):
         await self.bot.alerts.insert(data)
         await interaction.edit_original_response(content="Alert has been added.")
 
-    @alert.command(name="remove", description="Add an alert")
+    @alert.command(name="remove", description="Remove an alert")
+    @app_commands.default_permissions(administrator=True)
     @app_commands.describe(alert="The alert to remove")
     @app_commands.autocomplete(alert=alert_autocomplete)
     async def _remove(self, interaction: discord.Interaction, alert: str):
@@ -311,6 +315,184 @@ class owner(commands.Cog):
             await interaction.response.send_message(embed = await get_success_embed("Alert has been removed."))
         else:
             await interaction.response.send_message(embed = await get_error_embed("Alert not found in db."))
+
+    # Info of user in a guild
+    @app_commands.command(name="user-info", description="Get info of a user")
+    @app_commands.default_permissions(administrator=True)
+    @app_commands.describe(user="The user to get info of", guild_id="The server to get info of")
+    async def user_info(self, interaction: discord.Interaction, user: discord.User, guild_id: str):
+        if interaction.user.id not in interaction.client.owner_ids:
+            return await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+        
+        server = interaction.client.get_guild(int(guild_id))
+        if server is None:
+            return await interaction.response.send_message(embed = await get_error_embed("Invalid guild id"), ephemeral=True)
+        user = server.get_member(user.id)
+        embed = await get_invisible_embed('')
+        embed.color = discord.Color.random()
+        embed.title = f"{user.name}'s Credentials in {server.name.title()}"
+        embed.add_field(name="User", value=f"<:nat_replycont:1146496789361479741> {user.name}\n<:nat_reply:1146498277068517386> `{user.id}`", inline=True)
+        embed.add_field(name="Server Owner", value=f"<:nat_replycont:1146496789361479741> {server.owner.name}\n<:nat_reply:1146498277068517386> `{server.owner.id}`", inline=True)
+        embed.add_field(name="\u200b", value='\u200b', inline=True)
+        data = await interaction.client.dankSecurity.find(server.id)
+        if data is not None:
+            if 'psuedo_owner' in data.keys():
+                embed.add_field(name="Psuedo Owner", value=f"<:nat_replycont:1146496789361479741> <@{data['psuedo_owner']}>\n<:nat_reply:1146498277068517386> `{data['psuedo_owner']}`", inline=False)
+        embed.add_field(name="User created:", value=f"<t:{int(datetime.datetime.timestamp(user.created_at))}>", inline=True)
+        embed.add_field(name="Joined guild:", value=f"<t:{int(datetime.datetime.timestamp(user.joined_at))}>", inline=True)
+        embed.add_field(name="\u200b", value='\u200b', inline=True)
+        # various user permissions in that guild
+
+        correct_emoji = '<:tgk_active:1082676793342951475>'
+        wrong_emoji = '<:tgk_deactivated:1082676877468119110>'
+        permissions = user.guild_permissions
+        perms = ''
+        if permissions.administrator:
+            perms += f"{correct_emoji} Administrator\n"
+        else:
+            perms += f"{wrong_emoji} Administrator\n"
+        if permissions.manage_guild:
+            perms += f"{correct_emoji} Manage Server\n"
+        else:
+            perms += f"{wrong_emoji} Manage Server\n"
+        if permissions.manage_channels:
+            perms += f"{correct_emoji} Manage Channels\n"
+        else:
+            perms += f"{wrong_emoji} Manage Channels\n"
+        if permissions.manage_roles:
+            perms += f"{correct_emoji} Manage Roles\n"
+        else:
+            perms += f"{wrong_emoji} Manage Roles\n"
+        if permissions.manage_messages:
+            perms += f"{correct_emoji} Manage Messages\n"
+        else:
+            perms += f"{wrong_emoji} Manage Messages\n"
+        if permissions.kick_members:
+            perms += f"{correct_emoji} Kick Members\n"
+        else:
+            perms += f"{wrong_emoji} Kick Members\n"
+        if permissions.ban_members:
+            perms += f"{correct_emoji} Ban Members\n"
+        else:
+            perms += f"{wrong_emoji} Ban Members\n"
+        # print only the important permissions
+        embed.add_field(name="Permissions", value=perms, inline=True)
+        # top 7 roles of user in that guild
+        roles = list(reversed(user.roles))
+        roles = roles[:7]
+        roles = '\n'.join([role.name[:20] for role in roles])
+        roles = await set_emojis(roles)
+        embed.add_field(name="Roles", value=roles, inline=True)
+        embed.add_field(name="\u200b", value='\u200b', inline=True)
+        if user.avatar is not None:
+            embed.set_thumbnail(url=user.avatar.url)
+        await interaction.response.send_message(embed=embed)
+
+    # add psuedo owner for dankpool security
+    @pool.command(name="add-owner", description="Add a pseudo owner for dankpool security")
+    @app_commands.default_permissions(administrator=True)
+    @app_commands.describe(user="The user to add as pseudo owner", guild_id="The server to add pseudo owner to")
+    async def add_owner(self, interaction: discord.Interaction, user: discord.User, guild_id: str):
+        if interaction.user.id not in interaction.client.owner_ids:
+            return await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+        
+        guild = interaction.client.get_guild(int(guild_id))
+        if guild is None:
+            return await interaction.response.send_message(embed = await get_error_embed("Invalid guild id"), ephemeral=True)
+        if user.id == guild.owner.id:
+            return await interaction.response.send_message(embed = await get_error_embed("This user is already an actual owner"), ephemeral=True)
+        data = await interaction.client.dankSecurity.find(guild.id)
+        if data is None:
+            data = await init_dankSecurity(interaction)
+        if 'psuedo_owner' not in data.keys():
+            data['psuedo_owner'] = guild.owner.id
+        og_owner = guild.owner.id
+        if user.id == data['psuedo_owner']:
+            return await interaction.response.send_message(embed = await get_error_embed("This user is already a pseudo owner"), ephemeral=True)
+        else:
+            og_owner = data['psuedo_owner']
+        data['psuedo_owner'] = user.id
+        await interaction.client.dankSecurity.update(data)
+        embed = await get_invisible_embed(f"Psuedo ownership has been transferred from <@{og_owner}> to <@{user.id}>.")
+        embed.title = f"Ownership transfer for {guild.name.title()}"
+        embed.description = None
+        embed.add_field(name="New Owner", value=f"<:nat_replycont:1146496789361479741> <@{user.id}>\n<:nat_reply:1146498277068517386> `{user.id}`", inline=True)
+        embed.add_field(name="Old Owner", value=f"<:nat_replycont:1146496789361479741> <@{og_owner}>\n<:nat_reply:1146498277068517386> `{og_owner}`", inline=True)
+        embed.add_field(name="\u200b", value='\u200b', inline=True)
+        embed.add_field(name="Guild", value=f"<:nat_replycont:1146496789361479741> {guild.name}\n<:nat_reply:1146498277068517386> `{guild.id}`", inline=True)
+        embed.set_thumbnail(url=guild.icon.url)
+        await interaction.response.send_message(embed=embed)
+
+        # log details
+        channel = interaction.client.get_channel(1209029627528478780)
+        embed.set_footer(text=f"Requested by {interaction.user.name} (ID: {interaction.user.id})", icon_url=interaction.user.avatar.url)
+        await channel.send(embed=embed)
+
+        # SEND embed to user
+        embed = await get_invisible_embed(f"You have been added as a pseudo owner in {guild.name.title()}.")
+        embed.title = f"Psuedo owner transfer for {guild.name.title()}"
+        embed.description = f'- **Guild**: {guild.name.title()}\n- **Guild ID**: `{guild.id}`\n'
+        embed.description += f'- You can now access **`dankpool`** command.'
+        embed.set_thumbnail(url=guild.icon.url)
+        try:
+            await user.send(embed=embed)
+        except:
+            pass
+
+    
+    # remove psuedo owner for dankpool security
+    @pool.command(name="remove-owner", description="Remove a pseudo owner for dankpool security")
+    @app_commands.default_permissions(administrator=True)
+    @app_commands.describe(guild_id="The server to remove pseudo owner from")
+    async def remove_owner(self, interaction: discord.Interaction, guild_id: str):
+        if interaction.user.id not in interaction.client.owner_ids:
+            return await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+        
+        guild = interaction.client.get_guild(int(guild_id))
+        if guild is None:
+            return await interaction.response.send_message(embed = await get_error_embed("Invalid guild id"), ephemeral=True)
+        data = await interaction.client.dankSecurity.find(guild.id)
+        if data is None:
+            return await interaction.response.send_message(embed = await get_error_embed("No pseudo owner found"), ephemeral=True)
+        if 'psuedo_owner' not in data.keys():
+            return await interaction.response.send_message(embed = await get_error_embed("No pseudo owner found"), ephemeral=True)
+        og_owner = data['psuedo_owner']
+        await interaction.client.dankSecurity.unset(guild.id, "psuedo_owner")
+        embed = await get_invisible_embed(f"Psuedo ownership has been removed from <@{og_owner}>.")
+        embed.title = f"Ownership removal for {guild.name.title()}"
+        embed.description = None
+        embed.add_field(name="Old Owner", value=f"<:nat_replycont:1146496789361479741> <@{og_owner}>\n<:nat_reply:1146498277068517386> `{og_owner}`", inline=True)
+        embed.add_field(name="Guild", value=f"<:nat_replycont:1146496789361479741> {guild.name}\n<:nat_reply:1146498277068517386> `{guild.id}`", inline=True)
+        embed.add_field(name="\u200b", value='\u200b', inline=True)
+        embed.set_thumbnail(url=guild.icon.url)
+        await interaction.response.send_message(embed=embed)
+
+        # log details
+        channel = interaction.client.get_channel(1209029627528478780)
+        embed.set_footer(text=f"Requested by {interaction.user.name} (ID: {interaction.user.id})", icon_url=interaction.user.avatar.url)
+        await channel.send(embed=embed)
+    
+    # get all the pseudo owners
+    @pool.command(name="get-owner", description="Get the pseudo owner")
+    @app_commands.default_permissions(administrator=True)
+    @app_commands.describe(guild_id="The server to get pseudo owners from")
+    async def get_owners(self, interaction: discord.Interaction, guild_id: str):
+        if interaction.user.id not in interaction.client.owner_ids:
+            return await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+        
+        guild = interaction.client.get_guild(int(guild_id))
+        if guild is None:
+            return await interaction.response.send_message(embed = await get_error_embed("Invalid guild id"), ephemeral=True)
+        data = await interaction.client.dankSecurity.find(guild.id)
+        if data is None:
+            return await interaction.response.send_message(embed = await get_error_embed("No pseudo owner found"), ephemeral=True)
+        embed = await get_invisible_embed('')
+        embed.color = discord.Color.random()
+        # embed.title = f"Pseudo Owner for {guild.name.title()}"
+        embed.add_field(name="Pseudo Owner", value=f"<:nat_replycont:1146496789361479741> <@{data['psuedo_owner']}>\n<:nat_reply:1146498277068517386> `{data['psuedo_owner']}`", inline=True)
+        embed.add_field(name="Guild", value=f"<:nat_replycont:1146496789361479741> {guild.name}\n<:nat_reply:1146498277068517386> `{guild.id}`", inline=True)
+        embed.set_thumbnail(url=guild.icon.url)
+        await interaction.response.send_message(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(

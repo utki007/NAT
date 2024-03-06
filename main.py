@@ -23,6 +23,8 @@ from utils.functions import *
 from utils.convertor import dict_to_tree
 from io import BytesIO
 
+from utils.init import init_dankSecurity
+
 logger = logging.getLogger('discord')
 handler = logging.handlers.RotatingFileHandler(
 	filename='bot.log',
@@ -68,14 +70,7 @@ class MyBot(commands.Bot):
 		bot.premium = Document(bot.db, "premium")
 		bot.userSettings = Document(bot.db, "userSettings")
 		bot.config = Document(bot.db, "config")
-		bot.dankFish = {
-			"timestamp" : 1705583700,
-			"active" : True
- 		}
-		bot.gboost = {
-			"timestamp" : 0,
-			"active" : False
-		}
+		bot.dank = Document(bot.db, "dank")
 
 		# Octane DB
 		bot.octane = motor.motor_asyncio.AsyncIOMotorClient(str(bot.dankHelper))
@@ -139,7 +134,14 @@ async def on_message(message):
 					member = message.interaction.user
 					if data:
 						if data['enabled'] is False: return
-						if member.id not in data['whitelist'] and member.id != member.guild.owner.id: 
+						owner = message.guild.owner
+						owner_list = [owner.id]
+						if 'psuedo_owner' in data.keys():
+							owner_list.append(data['psuedo_owner'])
+							owner = message.guild.get_member(data['psuedo_owner'])
+						if owner is None:
+							owner = message.guild.owner
+						if member.id not in data['whitelist'] and member.id not in owner_list: 
 							try:
 								await message.delete()
 							except:
@@ -202,6 +204,8 @@ async def on_message(message):
 								view = discord.ui.View()
 								view.add_item(discord.ui.Button(label=f'Used at', url=f"{message.jump_url}"))
 								await message.guild.owner.send(embed = embed, view=view)
+								if owner.id != message.guild.owner.id:
+									await owner.send(embed = embed, view=view)
 								if loggingChannel is not None and isLogEnabled is True:
 									embed = discord.Embed(
 										title = f"Security Breach!",
@@ -233,37 +237,39 @@ async def on_message(message):
 					fish_event = next((item for item in fields_dict if item["name"] in ["Active Event", "Active Events"]), None)
 				except:
 					return
+				data = await bot.dank.find('dankFish')
+				if data is None:
+					data = {"_id":"dankFish","dankFish":{}}
+					await bot.dank.upsert(data)
 				if fish_event is None:
-					if bot.dankFish['active'] is True:
+					if data['dankFish'] != {}:
 						current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
-						if current_timestamp > int(bot.dankFish['timestamp']) + 600:
-							bot.dankFish['active'] = False
-					return
+						for key in data['dankFish']:
+							if data['dankFish'][key] < current_timestamp:
+								del data['dankFish'][key]							
+					return await bot.dank.upsert(data)
 				fish_event = fish_event['value']
+				event_names = re.findall(r'\[(.*?)\]',fish_event)
+				timestamp = re.findall("\<t:\w*:\d*", fish_event)# [0].replace("<t:","",1).replace(":","",1))
+				timestamp = [int(t.replace("<t:","",1).replace(":","",1)) for t in timestamp]
+				dict = {event_names[i]:timestamp[i] for i in range(len(event_names))}
+
 				fish_event = await remove_emojis(fish_event)
 				fish_event = fish_event.split("\n")
 				for line in fish_event:
 					index = fish_event.index(line)
 					if 'https:' in fish_event[index]:
 						fish_event[index] = f"## " + fish_event[index].split(']')[0] + "](<https://dankmemer.lol/tutorial/random-timed-fishing-events>)"
-					elif '<t:' in fish_event[index]:
+					elif index == len(fish_event)-1:
 						fish_event[index] = "<:nat_reply:1146498277068517386>" + fish_event[index]
 					else:
 						fish_event[index] = "<:nat_replycont:1146496789361479741>" + fish_event[index]
 				fish_event = "\n".join(fish_event)
 
-				if bot.dankFish['active'] is False:
-					
-					# return if end time > current time
-					current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
-					if bot.dankFish['timestamp'] > current_timestamp:
-						bot.dankFish['active'] = True
-						return 
-					
-					bot.dankFish['active'] = True
-					timestamp = list(set(re.findall("\<t:\w*:R\>\d*", fish_event)))
-					bot.dankFish['timestamp'] = int(timestamp[0].replace("<t:","",1).replace(":R>","",1))
-					
+				if data['dankFish'] == {} or data['dankFish'] != dict:
+					data['dankFish'] = dict
+					await bot.dank.upsert(data)
+
 					records = await bot.userSettings.get_all({'fish_events':True})
 					user_ids = [record["_id"] for record in records]
 
@@ -274,11 +280,27 @@ async def on_message(message):
 							await asyncio.sleep(0.2)	
 						except:
 							pass
-				
-				elif bot.dankFish['active'] is True:
+				elif data['dankFish'] == dict:
+					change_in_event = False
 					current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
-					if current_timestamp > bot.dankFish['timestamp']:
-						bot.dankFish['active'] = False
+					for key in data['dankFish']:
+						if data['dankFish'][key] < current_timestamp:
+							change_in_event = True
+							del data['dankFish'][key]
+					if change_in_event:
+						await bot.dank.upsert(data)
+						records = await bot.userSettings.get_all({'fish_events':True})
+						user_ids = [record["_id"] for record in records]
+
+						for user_id in user_ids:
+							user = await bot.fetch_user(user_id)
+							try:
+								await user.send(fish_event)
+								await asyncio.sleep(0.2)	
+							except:
+								pass
+				else:
+					return
 
 			if 'multipliers xp' in message.interaction.name:
 				await check_gboost(bot, message)
@@ -306,7 +328,7 @@ async def on_message_edit(before, after):
 						managerRole = int(idList[0])
 						data = await bot.dankSecurity.find(message.guild.id)
 						if not data:
-							data = {"_id": message.guild.id, "event_manager": None, "whitelist": [], "quarantine": None, "enabled": False}
+							data = await init_dankSecurity(message)
 						if data['event_manager'] != managerRole:
 							data['event_manager'] = managerRole
 							await bot.dankSecurity.upsert(data)
@@ -428,73 +450,83 @@ async def on_message_edit(before, after):
 					
 				return await bot.dankAdventureStats.upsert(data)
 
-			# for fish catch
-			if message.interaction.name == 'fish catch':
-				if 'title' not in message.embeds[0].to_dict().keys():
-					return
-				if message.embeds[0].to_dict()['title'] != 'Fishing':
-					return
-				if 'fields' not in message.embeds[0].to_dict().keys():
-					return
-				if len(message.embeds[0].to_dict()['fields']) < 1:
-					return
-				fields_dict = message.embeds[0].to_dict()['fields']
-				try:
-					fish_event = next((item for item in fields_dict if item["name"] in ["Active Event", "Active Events"]), None)
-				except:
-					return
-				if fish_event is None:
-					if bot.dankFish['active'] is True:
-						current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
-						if current_timestamp > int(bot.dankFish['timestamp']) + 600:
-							bot.dankFish['active'] = False
-					return
-				fish_event = fish_event['value']
-				fish_event = await remove_emojis(fish_event)
-				fish_event = fish_event.split("\n")
-				# fish_event[0] = f"## " + fish_event[0].split(']')[0] + "](<https://dankmemer.lol/tutorial/random-timed-fishing-events>)"
-				# fish_event[-1] = "<:nat_reply:1146498277068517386>" + fish_event[-1]
-				for line in fish_event:
-					index = fish_event.index(line)
-					if 'https:' in fish_event[index]:
-						fish_event[index] = f"## " + fish_event[index].split(']')[0] + "](<https://dankmemer.lol/tutorial/random-timed-fishing-events>)"
-					elif '<t:' in fish_event[index]:
-						fish_event[index] = "<:nat_reply:1146498277068517386>" + fish_event[index]
-					else:
-						fish_event[index] = "<:nat_replycont:1146496789361479741>" + fish_event[index]
-				fish_event = "\n".join(fish_event)
+			# # for fish catch
+			# if message.interaction.name == 'fish catch':
+			# 	if 'title' not in message.embeds[0].to_dict().keys():
+			# 		return
+			# 	if message.embeds[0].to_dict()['title'] != 'Fishing':
+			# 		return
+			# 	if 'fields' not in message.embeds[0].to_dict().keys():
+			# 		return
+			# 	if len(message.embeds[0].to_dict()['fields']) < 1:
+			# 		return
+			# 	fields_dict = message.embeds[0].to_dict()['fields']
+			# 	try:
+			# 		fish_event = next((item for item in fields_dict if item["name"] in ["Active Event", "Active Events"]), None)
+			# 	except:
+			# 		return
+			# 	data = await bot.dank.find('dankFish')
+			# 	if data is None:
+			# 		data = {"_id":"dankFish","dankFish":{}}
+			# 		await bot.dank.upsert(data)
+			# 	if fish_event is None:
+			# 		if data['dankFish'] != {}:
+			# 			data['dankFish'] = {}
+			# 			await bot.dank.upsert(data)
+			# 		return
+			# 	fish_event = fish_event['value']
+			# 	event_names = re.findall(r'\[(.*?)\]',fish_event)
+			# 	timestamp = re.findall("\<t:\w*:\d*", fish_event)# [0].replace("<t:","",1).replace(":","",1))
+			# 	timestamp = [int(t.replace("<t:","",1).replace(":","",1)) for t in timestamp]
+			# 	dict = {event_names[i]:timestamp[i] for i in range(len(event_names))}
 
-				if bot.dankFish['active'] is False:
-					
-					# return if end time > current time
-					current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
-					if bot.dankFish['timestamp'] > current_timestamp:
-						bot.dankFish['active'] = True
-						return 
-					
-					bot.dankFish['active'] = True
-					timestamp = list(set(re.findall("\<t:\w*:R\>\d*", fish_event)))
-					bot.dankFish['timestamp'] = int(timestamp[0].replace("<t:","",1).replace(":R>","",1))
-					
-					records = await bot.userSettings.get_all({'fish_events':True})
-					user_ids = [record["_id"] for record in records]
+			# 	fish_event = await remove_emojis(fish_event)
+			# 	fish_event = fish_event.split("\n")
+			# 	for line in fish_event:
+			# 		index = fish_event.index(line)
+			# 		if 'https:' in fish_event[index]:
+			# 			fish_event[index] = f"## " + fish_event[index].split(']')[0] + "](<https://dankmemer.lol/tutorial/random-timed-fishing-events>)"
+			# 		elif index == len(fish_event)-1:
+			# 			fish_event[index] = "<:nat_reply:1146498277068517386>" + fish_event[index]
+			# 		else:
+			# 			fish_event[index] = "<:nat_replycont:1146496789361479741>" + fish_event[index]
+			# 	fish_event = "\n".join(fish_event)
 
-					for user_id in user_ids:
-						user = await bot.fetch_user(user_id)
-						try:
-							await user.send(fish_event)
-							await asyncio.sleep(0.2)			
-						except:
-							pass
-				
-				elif bot.dankFish['active'] is True:
-					current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
-					if current_timestamp > bot.dankFish['timestamp']:
-						bot.dankFish['active'] = False
+			# 	if data['dankFish'] == {} or data['dankFish'] != dict:
+			# 		data['dankFish'] = dict
+			# 		await bot.dank.upsert(data)
 
-			# for multipliers xp
-			if message.interaction.name == 'multipliers xp':
-				await check_gboost(bot, message)
+			# 		records = await bot.userSettings.get_all({'fish_events':True})
+			# 		user_ids = [record["_id"] for record in records]
+
+			# 		for user_id in user_ids:
+			# 			user = await bot.fetch_user(user_id)
+			# 			try:
+			# 				await user.send(fish_event)
+			# 				await asyncio.sleep(0.2)	
+			# 			except:
+			# 				pass
+			# 	elif data['dankFish'] == dict:
+			# 		change_in_event = False
+			# 		current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
+			# 		for key in data['dankFish']:
+			# 			if data['dankFish'][key] < current_timestamp:
+			# 				change_in_event = True
+			# 				del data['dankFish'][key]
+			# 		if change_in_event:
+			# 			await bot.dank.upsert(data)
+			# 			records = await bot.userSettings.get_all({'fish_events':True})
+			# 			user_ids = [record["_id"] for record in records]
+
+			# 			for user_id in user_ids:
+			# 				user = await bot.fetch_user(user_id)
+			# 				try:
+			# 					await user.send(fish_event)
+			# 					await asyncio.sleep(0.2)	
+			# 				except:
+			# 					pass
+			# 	else:
+			# 		return
 
 	# return if message is from bot
 	if message.author.bot:
@@ -505,18 +537,31 @@ async def on_audit_log_entry_create(entry: discord.AuditLogEntry):
 	match entry.action:
 		case discord.AuditLogAction.member_role_update:
 			if entry.changes.after.roles:
-				added_to = entry.target
 				added_by = entry.user
 				roles = entry.changes.after.roles
 				member = entry.target
 
+				if member is None: return
+
 				# check if dank manager role is added
-				data = await bot.dankSecurity.find(entry.target.guild.id)
+				try:
+					data = await bot.dankSecurity.find(entry.target.guild.id)
+				except:
+					data = None
 
 				if data:
 					if data['enabled'] is False: return
 					event_manager = member.guild.get_role(data['event_manager'])
-					if event_manager is not None and event_manager in roles and member.id not in data['whitelist'] and member.id != member.guild.owner.id: 
+					owner = member.guild.owner
+					if owner is None:
+						return
+					owner_list = [owner.id]
+					if 'psuedo_owner' in data.keys():
+						owner = member.guild.get_member(data['psuedo_owner'])
+						owner_list.append(owner.id)
+					if owner is None:
+						owner = member.guild.owner
+					if event_manager is not None and event_manager in roles and member.id not in data['whitelist'] and added_by.id not in owner_list: 
 						try:
 							await member.remove_roles(member.guild.get_role(data['event_manager']), reason="Member is not a authorized Dank Manager.")
 						except:
@@ -526,7 +571,7 @@ async def on_audit_log_entry_create(entry: discord.AuditLogEntry):
 							role = member.guild.get_role(data['quarantine'])
 						try:
 							await quarantineUser(bot, member, role, f"{member.name}(ID: {member.id}) has made an unauthorized attempt to get Dank Manager role.")	
-							if added_by.id != member.guild.owner.id:								
+							if added_by.id not in owner_list:								
 								await quarantineUser(bot, added_by, role, f"{added_by.name}(ID: {added_by.id}) has made an unauthorized attempt to give Dank Manager role to {member.name} (ID: {member.id}).")					
 						except:
 							pass
@@ -570,8 +615,21 @@ async def on_audit_log_entry_create(entry: discord.AuditLogEntry):
 						embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to get Dank Manager role in {member.guild.name}")
 						try:
 							await member.guild.owner.send(embed = embed)
+							if owner.id != member.guild.owner.id:
+								await owner.send(embed = embed)
 						except:
 							pass
+						if loggingChannel is not None and isLogEnabled:
+							embed = discord.Embed(
+								title = f"Security Breach!",
+								description=
+								f"` - `   **Added to:** {member.mention}\n"
+								f"` - `   **Added by:** {added_by.mention}\n"
+								f"` - `   {added_by.mention} tried to add {role.mention} to {member.mention}\n",
+								color=discord.Color.random()
+							)
+							await loggingChannel.send(embed=embed)
+							
 
 @bot.event
 async def on_guild_join(guild: discord.Guild):
