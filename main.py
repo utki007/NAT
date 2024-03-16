@@ -54,7 +54,7 @@ class MyBot(commands.Bot):
 	async def setup_hook(self):
 
 		# Nat DB
-		bot.mongo = motor.motor_asyncio.AsyncIOMotorClient("mongodb+srv://utki009:Utkarsh2697@cluster0.5wndm.mongodb.net/TGK?retryWrites=true&w=majority")
+		bot.mongo = motor.motor_asyncio.AsyncIOMotorClient(str(bot.connection_url))
 		bot.db = bot.mongo["NAT"]
 		bot.timer = Document(bot.db, "timer")
 		bot.lockdown = Document(bot.db, "lockdown")
@@ -68,7 +68,7 @@ class MyBot(commands.Bot):
 		bot.dank = Document(bot.db, "dank")
 
 		# Octane DB
-		bot.octane = motor.motor_asyncio.AsyncIOMotorClient(str("mongodb://OCTANE:hjtCsPw98yHNgIvF0lM72Gn1@212.192.29.229:27017/?directConnection=true"))
+		bot.octane = motor.motor_asyncio.AsyncIOMotorClient(str(bot.dankHelper))
 		bot.db2 = bot.octane["Dank_Data"]
 		bot.dankItems = Document(bot.db2, "Item prices")
 
@@ -694,7 +694,6 @@ else:
 	bot.connection_url = os.environ.get("MongoConnectionUrl")
 	bot.amari = os.environ.get("amari")
 	bot.dankHelper = os.environ.get("dankHelper")
-	print(bot.connection_url, bot.amari, bot.dankHelper)
 
 # fetching assets
 if os.path.exists("./utils/assets/colors.json"):
