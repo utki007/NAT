@@ -6,23 +6,18 @@ import logging
 import logging.handlers
 import os
 import re
-import traceback
-import aiohttp
 from ast import literal_eval
 
 import chat_exporter
 import discord
 import motor.motor_asyncio
 from discord.ext import commands
-from discord import app_commands
 
 from dotenv import load_dotenv
 from utils.db import Document
 from utils.embeds import *
 from utils.functions import *
-from utils.convertor import dict_to_tree
-from io import BytesIO
-
+from dotenv import load_dotenv
 from utils.init import init_dankSecurity
 
 logger = logging.getLogger('discord')
@@ -59,7 +54,7 @@ class MyBot(commands.Bot):
 	async def setup_hook(self):
 
 		# Nat DB
-		bot.mongo = motor.motor_asyncio.AsyncIOMotorClient(str(bot.connection_url))
+		bot.mongo = motor.motor_asyncio.AsyncIOMotorClient("mongodb+srv://utki009:Utkarsh2697@cluster0.5wndm.mongodb.net/TGK?retryWrites=true&w=majority")
 		bot.db = bot.mongo["NAT"]
 		bot.timer = Document(bot.db, "timer")
 		bot.lockdown = Document(bot.db, "lockdown")
@@ -73,7 +68,7 @@ class MyBot(commands.Bot):
 		bot.dank = Document(bot.db, "dank")
 
 		# Octane DB
-		bot.octane = motor.motor_asyncio.AsyncIOMotorClient(str(bot.dankHelper))
+		bot.octane = motor.motor_asyncio.AsyncIOMotorClient(str("mongodb://OCTANE:hjtCsPw98yHNgIvF0lM72Gn1@212.192.29.229:27017/?directConnection=true"))
 		bot.db2 = bot.octane["Dank_Data"]
 		bot.dankItems = Document(bot.db2, "Item prices")
 
@@ -694,11 +689,12 @@ if os.path.exists(os.getcwd()+"./properties/tokens.json"):
 	bot.amari = configData["amari"]
 	bot.dankHelper = configData["dankHelper"]
 else:
-	# for sparked
-	bot.botToken = os.environ['BOT_TOKEN']
-	bot.connection_url = os.environ['MongoConnectionUrl']
-	bot.amari = os.environ["amari"]
-	bot.dankHelper = os.environ["dankHelper"]
+	load_dotenv()
+	bot.botToken = os.environ.get("BOT_TOKEN")
+	bot.connection_url = os.environ.get("MongoConnectionUrl")
+	bot.amari = os.environ.get("amari")
+	bot.dankHelper = os.environ.get("dankHelper")
+	print(bot.connection_url, bot.amari, bot.dankHelper)
 
 # fetching assets
 if os.path.exists("./utils/assets/colors.json"):
