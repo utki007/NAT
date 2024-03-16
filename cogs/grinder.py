@@ -86,6 +86,27 @@ class Grinders(commands.GroupCog, name="grinders"):
         ]
         return choices[:24] if len(choices) > 0 else [app_commands.Choice(name="No profile found", value="None")]
     
+    @staticmethod
+    async def GrinderCheck(interaction: Interaction):
+
+        if interaction.user.guild_permissions.administrator or interaction.user.guild_permissions.manage_guild or interaction.user == interaction.guild.owner:
+            return True
+        
+        if interaction.user.id in interaction.client.owner_ids:
+            return True
+
+        guild: discord.Guild = interaction.guild
+        user_roles = [role.id for role in interaction.user.roles]
+        config = await interaction.client.grinder.get_config(guild.id)
+
+        if (set(config['manager_roles']) & set(user_roles)):
+            return True
+        await interaction.response.send_message("You don't have permission to use this command", ephemeral=True)
+        return False
+    
+
+
+
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if not message.guild or message.author.id != 270904126974590976: return
@@ -109,61 +130,61 @@ class Grinders(commands.GroupCog, name="grinders"):
         self.bot.dispatch("grinder_payment", message.guild, donation_info.donor, donation_info, profile, grinder_account, message)
 
         
-    @commands.Cog.listener()
-    async def on_grinder_payment(self, guild: discord.Guild, user: discord.Member, donation: DonationsInfo, profile: GrinderProfile, grinder_account: GrinderAccount, message: discord.Message):
-        guild_config = await self.backend.get_config(guild.id)
+    # @commands.Cog.listener()
+    # async def on_grinder_payment(self, guild: discord.Guild, user: discord.Member, donation: DonationsInfo, profile: GrinderProfile, grinder_account: GrinderAccount, message: discord.Message):
+    #     guild_config = await self.backend.get_config(guild.id)
         
-        profile_payment = profile['payment']
-        paid = donation.quantity + grinder_account['payment']['credits']
+    #     profile_payment = profile['payment']
+    #     paid = donation.quantity + grinder_account['payment']['credits']
 
-        if grinder_account['payment']['due'] > 0:
+    #     if grinder_account['payment']['due'] > 0:
             
-            if paid > grinder_account['payment']['due']:
-                paid -= grinder_account['payment']['due']
-                grinder_account['payment']['due'] = 0
-            else:
-                grinder_account['payment']['due'] -= paid
-                await self.backend.grinders.update(grinder_account)
-                await message.reply(f"{user.mention}, you have successfully paid {donation.format()} but you are still due for {grinder_account['payment']['due']}")
-                return
+    #         if paid > grinder_account['payment']['due']:
+    #             paid -= grinder_account['payment']['due']
+    #             grinder_account['payment']['due'] = 0
+    #         else:
+    #             grinder_account['payment']['due'] -= paid
+    #             await self.backend.grinders.update(grinder_account)
+    #             await message.reply(f"{user.mention}, you have successfully paid {donation.format()} but you are still due for {grinder_account['payment']['due']}")
+    #             return
             
-        if paid < profile_payment:
-            grinder_account['payment']['credits'] += paid
-            await self.backend.grinders.update(grinder_account)
-            await message.reply(f"{user.mention}, you have successfully paid {donation.format()} but you are still due for {profile_payment - paid}")
-            return
+    #     if paid < profile_payment:
+    #         grinder_account['payment']['credits'] += paid
+    #         await self.backend.grinders.update(grinder_account)
+    #         await message.reply(f"{user.mention}, you have successfully paid {donation.format()} but you are still due for {profile_payment - paid}")
+    #         return
         
-        if paid > profile_payment:
-            credits = paid - profile_payment
-            grinder_account['payment']['credits'] += credits
-            grinder_account['payment']['last_payment'] = datetime.datetime.utcnow()
+    #     if paid > profile_payment:
+    #         credits = paid - profile_payment
+    #         grinder_account['payment']['credits'] += credits
+    #         grinder_account['payment']['last_payment'] = datetime.datetime.utcnow()
 
-            #check how many time grinder_account['payment']['credits'] can over the profile_payment and still have some credits left
-            if grinder_account['payment']['credits'] > profile_payment:
-                future_payments = grinder_account['payment']['credits'] // profile_payment
-                extra_credits = grinder_account['payment']['credits'] % profile_payment
-                grinder_account['payment']['credits'] = extra_credits
+    #         #check how many time grinder_account['payment']['credits'] can over the profile_payment and still have some credits left
+    #         if grinder_account['payment']['credits'] > profile_payment:
+    #             future_payments = grinder_account['payment']['credits'] // profile_payment
+    #             extra_credits = grinder_account['payment']['credits'] % profile_payment
+    #             grinder_account['payment']['credits'] = extra_credits
 
-                if future_payments > 1:
-                    grinder_account['payment']['next_payment'] = grinder_account['payment']['last_payment'] + datetime.timedelta(seconds=profile['frequency']*future_payments)
-                else:
-                    grinder_account['payment']['next_payment'] = grinder_account['payment']['last_payment'] + datetime.timedelta(seconds=profile['frequency'])
+    #             if future_payments > 1:
+    #                 grinder_account['payment']['next_payment'] = grinder_account['payment']['last_payment'] + datetime.timedelta(seconds=profile['frequency']*future_payments)
+    #             else:
+    #                 grinder_account['payment']['next_payment'] = grinder_account['payment']['last_payment'] + datetime.timedelta(seconds=profile['frequency'])
 
-                await self.backend.grinders.update(grinder_account)
-                await message.reply(f"{user.mention}, you have successfully paid {donation.format()} which covered your payment till <t:{round((datetime.datetime.utcnow() + datetime.timedelta(seconds=profile['frequency']*future_payments).timestamp()))}:R>")
+    #             await self.backend.grinders.update(grinder_account)
+    #             await message.reply(f"{user.mention}, you have successfully paid {donation.format()} which covered your payment till <t:{round((datetime.datetime.utcnow() + datetime.timedelta(seconds=profile['frequency']*future_payments).timestamp()))}:R>")
 
-            else:
-                await self.backend.grinders.update(grinder_account)
-                await message.reply(f"{user.mention}, you have successfully paid {donation.format()} which covered your payment till <t:{round((datetime.datetime.utcnow() + datetime.timedelta(seconds=profile['frequency']).timestamp()))}:R>")
+    #         else:
+    #             await self.backend.grinders.update(grinder_account)
+    #             await message.reply(f"{user.mention}, you have successfully paid {donation.format()} which covered your payment till <t:{round((datetime.datetime.utcnow() + datetime.timedelta(seconds=profile['frequency']).timestamp()))}:R>")
             
-            return
+    #         return
         
-        elif paid == profile_payment:
-            grinder_account['payment']['last_payment'] = datetime.datetime.utcnow()
-            grinder_account['payment']['next_payment'] = grinder_account['payment']['last_payment'] + datetime.timedelta(seconds=profile['frequency'])
-            await self.backend.grinders.update(grinder_account)
-            await message.reply(f"{user.mention}, you have successfully paid {donation.format()} which covered your payment till <t:{round((datetime.datetime.utcnow() + datetime.timedelta(seconds=profile['frequency']).timestamp()))}:R>")
-            return
+    #     elif paid == profile_payment:
+    #         grinder_account['payment']['last_payment'] = datetime.datetime.utcnow()
+    #         grinder_account['payment']['next_payment'] = grinder_account['payment']['last_payment'] + datetime.timedelta(seconds=profile['frequency'])
+    #         await self.backend.grinders.update(grinder_account)
+    #         await message.reply(f"{user.mention}, you have successfully paid {donation.format()} which covered your payment till <t:{round((datetime.datetime.utcnow() + datetime.timedelta(seconds=profile['frequency']).timestamp()))}:R>")
+    #         return
     
 
     @app_commands.command(name="setup", description="Setup the grinder system")
@@ -257,6 +278,56 @@ class Grinders(commands.GroupCog, name="grinders"):
                 return            
 
 
+    @app_commands.command(name="dismiss", description="Dismiss a grinder")
+    @app_commands.describe(user="User to dismiss")
+    @app_commands.default_permissions(manage_guild=True)
+    @app_commands.check(GrinderCheck)
+    async def dismiss(self, interaction: Interaction, user: discord.Member):
+        guild_config = await self.backend.get_config(interaction.guild.id)
+        grinder_profile = await self.backend.grinders.find({"guild": interaction.guild.id, "user": user.id})
+        if not grinder_profile:
+            await interaction.response.send_message(f"{user.mention} is not a grinder", ephemeral=True)
+            return
+
+        embed = discord.Embed(color=0x2b2d31, description=f"Are you sure you want to dismiss {user.mention} from {grinder_profile['profile']}?")
+        view = Confirm(interaction.user, 30)
+        await interaction.response.send_message(embed=embed, view=view)
+        view.message = await interaction.original_response()
+
+        await view.wait()
+        if view.value:
+            await view.interaction.response.edit_message(embed=discord.Embed(description="Please wait...", color=0x2b2d31), view=None)
+            if guild_config['base_role']: 
+                await user.remove_roles(interaction.guild.get_role(guild_config['base_role']))
+            if guild_config['trail']['role']:
+                await user.remove_roles(interaction.guild.get_role(guild_config['trail']['role']))
+            await user.remove_roles(interaction.guild.get_role(grinder_profile['profile_role']))
+            await self.backend.grinders.delete(grinder_profile)
+            await view.interaction.edit_original_response(embed=discord.Embed(description=f"{user.mention} has been dismissed from {grinder_profile['profile']}"))
+            return
+        else:
+            await interaction.edit_original_response(content="Cancelled")
+            return
+
+
+    @app_commands.command(name="stats", description="Check payment status")
+    @app_commands.describe(user="User to check")
+    async def stats(self, interaction: Interaction, user: discord.Member = None):
+        user = user if user else interaction.user
+        guild_config = await self.backend.get_config(interaction.guild.id)
+        grinder_profile = await self.backend.grinders.find({"guild": interaction.guild.id, "user": user.id})
+        if not grinder_profile:
+            await interaction.response.send_message(f"{user.mention} is not a grinder", ephemeral=True)
+            return
+
+        profile = guild_config['profile'][grinder_profile['profile']]
+        embed = discord.Embed(color=0x2b2d31, description=f"Payment Status for {user.mention} as {profile['name']}")
+        embed.add_field(name="Total Payment", value=f"{grinder_profile['payment']['total']}")
+        embed.add_field(name="Missed Payment", value=f"{grinder_profile['payment']['missed']}")
+        embed.add_field(name="Extra Payment", value=f"{grinder_profile['payment']['extra']}")
+        embed.add_field(name="Last Payment", value=f"{grinder_profile['payment']['last_payment']}")
+        embed.add_field(name="Next Payment", value=f"{grinder_profile['payment']['next_payment']}")
+        await interaction.response.send_message(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(Grinders(bot), 
