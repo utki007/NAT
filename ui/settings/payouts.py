@@ -553,7 +553,9 @@ class Payout_Buttton(discord.ui.View):
 				if items == data['prize']:
 					await view.interaction.edit_original_response(content="Verified Successfully")
 				else:
-					return await view.interaction.edit_original_response(content="The prize of the provided message is not the prize of this payout")
+					embed = discord.Embed(description="The prize of the provided message is not the prize of this payout", color=discord.Color.red())
+					embed.description += f"\n\n**Prize Found:** {items}\n**Payout Prize:** {data['prize']}"
+					return await view.interaction.edit_original_response(content="")
 			else:
 				emojis = list(set(re.findall(":\w*:\d*", items)))
 				for emoji in emojis :items = items.replace(emoji,"",100); items = items.replace("<>","",100);items = items.replace("<a>","",100);items = items.replace("  "," ",100)
@@ -563,6 +565,8 @@ class Payout_Buttton(discord.ui.View):
 				if item_found == data['item'] and quantity_found == data['prize']:
 					await view.interaction.edit_original_response(content="Verified Successfully")
 				else:
+					embed = discord.Embed(description="The prize of the provided message is not the prize of this payout", color=discord.Color.red())
+					embed.description += f"\n\n**Prize Found:** `{quantity_found}x` {item_found}\n**Payout Prize:** `{data['prize']}x` {data['item']}"
 					return await view.interaction.edit_original_response(content="The prize of the provided message is not the prize of this payout")
 			
 			Payout_embed = interaction.message.embeds[0]
