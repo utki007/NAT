@@ -1,8 +1,5 @@
-import asyncio
-
 import discord
 from discord import Interaction
-from discord.ui import RoleSelect, UserSelect
 import asyncio
 
 from utils.embeds import (get_error_embed, get_invisible_embed,
