@@ -89,36 +89,6 @@ bot = MyBot(application_id)
 
 @bot.event
 async def on_message(message):
-	
-	# setup mafia transcript
-	if message.author.id == 511786918783090688 and len(message.embeds)>0:
-		embed = message.embeds[0]
-		if embed.description is not None and "Thank you all for playing! Deleting this channel in 10 seconds" in embed.description:
-			
-			channel = message.channel
-			guild = channel.guild
-			client = guild.me
-			messages = [message async for message in channel.history(limit=None)]
-
-			data = await bot.mafiaConfig.find(guild.id)
-			if data is None:
-				return
-			
-			if data['enable_logging'] is True and data['logs_channel'] is not None:
-				log_channel = guild.get_channel(int(data['logs_channel']))
-				if log_channel is None:
-					return
-				
-				# print transcript file
-				transcript_file = await chat_exporter.raw_export(
-					channel, messages=messages, tz_info="Asia/Kolkata", 
-					guild=guild, bot=client, fancy_times=True, support_dev=False)
-				transcript_file = discord.File(io.BytesIO(transcript_file.encode()), filename=f"Mafia Logs.html")
-				link_msg  = await log_channel.send(content = f"**Mafia Logs:** <t:{int(datetime.datetime.now(pytz.utc).timestamp())}>", file=transcript_file, allowed_mentions=discord.AllowedMentions.none())
-				link_view = discord.ui.View()
-				link_view.add_item(discord.ui.Button(emoji="<:nat_mafia:1102305100527042622>",label="Mafia Evidence", style=discord.ButtonStyle.link, url=f"https://mahto.id/chat-exporter?url={link_msg.attachments[0].url}"))
-				await link_msg.edit(view=link_view)
-
 	# pool logging for dank memer
 	if message.author.id == 270904126974590976 and len(message.embeds)>0:
 		if message.interaction is not None:
