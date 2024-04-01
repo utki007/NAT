@@ -133,7 +133,7 @@ class Mafia(commands.GroupCog):
         guildData['game_count'] = game_num
         await self.db.update(guildData)
 
-        embed = discord.Embed(description="", color=self.bot.default_color)
+        embed = discord.Embed(description="", color=0x2b2d31)
         for night in data['Nights'].keys():
             if len(data['Nights'][night]['Players'].keys()) == 0:
                 continue
@@ -153,13 +153,13 @@ class Mafia(commands.GroupCog):
             
             if len(embed.description) + len(_str) > 4096:
                 await log_channel.send(embed=embed)
-                embed = discord.Embed(description=_str, color=self.bot.default_color)
+                embed = discord.Embed(description=_str, color=0x2b2d31)
             else:
                 embed.description += _str
 
         await log_channel.send(embed=embed)
 
-        embed = discord.Embed(title="Dead Info", description="", color=self.bot.default_color)
+        embed = discord.Embed(title="Dead Info", description="", color=0x2b2d31)
         dead_players = {}
         for i in data['players'].keys():
             if not data['players'][i]['alive']:
