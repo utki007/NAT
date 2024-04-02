@@ -1,10 +1,10 @@
 import discord
 from discord import Interaction
-import asyncio
 
 from utils.embeds import (get_error_embed, get_invisible_embed,
                           get_success_embed, get_warning_embed)
 from utils.views.ui import Dropdown_Channel
+from utils.views.selects import Select_General
 
 async def update_mafia_embed(interaction: Interaction, data: dict):
 
@@ -26,6 +26,7 @@ async def update_mafia_embed(interaction: Interaction, data: dict):
 		title="Mafia Logs Setup"
 	)
 	embed.add_field(name="Logging Channel:", value=f"{channel}", inline=False)
+	embed.add_field(name="Minimum Messages:", value=f"{data['minimum_messages']}", inline=False)
 
 	await interaction.message.edit(embed=embed)
 
@@ -86,6 +87,29 @@ class Mafia_Panel(discord.ui.View):
 				return await interaction.edit_original_response(
 					content = None, embed = embed, view = None
 				)
+	
+	@discord.ui.button(label="Minimum Messages", style=discord.ButtonStyle.gray, emoji="<:tgk_message:1073908465405268029>",row=1)
+	async def min_messages(self, interaction: discord.Interaction, button: discord.ui.Button):
+		data = await interaction.client.mafiaConfig.find(interaction.guild.id)
+		view = discord.ui.View()
+		view.value = None
+		view.select = Select_General(interaction=interaction, options=[
+			discord.SelectOption(label=str(i), value=str(i))
+			for i in range(1, 11)
+		])
+		view.add_item(view.select)
+
+		await interaction.response.send_message(view=view, ephemeral=True)
+
+		await view.wait()
+		if view.value != True:
+			await interaction.delete_original_response()
+			return
+		data['minimum_messages'] = int(view.select.values[0])
+		await interaction.client.mafiaConfig.upsert(data)
+		await view.select.interaction.response.edit_message(embed=await get_success_embed(f"Minimum Messages set to {data['minimum_messages']}"), view=None)
+		await update_mafia_embed(interaction, data)
+
 
 	async def interaction_check(self, interaction: discord.Interaction):
 		if interaction.user.id != self.interaction.user.id:

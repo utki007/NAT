@@ -272,6 +272,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 					title="Mafia Logs Setup"
 				)
 				embed.add_field(name="Logging Channel:", value=f"{channel}", inline=False)
+				embed.add_field(name="Minimum Messages:", value=f"{data['minimum_messages']}", inline=False)
 
 				self.view.stop()
 				mafia_view = Mafia_Panel(interaction , data)
