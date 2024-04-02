@@ -31,6 +31,7 @@ class GuildConfig(TypedDict):
     _id: int
     game_count: int
     logs_channel: int
+    minimum_messages: int
     enable_logging: bool
 
 
@@ -55,10 +56,11 @@ class Mafia(commands.GroupCog):
         if message.guild.id in self.disabled_guilds: return
 
         if message.channel.name == "mafia" and message.channel.id not in self.mafia_channels.keys():
+            guildData: GuildConfig = await self.db.find(message.guild.id)
             new_game_data: MafiaData = {
                 "current_night": 1,
                 "players": {},
-                "MininumMessages": 3,
+                "MininumMessages": guildData['minimum_messages'] if guildData else 3,
                 "Nights": {1: {
                     "NightNumber": 1,
                     "Players": {}
@@ -87,8 +89,8 @@ class Mafia(commands.GroupCog):
 
             if message.author.id == 511786918783090688 and message.embeds != [] and isinstance(message.embeds[0].description, str):
                 if message.embeds[0].description == "Thank you all for playing! Deleting this channel in 10 seconds":
-                    self.bot.dispatch("mafia_ends", self.mafia_channels[message.channel.id], message.channel)
                     self.bot.dispatch("mafia_transcript", message.channel, message)
+                    self.bot.dispatch("mafia_ends", self.mafia_channels[message.channel.id], message.channel)                    
                     return
             
                 if message.embeds[0].title == "Currently ded:":
