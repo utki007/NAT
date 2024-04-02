@@ -57,6 +57,18 @@ class Mafia(commands.GroupCog):
 
         if message.channel.name == "mafia" and message.channel.id not in self.mafia_channels.keys():
             guildData: GuildConfig = await self.db.find(message.guild.id)
+            if not guildData:
+                guildData: GuildConfig = {
+                    "_id": message.guild.id,
+                    "game_count": 0,
+                    "logs_channel": None,
+                    "enable_logging": False,
+                    "minimum_messages": 3
+                }
+                await self.db.insert(guildData)
+                self.disabled_guilds.append(message.guild.id)
+                return
+
             new_game_data: MafiaData = {
                 "current_night": 1,
                 "players": {},
@@ -120,7 +132,8 @@ class Mafia(commands.GroupCog):
                 "_id": channel.guild.id,
                 "game_count": 0,
                 "logs_channel": None,
-                "enable_logging": False
+                "enable_logging": False,
+                "minimum_messages": 3                
             }
             await self.db.insert(guildData)
             return 

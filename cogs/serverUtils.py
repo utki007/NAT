@@ -251,8 +251,8 @@ class Serversettings_Dropdown(discord.ui.Select):
 
 				data = await interaction.client.mafiaConfig.find(interaction.guild.id)
 				if data is None:
-					data = {"_id": interaction.guild.id, "enable_logging":False, "logs_channel": None, "message_logs": []}
-					await interaction.client.mafiaConfig.upsert(data)
+					data = {"_id": interaction.guild.id, "enable_logging":False, "logs_channel": None, "minimum_messages": 3, 'game_count': 0}
+					await interaction.client.mafiaConfig.insert(data)
 
 				channel = data['logs_channel']
 
