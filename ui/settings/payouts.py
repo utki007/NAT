@@ -562,7 +562,7 @@ class Payout_Buttton(discord.ui.View):
 				mathc = re.search(r"(\d+)x (.+)", items)
 				item_found = mathc.group(2)
 				quantity_found = int(items.split(" ")[0][:-1].replace(",","",100))
-				if item_found == data['item'] and quantity_found == data['prize']:
+				if item_found.lower() == data['item'].lower() and quantity_found == data['prize']:
 					await view.interaction.edit_original_response(content="Verified Successfully")
 				else:
 					embed = discord.Embed(description="The prize of the provided message is not the prize of this payout", color=discord.Color.red())

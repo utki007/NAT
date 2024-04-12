@@ -548,7 +548,7 @@ class PayoutV2(commands.GroupCog, name="payout"):
                         mathc = re.search(r"(\d+)x (.+)", items)
                         item_found = mathc.group(2)
                         quantity_found = int(items.split(" ")[0][:-1].replace(",","",100))
-                        if item_found == payout['item'] and quantity_found == payout['prize']:
+                        if item_found.lower() == payout['item'].lower() and quantity_found == payout['prize']:
                             return True
 
             embed = discord.Embed(title="Payout Info", description="", color=0x2b2d31)
