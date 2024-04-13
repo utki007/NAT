@@ -17,7 +17,7 @@ from utils.checks import App_commands_Checks
 from utils.db import Document
 from utils.views.confirm import Confirm
 from utils.transformers import TimeConverter
-from typing import List
+from typing import List, Literal
 import os
 
 class owner(commands.Cog):
@@ -164,6 +164,35 @@ class owner(commands.Cog):
                         embed.add_field(name=f"{module}", value=f"Failure **|** {error[:100]}", inline=True)
                         await interaction.edit_original_response(embed=embed)
     
+    @dev.command(name="server", description="VPS cmds")
+    @app_commands.default_permissions(administrator=True)
+    @app_commands.describe(action="The action to perform")
+    @app_commands.choices(action=[
+        app_commands.Choice(name="start", value="start"),
+        app_commands.Choice(name="stop", value="stop"),
+        app_commands.Choice(name="restart", value="restart"),
+        app_commands.Choice(name="sync-start", value="git"),
+    ])
+    async def _server(self, interaction: discord.Interaction, action:  str):
+        if interaction.user.id not in self.bot.owner_ids:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+        match action:
+            case "start":
+                os.system("pm2 start NAT")
+                await interaction.response.send_message("Server has been started", ephemeral=True)
+            case "stop":
+                os.system("pm2 stop NAT")
+                await interaction.response.send_message("Server has been stopped", ephemeral=True)
+            case "restart":
+                os.system("pm2 restart NAT")
+                await interaction.response.send_message("Server has been restarted", ephemeral=True)
+            case "git":
+                os.system("gh repo sync && pm2 restart NAT")
+                await interaction.response.send_message("Server has been synced and restarted", ephemeral=True)
+            case _:
+                await interaction.response.send_message("Invalid action", ephemeral=True)
+
     @dev.command(name="add-premium", description="Add premium to a guild")
     @app_commands.default_permissions(administrator=True)
     @app_commands.describe(guild_id="The guild id to add premium to", time="The time to add premium for")
