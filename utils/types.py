@@ -95,3 +95,4 @@ class GrinderAccount(TypedDict):
     profile: str
     payment: GrinderPayment
     profile_role: int
+    active: bool

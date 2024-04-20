@@ -1,7 +1,7 @@
 import datetime
 import discord
 import typing
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord import app_commands, Interaction
 from utils.db import Document
 from ui.settings.grinder import GrinderConfigPanel
@@ -103,9 +103,42 @@ class Grinders(commands.GroupCog, name="grinders"):
             return True
         await interaction.response.send_message("You don't have permission to use this command", ephemeral=True)
         return False
-    
 
+    @tasks.loop(seconds=60)
+    async def payment_reminder(self):
+        guilds_configs = await self.backend.config.find_all()
 
+        for guild_config in guilds_configs:
+            guild = self.bot.get_guild(guild['_id'])
+            if not guild: continue
+
+            grinders = await self.backend.grinders.find_many_by_custom({"guild": guild.id})
+            today = datetime.datetime.utcnow()
+            for grinder in grinders:
+                user = guild.get_member(grinder['user'])
+                if not isinstance(user, discord.Member): continue
+
+                if today > grinder['payment']['next_payment']:
+                    self.bot.dispatch("grinder_reminder", guild, user, grinder, guild_config)
+                    self.bot.dispatch("grinder_kick", guild, user, grinder, guild_config)
+
+    @commands.Cog.listener()
+    async def on_grinder_reminder(self, guild: discord.Guild, user: discord.Member, grinder_account: GrinderAccount, guild_config: GrinderConfig):
+        try:await user.send(f"Hey {user.mention}, you have missed your payment. Please make sure to pay your due as soon as possible")
+        except discord.Forbidden: pass
+
+    @commands.Cog.listener()
+    async def on_grinder_kick(self, guild: discord.Guild, user: discord.Member, grinder_account: GrinderAccount, guild_config: GrinderConfig):
+        today = datetime.datetime.utcnow()
+        pending_days = int((today - grinder_account['payment']['next_payment']).days)
+        if pending_days > 0:
+            if pending_days > guild_config['missed_payment_limit']:
+                grinder_account['active'] = False
+                try:await user.remove_roles(guild.get_role(grinder_account['profile_role']))
+                except discord.Forbidden: pass
+                await self.backend.grinders.update(grinder_account)
+
+        
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -126,66 +159,38 @@ class Grinders(commands.GroupCog, name="grinders"):
         grinder_account = await self.backend.get_payment(message.guild.id, donation_info.donor.id)
         if not grinder_account: return
         profile = guild_config['profile'][str(grinder_account['profile_role'])]
-
+        if grinder_account['active'] == False: grinder_account['active'] = True
+        await self.backend.grinders.update(grinder_account)
         self.bot.dispatch("grinder_payment", message.guild, donation_info.donor, donation_info, profile, grinder_account, message)
 
         
-    # @commands.Cog.listener()
-    # async def on_grinder_payment(self, guild: discord.Guild, user: discord.Member, donation: DonationsInfo, profile: GrinderProfile, grinder_account: GrinderAccount, message: discord.Message):
-    #     guild_config = await self.backend.get_config(guild.id)
-        
-    #     profile_payment = profile['payment']
-    #     paid = donation.quantity + grinder_account['payment']['credits']
+    @commands.Cog.listener()
+    async def on_grinder_payment(self, guild: discord.Guild, user: discord.Member, donation: DonationsInfo, profile: GrinderProfile, grinder_account: GrinderAccount, message: discord.Message):        
+        paid_for = int(donation.quantity/profile['payment'])
+        lastPayment = grinder_account['payment']['last_payment']
+        nextPayment = lastPayment + datetime.timedelta(days=paid_for)
+        lastPayment = datetime.datetime.utcnow()
 
-    #     if grinder_account['payment']['due'] > 0:
-            
-    #         if paid > grinder_account['payment']['due']:
-    #             paid -= grinder_account['payment']['due']
-    #             grinder_account['payment']['due'] = 0
-    #         else:
-    #             grinder_account['payment']['due'] -= paid
-    #             await self.backend.grinders.update(grinder_account)
-    #             await message.reply(f"{user.mention}, you have successfully paid {donation.format()} but you are still due for {grinder_account['payment']['due']}")
-    #             return
-            
-    #     if paid < profile_payment:
-    #         grinder_account['payment']['credits'] += paid
-    #         await self.backend.grinders.update(grinder_account)
-    #         await message.reply(f"{user.mention}, you have successfully paid {donation.format()} but you are still due for {profile_payment - paid}")
-    #         return
-        
-    #     if paid > profile_payment:
-    #         credits = paid - profile_payment
-    #         grinder_account['payment']['credits'] += credits
-    #         grinder_account['payment']['last_payment'] = datetime.datetime.utcnow()
+        profile_payment = profile['payment']
 
-    #         #check how many time grinder_account['payment']['credits'] can over the profile_payment and still have some credits left
-    #         if grinder_account['payment']['credits'] > profile_payment:
-    #             future_payments = grinder_account['payment']['credits'] // profile_payment
-    #             extra_credits = grinder_account['payment']['credits'] % profile_payment
-    #             grinder_account['payment']['credits'] = extra_credits
+        total_payment = grinder_account['payment']['total'] + paid_for * profile_payment
+        if lastPayment < nextPayment:
+            due_payment = (nextPayment - lastPayment).days * profile_payment
+        else:
+            due_payment = 0
 
-    #             if future_payments > 1:
-    #                 grinder_account['payment']['next_payment'] = grinder_account['payment']['last_payment'] + datetime.timedelta(seconds=profile['frequency']*future_payments)
-    #             else:
-    #                 grinder_account['payment']['next_payment'] = grinder_account['payment']['last_payment'] + datetime.timedelta(seconds=profile['frequency'])
+        grinder_account['payment']['total'] = total_payment
+        grinder_account['payment']['last_payment'] = lastPayment
+        grinder_account['payment']['next_payment'] = nextPayment
+        grinder_account['payment']['due'] = due_payment
 
-    #             await self.backend.grinders.update(grinder_account)
-    #             await message.reply(f"{user.mention}, you have successfully paid {donation.format()} which covered your payment till <t:{round((datetime.datetime.utcnow() + datetime.timedelta(seconds=profile['frequency']*future_payments).timestamp()))}:R>")
+        await self.backend.grinders.update(grinder_account)
 
-    #         else:
-    #             await self.backend.grinders.update(grinder_account)
-    #             await message.reply(f"{user.mention}, you have successfully paid {donation.format()} which covered your payment till <t:{round((datetime.datetime.utcnow() + datetime.timedelta(seconds=profile['frequency']).timestamp()))}:R>")
-            
-    #         return
-        
-    #     elif paid == profile_payment:
-    #         grinder_account['payment']['last_payment'] = datetime.datetime.utcnow()
-    #         grinder_account['payment']['next_payment'] = grinder_account['payment']['last_payment'] + datetime.timedelta(seconds=profile['frequency'])
-    #         await self.backend.grinders.update(grinder_account)
-    #         await message.reply(f"{user.mention}, you have successfully paid {donation.format()} which covered your payment till <t:{round((datetime.datetime.utcnow() + datetime.timedelta(seconds=profile['frequency']).timestamp()))}:R>")
-    #         return
-    
+        # await message.reply(f"{user.mention}, you have successfully paid {donation.format()} which covered your payment till <t:{round(nextPayment.timestamp())}:R>")
+        tgk = self.bot.get_guild(785839283847954433)
+        log_channel = tgk.get_channel(1119998681924509747)
+        await log_channel.send(f"{user.mention}, you have successfully paid {donation.format()} which covered your payment till <t:{round(nextPayment.timestamp())}:R>")
+
 
     @app_commands.command(name="setup", description="Setup the grinder system")
     async def setup(self, interaction: Interaction): 
@@ -234,9 +239,10 @@ class Grinders(commands.GroupCog, name="grinders"):
                     "total": 0,
                     "missed": 0,
                     "extra": 0,
-                    "last_payment": None,
-                    "next_payment": None
-                }
+                    "last_payment": datetime.datetime.utcnow(),
+                    "next_payment": datetime.datetime.utcnow(),
+                },
+                "active": True
             }
 
             await self.backend.grinders.insert(dict(grinder_profile))
@@ -332,3 +338,56 @@ class Grinders(commands.GroupCog, name="grinders"):
 async def setup(bot):
     await bot.add_cog(Grinders(bot), 
                       guilds=[discord.Object(999551299286732871)])
+
+
+"""
+        paid = donation.quantity + grinder_account['payment']['credits']
+        if grinder_account['payment']['due'] > 0:
+            
+            if paid > grinder_account['payment']['due']:
+                paid -= grinder_account['payment']['due']
+                grinder_account['payment']['due'] = 0
+            else:
+                grinder_account['payment']['due'] -= paid
+                await self.backend.grinders.update(grinder_account)
+                await message.reply(f"{user.mention}, you have successfully paid {donation.format()} but you are still due for {grinder_account['payment']['due']}")
+                return
+            
+        if paid < profile_payment:
+            grinder_account['payment']['credits'] += paid
+            await self.backend.grinders.update(grinder_account)
+            await message.reply(f"{user.mention}, you have successfully paid {donation.format()} but you are still due for {profile_payment - paid}")
+            return
+        
+        if paid > profile_payment:
+            credits = paid - profile_payment
+            grinder_account['payment']['credits'] += credits
+            grinder_account['payment']['last_payment'] = datetime.datetime.utcnow()
+
+            #check how many time grinder_account['payment']['credits'] can over the profile_payment and still have some credits left
+            if grinder_account['payment']['credits'] > profile_payment:
+                future_payments = grinder_account['payment']['credits'] // profile_payment
+                extra_credits = grinder_account['payment']['credits'] % profile_payment
+                grinder_account['payment']['credits'] = extra_credits
+
+                if future_payments > 1:
+                    grinder_account['payment']['next_payment'] = grinder_account['payment']['last_payment'] + datetime.timedelta(seconds=profile['frequency']*future_payments)
+                else:
+                    grinder_account['payment']['next_payment'] = grinder_account['payment']['last_payment'] + datetime.timedelta(seconds=profile['frequency'])
+
+                await self.backend.grinders.update(grinder_account)
+                await message.reply(f"{user.mention}, you have successfully paid {donation.format()} which covered your payment till <t:{round((datetime.datetime.utcnow() + datetime.timedelta(seconds=profile['frequency']*future_payments).timestamp()))}:R>")
+
+            else:
+                await self.backend.grinders.update(grinder_account)
+                await message.reply(f"{user.mention}, you have successfully paid {donation.format()} which covered your payment till <t:{round((datetime.datetime.utcnow() + datetime.timedelta(seconds=profile['frequency']).timestamp()))}:R>")
+            
+            return
+        
+        elif paid == profile_payment:
+            grinder_account['payment']['last_payment'] = datetime.datetime.utcnow()
+            grinder_account['payment']['next_payment'] = grinder_account['payment']['last_payment'] + datetime.timedelta(seconds=profile['frequency'])
+            await self.backend.grinders.update(grinder_account)
+            await message.reply(f"{user.mention}, you have successfully paid {donation.format()} which covered your payment till <t:{round((datetime.datetime.utcnow() + datetime.timedelta(seconds=profile['frequency']).timestamp()))}:R>")
+            return
+"""
