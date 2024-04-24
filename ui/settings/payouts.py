@@ -141,7 +141,10 @@ class Payouts_Panel(discord.ui.View):
 					content = None, embed = embed, view = None
 				)
 			embed = await update_payouts_embed(self.interaction, data)
-			await interaction.message.edit(embed=embed)				  
+			try:
+				await interaction.message.edit(embed=embed)				  
+			except:
+				pass
     
 			
 	@discord.ui.button(label="Queue Channel", style=discord.ButtonStyle.gray, emoji="<:tgk_channel:1073908465405268029>",row=2)
@@ -181,7 +184,10 @@ class Payouts_Panel(discord.ui.View):
 					content = None, embed = embed, view = None
 				)
 			embed = await update_payouts_embed(self.interaction, data)
-			await interaction.message.edit(embed=embed)
+			try:
+				await interaction.message.edit(embed=embed)
+			except:
+				pass
 
 
 	@discord.ui.button(label="Payouts Channel", style=discord.ButtonStyle.gray, emoji="<:tgk_channel:1073908465405268029>",row=2)
@@ -212,7 +218,10 @@ class Payouts_Panel(discord.ui.View):
 					content = None, embed = embed, view = None
 				)
 				embed = await update_payouts_embed(self.interaction, data)
-				await interaction.message.edit(embed=embed)
+				try:
+					await interaction.message.edit(embed=embed)
+				except:
+					pass
 			else:
 				embed = await get_error_embed(f"Payouts Channel was already set to {channel}")
 				return await interaction.edit_original_response(
@@ -247,7 +256,10 @@ class Payouts_Panel(discord.ui.View):
 					content = None, embed = embed, view = None
 				)
 				embed = await update_payouts_embed(self.interaction, data)
-				await interaction.message.edit(embed=embed)
+				try:
+					await interaction.message.edit(embed=embed)
+				except:
+					pass
 			else:
 				embed = await get_error_embed(f"Logs Channel was already set to {channel}")
 				return await interaction.edit_original_response(
@@ -304,7 +316,10 @@ class Payouts_Panel(discord.ui.View):
 				interaction.client.payouts.config_cache[interaction.guild.id]['manager_roles'] = data["manager_roles"]
 
 				embed = await update_payouts_embed(self.interaction, data)
-				await interaction.message.edit(embed=embed)
+				try:
+					await interaction.message.edit(embed=embed)
+				except:
+					pass
 		else:
 			await interaction.edit_original_response(content="No role selected", view=None)
 	
@@ -335,7 +350,10 @@ class Payouts_Panel(discord.ui.View):
 				await interaction.client.payouts.update_config(data)
 				interaction.client.payouts.config_cache[interaction.guild.id]['event_manager_roles'] = data["event_manager_roles"]
 				embed = await update_payouts_embed(self.interaction, data)
-				await interaction.message.edit(embed=embed)
+				try:
+					await interaction.message.edit(embed=embed)
+				except:
+					pass
 		else:
 			await interaction.edit_original_response(content="No role selected", view=None)
 
@@ -535,17 +553,21 @@ class Payout_Buttton(discord.ui.View):
 				if items == data['prize']:
 					await view.interaction.edit_original_response(content="Verified Successfully")
 				else:
-					return await view.interaction.edit_original_response(content="The prize of the provided message is not the prize of this payout")
+					embed = discord.Embed(description="The prize of the provided message is not the prize of this payout", color=discord.Color.red())
+					embed.description += f"\n\n**Prize Found:** {items}\n**Payout Prize:** {data['prize']}"
+					return await view.interaction.edit_original_response(content=None, embed=embed)
 			else:
 				emojis = list(set(re.findall(":\w*:\d*", items)))
 				for emoji in emojis :items = items.replace(emoji,"",100); items = items.replace("<>","",100);items = items.replace("<a>","",100);items = items.replace("  "," ",100)
 				mathc = re.search(r"(\d+)x (.+)", items)
 				item_found = mathc.group(2)
 				quantity_found = int(items.split(" ")[0][:-1].replace(",","",100))
-				if item_found == data['item'] and quantity_found == data['prize']:
+				if item_found.lower() == data['item'].lower() and quantity_found == data['prize']:
 					await view.interaction.edit_original_response(content="Verified Successfully")
 				else:
-					return await view.interaction.edit_original_response(content="The prize of the provided message is not the prize of this payout")
+					embed = discord.Embed(description="The prize of the provided message is not the prize of this payout", color=discord.Color.red())
+					embed.description += f"\n\n**Prize Found:** `{quantity_found}x` {item_found}\n**Payout Prize:** `{data['prize']}x` {data['item']}"
+					return await view.interaction.edit_original_response(content=None, embed=embed)
 			
 			Payout_embed = interaction.message.embeds[0]
 			Payout_embed.title = "Successfully Paid"

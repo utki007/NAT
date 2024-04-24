@@ -34,7 +34,9 @@ class MultipleMember(app_commands.Transformer):
         for i in value:
             if i not in ["", " ", None, "None"]:
                 member = interaction.guild.get_member(int(i))
-                if member is not None:
+                if not isinstance(member, discord.Member):
+                    member = await interaction.guild.fetch_member(int(i))
+                if isinstance(member, discord.Member):
                     members.append(member)
 
         return members

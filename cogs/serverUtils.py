@@ -17,6 +17,7 @@ from typing import List, Union
 from ui.settings import *
 from ui.settings.dankPool import *
 from utils.functions import *
+from utils.init import init_dankSecurity
 from utils.views.confirm import Confirm
 from utils.views.ui import *
 from ui.settings.lockdown import *
@@ -144,21 +145,26 @@ class Serversettings_Dropdown(discord.ui.Select):
 			case "Dank Pool Access":
 				data = await interaction.client.dankSecurity.find(interaction.guild.id)
 				if data is None:
-					data = { 
-						"_id": interaction.guild.id, 
-						"event_manager": None, 
-						"whitelist": [], 
-						"quarantine": None, 
-						"enable_logging":False, 
-						"logs_channel": None,
-						"enabled": False
-					}
-					await interaction.client.dankSecurity.upsert(data)
-				if not (interaction.user.id == interaction.guild.owner.id or interaction.user.id in interaction.client.owner_ids):
+					data = await init_dankSecurity(interaction)
+				owner_list = [interaction.guild.owner.id]
+				owner = interaction.guild.owner
+				if 'psuedo_owner' in data.keys():
+					owner = interaction.guild.get_member(data['psuedo_owner'])
+					owner_list.append(data['psuedo_owner'])
+				if owner is None:
+					owner = interaction.guild.owner
+				if not (interaction.user.id in owner_list or interaction.user.id in interaction.client.owner_ids):
+					owners = [interaction.guild.get_member(owner_id) for owner_id in owner_list if interaction.guild.get_member(owner_id) is not None]
+					if len(owners) == 0:
+						owners = f'{interaction.guild.owner.mention}'
+					elif len(owners) == 1:
+						owners = f'{owners[0].mention}'
+					elif len(owners) == 2:
+						owners = f'{owners[0].mention} or {owners[1].mention}'
 					embed = discord.Embed(
 						color=3092790,
 						title="Dank Pool Access",
-						description=f"- Only the server owner can configure this! \n- Contact {interaction.guild.owner.mention} if you need this changed."
+						description=f"- Only the server owner can configure this! \n- Contact {owners} if you need this changed."
 					)
 					self.view.stop()
 					nat_changelog_view = discord.ui.View()
@@ -245,8 +251,8 @@ class Serversettings_Dropdown(discord.ui.Select):
 
 				data = await interaction.client.mafiaConfig.find(interaction.guild.id)
 				if data is None:
-					data = {"_id": interaction.guild.id, "enable_logging":False, "logs_channel": None, "message_logs": []}
-					await interaction.client.mafiaConfig.upsert(data)
+					data = {"_id": interaction.guild.id, "enable_logging":False, "logs_channel": None, "minimum_messages": 3, 'game_count': 0}
+					await interaction.client.mafiaConfig.insert(data)
 
 				channel = data['logs_channel']
 
@@ -266,6 +272,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 					title="Mafia Logs Setup"
 				)
 				embed.add_field(name="Logging Channel:", value=f"{channel}", inline=False)
+				embed.add_field(name="Minimum Messages:", value=f"{data['minimum_messages']}", inline=False)
 
 				self.view.stop()
 				mafia_view = Mafia_Panel(interaction , data)
