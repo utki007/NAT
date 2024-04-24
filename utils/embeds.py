@@ -1,5 +1,7 @@
 import discord
-from typing import List, Dict, Union, TypedDict
+from typing import List, Dict, Union, TypedDict, Literal
+from humanfriendly import format_timespan
+import datetime
 
 async def get_success_embed(content):
 	success_embed = discord.Embed(
@@ -56,3 +58,96 @@ async def get_formated_embed(arguments: List[str], custom_lenth: int = None) -> 
 		output[arg] = f" `{arg}{' '* (final_lenth - len(arg))}` "
 		
 	return output
+
+async def get_formated_field(guild: discord.Guild, name: str, type: Literal["role", "channel", "user", "time", "str", "bool", "emoji"], data: Union[List[int], None, int]) -> str:
+	
+	"""
+	This function creates a formated embed field for a role, channel or user.
+
+	Args:
+		guild (discord.Guild): The guild where the role, channel or user is located.
+		name (str): The name of the role, channel or user.
+		type (Literal["role", "channel", "user"]): The type of the field.
+		data (Union[List[int], None, int]): The id of the role, channel or user.
+
+	Returns:
+		str: The formated embed field.
+
+	Raises:
+	ValueError: If the type is invalid.
+	"""
+	match type:
+
+		case "role":
+			if isinstance(data, List):
+				if len(data) == 0:
+					return f"{name}None"
+				
+				roles = []; [roles.append(role.mention) for role in (guild.get_role(r) for r in data) if role]
+				return f"{name}{','.join(roles)}"
+			
+			elif isinstance(data, int):
+				role = guild.get_role(data)
+				return f"{name}{role.mention}" if role else f"{name}None"
+			
+			else:
+				return f"{name}None"
+			
+		
+		case "channel":
+			if isinstance(data, List):
+				if len(data) == 0:
+					return f"{name}None"
+				
+				channels = []; [channels.append(channel.mention) for channel in (guild.get_channel(c) for c in data) if channel]
+				return f"{name}{','.join(channels)}"
+			
+			elif isinstance(data, int):
+				channel = guild.get_channel(data)
+				return f"{name}{channel.mention}" if channel else f"{name}None"
+			
+			else:
+				return f"{name}None"
+			
+		case "user":
+			if isinstance(data, int):
+				user = guild.get_member(data)
+				return f"{name}{user.mention}" if user else f"{name}None"
+			
+			elif isinstance(data, List):
+				if len(data) == 0:
+					return f"{name}None"
+				
+				users = []; [users.append(user.mention) for user in (guild.get_member(u) for u in data) if user]
+				return f"{name}{','.join(users)}"			
+			else:
+				return f"{name}None"
+		
+		case "time":
+			if isinstance(data, int):
+				return f"{name}{format_timespan(data)}"
+			elif isinstance(data, datetime.datetime):
+				return f"{name}<t:{round(data.timestamp())}:R>(<t:{round(data.timestamp())}:f>)"
+			elif isinstance(data, str) and data.lower() == "permanent":
+				return f"{name}Permanent"
+			else:
+				return f"{name}None"
+		case "str":
+			if isinstance(data, str):
+				return f"{name}{data}"
+			else:
+				return f"{name}None"
+		case "bool":
+			if data is True:
+				return f"{name}<:toggle_on:1123932825956134912>"
+			elif data is False:
+				return f"{name}<:toggle_off:1123932890993020928>"
+			elif data is None:
+				return f"{name}<:caution:1122473257338151003>"
+		case "emoji":
+			if isinstance(data, str):
+				return f"{name}{data}"
+			else:
+				return f"{name}None"
+		case _:
+			raise ValueError("Invalid type")

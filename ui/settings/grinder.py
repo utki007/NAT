@@ -11,7 +11,7 @@ from humanfriendly import format_timespan
 from utils.embeds import get_formated_embed
 
 class GrinderConfigPanel(ui.View):
-    def __init__(self, config: GrinderConfig, user: discord.Member, message: discord.Message):
+    def __init__(self, config: GrinderConfig, user: discord.Member, message: discord.Message=None):
         super().__init__(timeout=120)
         self.config = config
         self.user = user
@@ -21,7 +21,7 @@ class GrinderConfigPanel(ui.View):
         for chl in self.children: chl.disabled = True
         try:
             await self.message.edit(view=self)
-        except discord.HTTPException:
+        except AttributeError:
             pass
     
     async def interaction_check(self, interaction: Interaction):

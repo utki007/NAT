@@ -6,7 +6,7 @@ from discord import app_commands, Interaction
 from utils.db import Document
 from ui.settings.grinder import GrinderConfigPanel
 from utils.types import GrinderConfig, GrinderAccount, GrinderProfile
-from utils.embeds import get_formated_embed
+from utils.embeds import get_formated_embed, get_formated_field
 from humanfriendly import format_timespan
 from utils.views.confirm import Confirm
 from utils.dank import get_doantion_from_message, DonationsInfo, calculate_payments
@@ -24,7 +24,10 @@ class GrinderDB:
         config: GrinderConfig = {
             "_id": guild.id,
             "payment_channel": None,
-            "trail": None,
+            "trail": {
+                'duration': None,
+                'role': None
+            },
             "base_role": None,
             "manager_roles": [],
             "max_profiles": 5,
@@ -58,18 +61,18 @@ class GrinderDB:
         embed.description = ""
         embed.description += "<:tgk_cc:1150394902585290854> `Grinder System`"
         embed.description += "\n\n"
-        embed.description += f"{formated_args['Payment Channel']}" + f"{'<#' + str(config['payment_channel']) + '>' if config['payment_channel'] else 'None'}\n"
-        embed.description += f"{formated_args['Manager Roles']}" + f"{','.join([guild.get_role(role).mention for role in config['manager_roles']]) if config['manager_roles'] and len(config['manager_roles']) > 1 else 'None'}\n"
-        embed.description += f"{formated_args['Base Role']}" + f"{'<@&' + str(config['base_role']) + '>' if config['base_role'] else 'None'}\n"
-        embed.description += f"{formated_args['Trail Role']}" + f"{'<@&' + str(config['trail']['role']) + '>' if config['trail']['role'] else 'None'}\n"
+        embed.description += f"{await get_formated_field(guild, formated_args['Payment Channel'], 'channel', config['payment_channel'])}\n"
+        embed.description += f"{await get_formated_field(guild, formated_args['Manager Roles'], 'role', config['manager_roles'])}\n"
+        embed.description += f"{await get_formated_field(guild, formated_args['Base Role'], 'role', config['base_role'])}\n"
+        embed.description += f"{await get_formated_field(guild, formated_args['Trail Role'], 'role', config['trail']['role'])}\n"
 
         if config['trail']['duration'] is not None:
-            embed.description += f"{formated_args['Trail Duration']}" + format_timespan(config['trail']['duration']) + "\n"
+           embed.description += f"{await get_formated_field(guild, formated_args['Trail Duration'], 'time', config['trail']['duration'])}\n"
         else:
-            embed.description += f"{formated_args['Trail Duration']}" + "None\n"
+           embed.description += f"{await get_formated_field(guild, formated_args['Trail Duration'], 'str', 'None')}\n"
 
         embed.description += f"{formated_args['Max Profiles']}" + str(config['max_profiles']) + "\n"
-        embed.description += f"{formated_args['Profiles']}" + f"{len(config['profile'])}/{config['max_profiles']}\n\n"
+        embed.description += f"{formated_args['Profiles']}" + f"{len(config['profile'].keys())}/{config['max_profiles']}\n\n"
         embed.description += "<:tgk_hint:1206282482744561744> Use buttons below to changes the settings"
         return embed
 
@@ -101,7 +104,9 @@ class Grinders(commands.GroupCog, name="grinders"):
         guild: discord.Guild = interaction.guild
         user_roles = [role.id for role in interaction.user.roles]
         config = await interaction.client.grinder.get_config(guild)
-
+        if not config:
+            await interaction.response.send_message("Grinder system is not setup in this server", ephemeral=True)
+            return False
         if (set(config['manager_roles']) & set(user_roles)):
             return True
         await interaction.response.send_message("You don't have permission to use this command", ephemeral=True)
@@ -198,9 +203,14 @@ class Grinders(commands.GroupCog, name="grinders"):
     @app_commands.command(name="setup", description="Setup the grinder system")
     async def setup(self, interaction: Interaction): 
         config: GrinderConfig = await self.backend.get_config(interaction.guild)
-        view = GrinderConfigPanel(config, interaction.user, interaction.message)
+        view = GrinderConfigPanel(config, interaction.user)
+
         await interaction.response.send_message(embed=await self.backend.get_config_embed(interaction.guild, config), view=view)
         view.message = await interaction.original_response()
+
+    @setup.error
+    async def setup_error(self, interaction: Interaction, error):
+        print(error)
 
     @app_commands.command(name="appoint", description="Add New Grinder")
     @app_commands.autocomplete(profile=GrinderProfileAutoComplete)
