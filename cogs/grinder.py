@@ -337,7 +337,7 @@ class Grinders(commands.GroupCog, name="grinders"):
 
 async def setup(bot):
     await bot.add_cog(Grinders(bot), 
-                      guilds=[discord.Object(999551299286732871)])
+                      guilds=[discord.Object(999551299286732871), discord.Object(785839283847954433)])
 
 
 """
