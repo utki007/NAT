@@ -50,7 +50,7 @@ class GrinderConfigPanel(ui.View):
         new_channel = view.channel_select.values[0]
         if new_channel.id == self.config["payment_channel"]: self.config["payment_channel"] = None
         else: self.config["payment_channel"] = new_channel.id
-        await interaction.client.grinder.update_config(interaction.guild.id, self.config)        
+        await interaction.client.grinder.update_config(interaction.guild, self.config)        
         await view.channel_select.interaction.response.edit_message(content="Payment Channel updated", view=None)
         await view.channel_select.interaction.delete_original_response()
         await self.message.edit(embed=await interaction.client.grinder.get_config_embed(interaction.guild, self.config), view=self)        
@@ -78,7 +78,7 @@ class GrinderConfigPanel(ui.View):
             else:
                 self.config["manager_roles"].remove(role.id)
                 remove_roles += f"{role.mention} "
-        await interaction.client.grinder.update_config(interaction.guild.id, self.config)
+        await interaction.client.grinder.update_config(interaction.guild, self.config)
         await view.role_select.interaction.response.edit_message(content=f"Added Roles: {add_roles}\nRemoved Roles: {remove_roles}", view=None)
         await view.role_select.interaction.delete_original_response()
 
@@ -129,7 +129,7 @@ class GrinderConfigPanel(ui.View):
             "role": role.id,
             "duration": duration
         }
-        await interaction.client.grinder.update_config(interaction.guild.id, self.config)
+        await interaction.client.grinder.update_config(interaction.guild, self.config)
         embed.color = discord.Color.green()
         confirm_view.children[0].style = discord.ButtonStyle.green
         confirm_view.children[0].disabled = True
@@ -154,7 +154,7 @@ class GrinderConfigPanel(ui.View):
         
         role = view.role_select.values[0]
         self.config["base_role"] = role.id
-        await interaction.client.grinder.update_config(interaction.guild.id, self.config)
+        await interaction.client.grinder.update_config(interaction.guild, self.config)
         await view.role_select.interaction.response.edit_message(content=f"Base Role updated to {role.mention}", view=None)
         await view.role_select.interaction.delete_original_response()
         await self.message.edit(embed=await interaction.client.grinder.get_config_embed(interaction.guild, self.config), view=self)
@@ -245,7 +245,7 @@ class GrinderConfigPanel(ui.View):
                     frequency=profile_time
                 )
 
-                await interaction.client.grinder.update_config(interaction.guild.id, self.config)
+                await interaction.client.grinder.update_config(interaction.guild, self.config)
                 embed.color = discord.Color.green()
                 confirm_view.children[0].style = discord.ButtonStyle.green
                 confirm_view.children[0].disabled = True
@@ -287,7 +287,7 @@ class GrinderConfigPanel(ui.View):
                 for role_id in profile_select.select.values:
                     del self.config['profile'][role_id]
 
-                await interaction.client.grinder.update_config(interaction.guild.id, self.config)
+                await interaction.client.grinder.update_config(interaction.guild, self.config)
                 embed.color = discord.Color.green()
                 confirm_view.children[0].style = discord.ButtonStyle.green
                 confirm_view.children[0].disabled = True

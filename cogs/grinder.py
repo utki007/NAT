@@ -20,10 +20,10 @@ class GrinderDB:
         self.grinders: Document = Document(self.db, "grinders", GrinderAccount)
         self.config_cache = {}
 
-    async def create_config(self, guild: int) -> GrinderConfig:
+    async def create_config(self, guild: discord.Guild) -> GrinderConfig:
         config: GrinderConfig = {
-            "_id": guild,
-            "payment_channel": 0,
+            "_id": guild.id,
+            "payment_channel": None,
             "trail": None,
             "base_role": None,
             "manager_roles": [],
@@ -34,14 +34,17 @@ class GrinderDB:
         self.config_cache[guild] = config
         return config
     
-    async def get_config(self, guild: int) -> GrinderConfig:
-        config: GrinderConfig = await self.config.find(guild) or await self.create_config(guild)
-        self.config_cache[guild] = config
+    async def get_config(self, guild: discord.Guild) -> GrinderConfig:
+        config: GrinderConfig = await self.config.find(guild.id)
+        if not config:
+            config = await self.create_config(guild)
+
+        self.config_cache[guild.id] = config
         return config
     
-    async def update_config(self, guild: int, data: GrinderConfig):
+    async def update_config(self, guild: discord.Guild, data: GrinderConfig):
         await self.config.update(guild, dict(data))
-        self.config_cache[guild] = data
+        self.config_cache[guild.id] = data
   
     async def get_payment(self, guild: int, user: int):
         payment = await self.grinders.find({"guild": guild, "user": user})
@@ -79,7 +82,7 @@ class Grinders(commands.GroupCog, name="grinders"):
     
     async def GrinderProfileAutoComplete(self, interaction: Interaction, current: str) -> discord.app_commands.Choice[str]:
         guild: discord.Guild = interaction.guild
-        config = await self.backend.get_config(guild.id)
+        config = await self.backend.get_config(guild)
         choices = [
             discord.app_commands.Choice(name=value['name'], value=key)
             for key, value in config['profile'].items() if current.lower() in value['name'].lower()
@@ -97,7 +100,7 @@ class Grinders(commands.GroupCog, name="grinders"):
 
         guild: discord.Guild = interaction.guild
         user_roles = [role.id for role in interaction.user.roles]
-        config = await interaction.client.grinder.get_config(guild.id)
+        config = await interaction.client.grinder.get_config(guild)
 
         if (set(config['manager_roles']) & set(user_roles)):
             return True
@@ -145,7 +148,7 @@ class Grinders(commands.GroupCog, name="grinders"):
         if not message.guild or message.author.id != 270904126974590976: return
         if len(message.embeds) <= 0: return
     
-        guild_config = await self.backend.get_config(message.guild.id)
+        guild_config = await self.backend.get_config(message.guild)
         if not guild_config['payment_channel']: return
 
         if message.channel.id != guild_config['payment_channel']: return
@@ -194,7 +197,7 @@ class Grinders(commands.GroupCog, name="grinders"):
 
     @app_commands.command(name="setup", description="Setup the grinder system")
     async def setup(self, interaction: Interaction): 
-        config: GrinderConfig = await self.backend.get_config(interaction.guild.id)
+        config: GrinderConfig = await self.backend.get_config(interaction.guild)
         view = GrinderConfigPanel(config, interaction.user, interaction.message)
         await interaction.response.send_message(embed=await self.backend.get_config_embed(interaction.guild, config), view=view)
         view.message = await interaction.original_response()
