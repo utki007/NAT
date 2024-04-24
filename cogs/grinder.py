@@ -147,7 +147,7 @@ class Grinders(commands.GroupCog, name="grinders"):
     async def on_message(self, message: discord.Message):
         if not message.guild or message.author.id != 270904126974590976: return
         if len(message.embeds) <= 0: return
-    
+        if message.guild.id not in [785839283847954433, 999551299286732871]: return
         guild_config = await self.backend.get_config(message.guild)
         if not guild_config['payment_channel']: return
 
