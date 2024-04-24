@@ -109,7 +109,7 @@ class Grinders(commands.GroupCog, name="grinders"):
         guilds_configs = await self.backend.config.find_all()
 
         for guild_config in guilds_configs:
-            guild = self.bot.get_guild(guild['_id'])
+            guild = self.bot.get_guild(guild_config['_id'])
             if not guild: continue
 
             grinders = await self.backend.grinders.find_many_by_custom({"guild": guild.id})
