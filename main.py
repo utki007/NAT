@@ -630,11 +630,13 @@ if os.path.exists(os.getcwd()+"./properties/tokens.json"):
 	bot.dankHelper = configData["dankHelper"]
 else:
 	# for sparked
-	bot.botToken = os.environ['BOT_TOKEN']
-	bot.connection_url = os.environ['MongoConnectionUrl']
-	bot.amari = os.environ["amari"]
-	bot.dankHelper = os.environ["dankHelper"]
-bot.dank = Document(bot.db, "dank")
+	load_dotenv()
+	bot.botToken = os.environ.get("BOT_TOKEN")
+	bot.connection_url = os.environ.get("MongoConnectionUrl")
+	bot.amari = os.environ.get("amari")
+	bot.dankHelper = os.environ.get("dankHelper")
+
+
 # fetching assets
 if os.path.exists("./utils/assets/colors.json"):
 	with open("./utils/assets/colors.json") as file_data:
