@@ -17,23 +17,58 @@ class moderation(commands.GroupCog, name="moderate", description="Server moderat
 	async def quarantine(self, interaction:  discord.Interaction, user: discord.Member):
 		await interaction.response.defer()
 
+		# check if user = author
+		if user.id == interaction.user.id:
+			embed = await get_error_embed("Incorrect user provided.")
+			embed.title = "Failed to quarantine."
+			embed.description = f"<:tgk_redarrow:1005361235715424296> You cannot quarantine yourself.\n"
+			return await interaction.edit_original_response(embed = embed)
+		
+		# check if author top role < user top role
+		if interaction.user.top_role.position < user.top_role.position:
+			embed = await get_error_embed("I cannot quarantine this user!")
+			embed.title = "Failed to quarantine."
+			embed.description = f"<:tgk_redarrow:1005361235715424296> {user.mention}'s role {user.top_role.mention}(`{user.top_role.name}`) is above your higest role.\n"
+			return await interaction.edit_original_response(embed = embed)
+
 		dankSecurity = await interaction.client.dankSecurity.find(user.guild.id)
 		if dankSecurity is not None:
 			if dankSecurity['quarantine'] is None:
-				embed = await get_warning_embed("Quarantine role not set. Please set it using </serversettings:1068960308800008253> command.")
+				embed = await get_warning_embed("Quarantine role not set. Please set it using </serversettings:1197399871578185748> command.")
 				embed.title = "Failed to quarantine."
 				embed.description = f'<:tgk_redarrow:1005361235715424296> Quarantine role is not set or does not exist.\n'
-				embed.description += f'<:tgk_redarrow:1005361235715424296> Please set it using </serversettings:1068960308800008253> command.'
+				embed.description += f'<:tgk_redarrow:1005361235715424296> Please set it using </serversettings:1197399871578185748> command.'
 				return await interaction.edit_original_response(embed = embed)
 			else:
 				role = user.guild.get_role(dankSecurity['quarantine'])
 				
+				# check if interaction author is whitelisted
+				if 'whitelist' in dankSecurity:
+					if dankSecurity['whitelist'] is None:
+						embed = await get_warning_embed("Whitelist not set. Please set it using </serversettings:1197399871578185748> command.")
+						embed.title = "Failed to quarantine."
+						embed.description = f'<:tgk_redarrow:1005361235715424296> Whitelist is not set or does not exist.\n'
+						embed.description += f'<:tgk_redarrow:1005361235715424296> Please set it using </serversettings:1197399871578185748> command.'
+						return await interaction.edit_original_response(embed = embed)
+					if interaction.user.id not in dankSecurity['whitelist']:
+						embed = await get_error_embed(f"You are not whitelisted to quarantine users.")
+						embed.title = "Failed to quarantine."
+						embed.description = f'<:tgk_redarrow:1005361235715424296> You are not whitelisted to quarantine users.\n'
+						embed.description += f'<:tgk_redarrow:1005361235715424296> Please set it using </serversettings:1197399871578185748> command.'
+						return await interaction.edit_original_response(embed = embed)
+				else:
+					embed = await get_warning_embed("Whitelist not set. Please set it using </serversettings:1197399871578185748> command.")
+					embed.title = "Failed to quarantine."
+					embed.description = f'<:tgk_redarrow:1005361235715424296> Whitelist is not set or does not exist.\n'
+					embed.description += f'<:tgk_redarrow:1005361235715424296> Please set it using </serversettings:1197399871578185748> command.'
+					return await interaction.edit_original_response(embed = embed)
+
 				# check if role exists
 				if role is None:
-					embed = await get_warning_embed("Quarantine role not set. Please set it using </serversettings:1068960308800008253> command.")
+					embed = await get_warning_embed("Quarantine role not set. Please set it using </serversettings:1197399871578185748> command.")
 					embed.title = "Failed to quarantine."
 					embed.description = f'<:tgk_redarrow:1005361235715424296> Quarantine role is not set or does not exist.\n'
-					embed.description += f'<:tgk_redarrow:1005361235715424296> Please set it using </serversettings:1068960308800008253> command.'
+					embed.description += f'<:tgk_redarrow:1005361235715424296> Please set it using </serversettings:1197399871578185748> command.'
 					return await interaction.edit_original_response(embed = embed)
 				
 				# check if bot can handout role
@@ -55,10 +90,10 @@ class moderation(commands.GroupCog, name="moderate", description="Server moderat
 					embed.description = f'<:tgk_redarrow:1005361235715424296> {user.mention} is already quarantined.\n'
 					return await interaction.edit_original_response(embed = embed)
 		else:
-			embed = await get_warning_embed("Quarantine role not set. Please set it using </serversettings:1068960308800008253> command.")
+			embed = await get_warning_embed("Quarantine role not set. Please set it using </serversettings:1197399871578185748> command.")
 			embed.title = "Failed to quarantine."
 			embed.description = f'<:tgk_redarrow:1005361235715424296> Quarantine role is not set or does not exist.\n'
-			embed.description += f'<:tgk_redarrow:1005361235715424296> Please set it using </serversettings:1068960308800008253> command.'
+			embed.description += f'<:tgk_redarrow:1005361235715424296> Please set it using </serversettings:1197399871578185748> command.'
 			return await interaction.edit_original_response(embed = embed)
  
 	@app_commands.command(name="unquarantine", description="Unquarantine a user! 🦠")
@@ -69,20 +104,20 @@ class moderation(commands.GroupCog, name="moderate", description="Server moderat
 		dankSecurity = await interaction.client.dankSecurity.find(user.guild.id)
 		if dankSecurity is not None:
 			if dankSecurity['quarantine'] is None:
-				embed = await get_warning_embed("Quarantine role not set. Please set it using </serversettings:1068960308800008253> command.")
+				embed = await get_warning_embed("Quarantine role not set. Please set it using </serversettings:1197399871578185748> command.")
 				embed.title = "Failed to unquarantine."
 				embed.description = f'<:tgk_redarrow:1005361235715424296> Quarantine role is not set or does not exist.\n'
-				embed.description += f'<:tgk_redarrow:1005361235715424296> Please set it using </serversettings:1068960308800008253> command.'
+				embed.description += f'<:tgk_redarrow:1005361235715424296> Please set it using </serversettings:1197399871578185748> command.'
 				return await interaction.edit_original_response(embed = embed)
 			else:
 				role = user.guild.get_role(dankSecurity['quarantine'])
 				
 				# check if role exists
 				if role is None:
-					embed = await get_warning_embed("Quarantine role not set. Please set it using </serversettings:1068960308800008253> command.")
+					embed = await get_warning_embed("Quarantine role not set. Please set it using </serversettings:1197399871578185748> command.")
 					embed.title = "Failed to unquarantine."
 					embed.description = f'<:tgk_redarrow:1005361235715424296> Quarantine role is not set or does not exist.\n'
-					embed.description += f'<:tgk_redarrow:1005361235715424296> Please set it using </serversettings:1068960308800008253> command.'
+					embed.description += f'<:tgk_redarrow:1005361235715424296> Please set it using </serversettings:1197399871578185748> command.'
 					return await interaction.edit_original_response(embed = embed)
 				
 				# check if bot can handout role
@@ -104,10 +139,10 @@ class moderation(commands.GroupCog, name="moderate", description="Server moderat
 					embed.description = f'<:tgk_redarrow:1005361235715424296> {user.mention} is not quarantined by {interaction.client.user.mention}.\n'
 					return await interaction.edit_original_response(embed = embed)
 		else:
-			embed = await get_warning_embed("Quarantine role not set. Please set it using </serversettings:1068960308800008253> command.")
+			embed = await get_warning_embed("Quarantine role not set. Please set it using </serversettings:1197399871578185748> command.")
 			embed.title = "Failed to quarantine."
 			embed.description = f'<:tgk_redarrow:1005361235715424296> Quarantine role is not set or does not exist.\n'
-			embed.description += f'<:tgk_redarrow:1005361235715424296> Please set it using </serversettings:1068960308800008253> command.'
+			embed.description += f'<:tgk_redarrow:1005361235715424296> Please set it using </serversettings:1197399871578185748> command.'
 			return await interaction.edit_original_response(embed = embed)
 
 async def setup(bot):

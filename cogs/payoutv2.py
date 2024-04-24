@@ -463,12 +463,12 @@ class PayoutV2(commands.GroupCog, name="payout"):
     @app_commands.command(name="express", description="start doing payouts for the oldest payouts with the help of me")
     @app_commands.describe(mode="accessibility mode of the command")
     @app_commands.choices(mode=[
-        app_commands.Choice(name="PC/Adroid", value="pc"),
+        app_commands.Choice(name="PC/Android", value="pc"),
         app_commands.Choice(name="iOS", value="ios"),
     ]) 
     async def express_payout(self, interaction: discord.Interaction, mode: app_commands.Choice[str]=None):
         if mode is None:
-            mode = app_commands.Choice(name="PC/Adroid", value="pc")
+            mode = app_commands.Choice(name="PC/Android", value="pc")
         premium = await self.bot.premium.find(interaction.guild.id)
 
         guild_config = await self.backend.get_config(interaction.guild_id, new=True)
@@ -548,7 +548,7 @@ class PayoutV2(commands.GroupCog, name="payout"):
                         mathc = re.search(r"(\d+)x (.+)", items)
                         item_found = mathc.group(2)
                         quantity_found = int(items.split(" ")[0][:-1].replace(",","",100))
-                        if item_found == payout['item'] and quantity_found == payout['prize']:
+                        if item_found.lower() == payout['item'].lower() and quantity_found == payout['prize']:
                             return True
 
             embed = discord.Embed(title="Payout Info", description="", color=0x2b2d31)

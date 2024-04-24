@@ -73,6 +73,18 @@ async def unquarantineUser(bot, user: discord.Member, quarantineRole: discord.Ro
         await bot.quarantinedUsers.upsert(data)
         return True
 
+# set emojis based on new_line
+async def set_emojis(content):
+    content = content.split("\n")
+    for line in content:
+        index = content.index(line)
+        if index + 1 == len(content):
+            emoji = "<:nat_reply:1146498277068517386>"
+        else:
+            emoji = "<:nat_replycont:1146496789361479741>"
+        content[index] = f"{emoji} {line}"
+    return "\n".join(content)
+
 # create function to remove emojis from string
 async def remove_emojis(string):
     emojis = list(set(re.findall(":\w*:\d*", string)))
@@ -88,62 +100,79 @@ async def remove_emojis(string):
     return string
 
 async def check_gboost(bot, message):
+    data = await bot.dank.find('gboost')
+    if data is None:
+        data = {"_id":"gboost","active":False,"timestamp":0}
+        await bot.dank.upsert(data)
     boostMsgs = [line for line in message.embeds[0].to_dict()['description'].split("\n") if "Global Boost" in line]
     if len(boostMsgs) < 2: 
         if len(boostMsgs) == 0:
-            if bot.gboost['active'] is True:
+            if data['active'] is True:
                 current_timestamp = int(datetime.datetime.now(timezone('Asia/Kolkata')).timestamp())
-                if current_timestamp > int(bot.gboost['timestamp']):
-                    bot.gboost['active'] = False
-                    bot.gboost['timestamp'] = 0
+                if current_timestamp > int(data['timestamp']):
+                    data['active'] = False
+                    await bot.dank.upsert(data)
         return
     
-    extraGboost = re.findall("\((.*?)\)", boostMsgs[1])
-    if len(extraGboost) == 2:
-        gboost = (int(extraGboost[0].split(" ")[0][1:]))
-    elif len(extraGboost) == 0:
-        gboost = 0
     timestamp = re.findall("\<t:\w*:R\>\d*", boostMsgs[1])
     if len(timestamp) < 1: return
     timestamp = int(timestamp[0].replace("<t:","",1).replace(":R>","",1))
 
-    if bot.gboost['active'] is False:
+    if data['active'] is False:
         
         # return if end time > current time
         current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
-        if bot.gboost['timestamp'] > current_timestamp:
-            bot.gboost['active'] = True
+        if data['timestamp'] > current_timestamp:
+            data['active'] = True
+            await bot.dank.upsert(data)
             return
 
-        bot.gboost['active'] = True
-        bot.gboost['timestamp'] = timestamp
+        data['active'] = True
+        data['timestamp'] = timestamp
+        await bot.dank.upsert(data)
         
         records = await bot.userSettings.get_all({'gboost':True})
         user_ids = [record["_id"] for record in records]
 
-        gboostmsg = [line for line in message.embeds[0].to_dict()['description'].split(">")]
-        gboostmsg[3] = gboostmsg[3].split('\n')[0]
-        gboostmsg[2] = (gboostmsg[2].split(']')[0] + "](<https://dankmemer.lol/store>)" + "]".join(gboostmsg[2].split(']')[1:])).replace("(https://dankmemer.lol/store)","",1)
-        gboostmsg = [list.strip() for list in gboostmsg[2:4]]
-        content = "## Global Boost\n<:nat_replycont:1146496789361479741> "
-        content += f"\n<:nat_replycont:1146496789361479741> **Message:** ".join(gboostmsg)
+        gboostmsg = [line for line in message.embeds[0].to_dict()['description'].split("\n")]
+        gboostmsg = [line[2:] for line in gboostmsg if line.startswith('>')]
+        gboostmsg[1] = gboostmsg[1].replace("(", "(<").replace(")", ">)")
+        gboostmsg = [list.strip() for list in gboostmsg]
+        content = ""
+        try:
+            extraGboost = re.findall("\((.*?)\)", boostMsgs[1])
+            if len(extraGboost) == 2:
+                boost_count = (int(extraGboost[0].split(" ")[0][1:]))
+                content = f"## Global Boost (+{boost_count} pending)\n<:nat_replycont:1146496789361479741> "
+        except:
+            pass
+        if content == '':
+            content = "## Global Boost\n<:nat_replycont:1146496789361479741> "
+        content += f"{gboostmsg[1]}\n<:nat_replycont:1146496789361479741> **Message:** {gboostmsg[2]}"
         content += f"\n<:nat_reply:1146498277068517386> **Ends at:** <t:{timestamp}:R>"
 
         for user_id in user_ids:
             user = await bot.fetch_user(user_id)
             try:
                 if user_id in bot.owner_ids:
-                    await user.send(f'{content}\n> {message.interaction.user.mention}(`{message.interaction.user.id}`) used in [` {message.guild.name} `]({(await message.guild.invites())[0]})')
+                    view = discord.ui.View()
+                    view.add_item(discord.ui.Button(label="Jump to message", style=discord.ButtonStyle.url, url=message.jump_url, emoji="<:tgk_link:1105189183523401828>"))
+                    view.add_item(discord.ui.Button(label=f"{message.guild.name}", style=discord.ButtonStyle.url, url=str((await message.guild.invites())[0]), emoji="<:tgk_link:1105189183523401828>"))
+                    await user.send(f'{content}\n> {message.interaction.user.mention}(`{message.interaction.user.id}`) used in [` {message.guild.name} `]({(await message.guild.invites())[0]})', view=view)
                 else:
-                    await user.send(content)
-                await asyncio.sleep(0.2)
+                    try:
+                        await user.send(content)
+                        await asyncio.sleep(0.2)
+                    except:
+                        data = await bot.userSettings.find(user.id)
+                        data['gboost'] = False
+                        await bot.userSettings.upsert(data)
+                        pass
             except:
                 pass
     
-    elif bot.gboost['active'] is True:
+    elif data['active'] is True:
         current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
-        if current_timestamp > bot.gboost['timestamp']:
-            bot.gboost['active'] = False
-            bot.gboost['timestamp'] = 0
-        else:
-            bot.gboost['timestamp'] = timestamp
+        if current_timestamp > data['timestamp']:
+            data['active'] = False
+            await bot.dank.upsert(data)
