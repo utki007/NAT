@@ -68,14 +68,7 @@ class MyBot(commands.Bot):
 		bot.premium = Document(bot.db, "premium")
 		bot.userSettings = Document(bot.db, "userSettings")
 		bot.config = Document(bot.db, "config")
-		bot.dankFish = {
-			"timestamp" : 0,
-			"active" : False
- 		}
-		bot.gboost = {
-			"timestamp" : 0,
-			"active" : False
-		}
+		bot.dank = Document(bot.db, "dank")
 
 		# Octane DB
 		bot.octane = motor.motor_asyncio.AsyncIOMotorClient(str(bot.dankHelper))
@@ -641,7 +634,7 @@ else:
 	bot.connection_url = os.environ['MongoConnectionUrl']
 	bot.amari = os.environ["amari"]
 	bot.dankHelper = os.environ["dankHelper"]
-
+bot.dank = Document(bot.db, "dank")
 # fetching assets
 if os.path.exists("./utils/assets/colors.json"):
 	with open("./utils/assets/colors.json") as file_data:
