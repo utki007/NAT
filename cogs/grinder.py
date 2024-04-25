@@ -10,7 +10,6 @@ from utils.embeds import get_formated_embed, get_formated_field
 from humanfriendly import format_timespan
 from utils.views.confirm import Confirm
 from utils.dank import get_doantion_from_message, DonationsInfo, calculate_payments
-import pytz
 
 class GrinderDB:
     def __init__(self, bot):
@@ -121,7 +120,7 @@ class Grinders(commands.GroupCog, name="grinders"):
             if not guild: continue
 
             grinders = await self.backend.grinders.find_many_by_custom({"guild": guild.id})
-            today = datetime.datetime.now(pytz.utc)
+            today = datetime.datetime.now()
             for grinder in grinders:
                 user = guild.get_member(grinder['user'])
                 if not isinstance(user, discord.Member): continue
@@ -137,7 +136,7 @@ class Grinders(commands.GroupCog, name="grinders"):
 
     @commands.Cog.listener()
     async def on_grinder_kick(self, guild: discord.Guild, user: discord.Member, grinder_account: GrinderAccount, guild_config: GrinderConfig):
-        today = datetime.datetime.now(pytz.utc)
+        today = datetime.datetime.now()
         pending_days = int((today - grinder_account['payment']['next_payment']).days)
         if pending_days > 0:
             if pending_days > guild_config['missed_payment_limit']:
@@ -177,7 +176,7 @@ class Grinders(commands.GroupCog, name="grinders"):
         paid_for = int(donation.quantity/profile['payment'])
         lastPayment = grinder_account['payment']['last_payment']
         nextPayment = lastPayment + datetime.timedelta(days=paid_for)
-        lastPayment = datetime.datetime.now(pytz.utc)
+        lastPayment = datetime.datetime.now()
 
         profile_payment = profile['payment']
 
@@ -253,10 +252,10 @@ class Grinders(commands.GroupCog, name="grinders"):
                 "profile_role": profile['role'],
                 "payment": {
                     "total": 0,
-                    "missed": 0,
+                    "due": 0,
                     "credits": 0,
-                    "last_payment": datetime.datetime.now(pytz.utc),
-                    "next_payment": datetime.datetime.now(pytz.utc),
+                    "last_payment": datetime.datetime.now(),
+                    "next_payment": datetime.datetime.now(),
                 },
                 "active": True
             }
