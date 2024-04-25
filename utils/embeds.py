@@ -59,7 +59,7 @@ async def get_formated_embed(arguments: List[str], custom_lenth: int = None) -> 
 		
 	return output
 
-async def get_formated_field(guild: discord.Guild, name: str, type: Literal["role", "channel", "user", "time", "str", "bool", "emoji"], data: Union[List[int], None, int]) -> str:
+async def get_formated_field(guild: discord.Guild, name: str, type: Literal["role", "channel", "user", "time", "str", "bool", "emoji", "int"], data: Union[List[int], None, int]) -> str:
 	
 	"""
 	This function creates a formated embed field for a role, channel or user.
@@ -149,5 +149,16 @@ async def get_formated_field(guild: discord.Guild, name: str, type: Literal["rol
 				return f"{name}{data}"
 			else:
 				return f"{name}None"
+		case "int":
+			if isinstance(data, int):
+				return f"{name}{data:,}"
+			elif isinstance(data, List):
+				if len(data) == 0:
+					return f"{name}None"
+				_str = f"{name}".join([f"{i:,}" for i in data])
+				return _str
+			else:
+				return f"{name}None"
+			
 		case _:
 			raise ValueError("Invalid type")
