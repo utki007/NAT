@@ -39,12 +39,13 @@ class GrinderConfigPanel(ui.View):
     @ui.button(label="Payment Channel", style=discord.ButtonStyle.gray, emoji="<:tgk_channel:1073908465405268029>")
     async def payout_channel(self, interaction: Interaction, button: ui.Button):
         view = discord.ui.View()
+        view.value = None
         view.channel_select = Channel_select(placeholder="Select your payment channel", min_values=1, max_values=1, channel_types=[discord.ChannelType.text])
         view.add_item(view.channel_select)
         await interaction.response.send_message(view=view, ephemeral=True)
 
         await view.wait()
-        if view.channel_select.value is None or view.channel_select.value is False:
+        if view.value is None or view.value is False:
             return await interaction.delete_original_response()
         
         new_channel = view.channel_select.values[0]

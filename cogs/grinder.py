@@ -10,7 +10,7 @@ from utils.embeds import get_formated_embed, get_formated_field
 from humanfriendly import format_timespan
 from utils.views.confirm import Confirm
 from utils.dank import get_doantion_from_message, DonationsInfo, calculate_payments
-
+import pytz
 
 class GrinderDB:
     def __init__(self, bot):
@@ -46,7 +46,7 @@ class GrinderDB:
         return config
     
     async def update_config(self, guild: discord.Guild, data: GrinderConfig):
-        await self.config.update(guild, dict(data))
+        await self.config.update(guild.id, dict(data))
         self.config_cache[guild.id] = data
   
     async def get_payment(self, guild: int, user: int):
@@ -121,7 +121,7 @@ class Grinders(commands.GroupCog, name="grinders"):
             if not guild: continue
 
             grinders = await self.backend.grinders.find_many_by_custom({"guild": guild.id})
-            today = datetime.datetime.utcnow()
+            today = datetime.datetime.now(pytz.utc)
             for grinder in grinders:
                 user = guild.get_member(grinder['user'])
                 if not isinstance(user, discord.Member): continue
@@ -137,7 +137,7 @@ class Grinders(commands.GroupCog, name="grinders"):
 
     @commands.Cog.listener()
     async def on_grinder_kick(self, guild: discord.Guild, user: discord.Member, grinder_account: GrinderAccount, guild_config: GrinderConfig):
-        today = datetime.datetime.utcnow()
+        today = datetime.datetime.now(pytz.utc)
         pending_days = int((today - grinder_account['payment']['next_payment']).days)
         if pending_days > 0:
             if pending_days > guild_config['missed_payment_limit']:
@@ -177,7 +177,7 @@ class Grinders(commands.GroupCog, name="grinders"):
         paid_for = int(donation.quantity/profile['payment'])
         lastPayment = grinder_account['payment']['last_payment']
         nextPayment = lastPayment + datetime.timedelta(days=paid_for)
-        lastPayment = datetime.datetime.utcnow()
+        lastPayment = datetime.datetime.now(pytz.utc)
 
         profile_payment = profile['payment']
 
@@ -195,6 +195,12 @@ class Grinders(commands.GroupCog, name="grinders"):
         await self.backend.grinders.update(grinder_account)
 
         # await message.reply(f"{user.mention}, you have successfully paid {donation.format()} which covered your payment till <t:{round(nextPayment.timestamp())}:R>")
+        embed = discord.Embed(color=0x2b2d31, description="")
+        embed.description += f"<:tgk_active:1082676793342951475> **Donation Logged**"
+        embed.description += f"\n\n"
+        embed.description += f"{user.mention}, you have successfully paid {donation.format()} which covered your payment till <t:{round(nextPayment.timestamp())}:R>"
+        await message.reply(embed=embed)
+        await message.add_reaction("<:tgk_active:1082676793342951475>")
         tgk = self.bot.get_guild(785839283847954433)
         log_channel = tgk.get_channel(1119998681924509747)
         await log_channel.send(f"{user.mention}, you have successfully paid {donation.format()} which covered your payment till <t:{round(nextPayment.timestamp())}:R>")
@@ -208,9 +214,6 @@ class Grinders(commands.GroupCog, name="grinders"):
         await interaction.response.send_message(embed=await self.backend.get_config_embed(interaction.guild, config), view=view)
         view.message = await interaction.original_response()
 
-    @setup.error
-    async def setup_error(self, interaction: Interaction, error):
-        print(error)
 
     @app_commands.command(name="appoint", description="Add New Grinder")
     @app_commands.autocomplete(profile=GrinderProfileAutoComplete)
@@ -221,7 +224,7 @@ class Grinders(commands.GroupCog, name="grinders"):
             await interaction.response.send_message("No profile found", ephemeral=True)
             return
         
-        guild_config = await self.backend.get_config(interaction.guild.id)
+        guild_config = await self.backend.get_config(interaction.guild)
         await interaction.response.send_message(embed=discord.Embed(description="Please wait..."))
         try:
             profile: GrinderProfile = guild_config['profile'][profile]
@@ -251,9 +254,9 @@ class Grinders(commands.GroupCog, name="grinders"):
                 "payment": {
                     "total": 0,
                     "missed": 0,
-                    "extra": 0,
-                    "last_payment": datetime.datetime.utcnow(),
-                    "next_payment": datetime.datetime.utcnow(),
+                    "credits": 0,
+                    "last_payment": datetime.datetime.now(pytz.utc),
+                    "next_payment": datetime.datetime.now(pytz.utc),
                 },
                 "active": True
             }
@@ -290,19 +293,28 @@ class Grinders(commands.GroupCog, name="grinders"):
 
                 await self.backend.grinders.update(grinder_profile)
                 await view.interaction.edit_original_response(embed=discord.Embed(description=f"{user.mention} has successfully changed to {profile['name']}"))
+
+                try:
+                    appoint_embed = discord.Embed(color=0x2b2d31, description=f"Congratulations {user.mention}, you have been appointed as {profile['name']} grinder in {interaction.guild.name}")
+                    await user.send(embed=appoint_embed)
+                except discord.Forbidden:
+                    pass
                 return
             
             else:
                 await interaction.edit_original_response(content="Cancelled")
                 return            
 
+    @appoint.error
+    async def appoint_error(self, interaction: Interaction, error):
+        print(error)
 
     @app_commands.command(name="dismiss", description="Dismiss a grinder")
     @app_commands.describe(user="User to dismiss")
     @app_commands.default_permissions(manage_guild=True)
     @app_commands.check(GrinderCheck)
     async def dismiss(self, interaction: Interaction, user: discord.Member):
-        guild_config = await self.backend.get_config(interaction.guild.id)
+        guild_config = await self.backend.get_config(interaction.guild)
         grinder_profile = await self.backend.grinders.find({"guild": interaction.guild.id, "user": user.id})
         if not grinder_profile:
             await interaction.response.send_message(f"{user.mention} is not a grinder", ephemeral=True)
@@ -333,19 +345,22 @@ class Grinders(commands.GroupCog, name="grinders"):
     @app_commands.describe(user="User to check")
     async def stats(self, interaction: Interaction, user: discord.Member = None):
         user = user if user else interaction.user
-        guild_config = await self.backend.get_config(interaction.guild.id)
-        grinder_profile = await self.backend.grinders.find({"guild": interaction.guild.id, "user": user.id})
+        guild_config = await self.backend.get_config(interaction.guild)
+        grinder_profile: GrinderAccount = await self.backend.grinders.find({"guild": interaction.guild.id, "user": user.id})
         if not grinder_profile:
             await interaction.response.send_message(f"{user.mention} is not a grinder", ephemeral=True)
             return
 
-        profile = guild_config['profile'][grinder_profile['profile']]
-        embed = discord.Embed(color=0x2b2d31, description=f"Payment Status for {user.mention} as {profile['name']}")
-        embed.add_field(name="Total Payment", value=f"{grinder_profile['payment']['total']}")
-        embed.add_field(name="Missed Payment", value=f"{grinder_profile['payment']['missed']}")
-        embed.add_field(name="Extra Payment", value=f"{grinder_profile['payment']['extra']}")
-        embed.add_field(name="Last Payment", value=f"{grinder_profile['payment']['last_payment']}")
-        embed.add_field(name="Next Payment", value=f"{grinder_profile['payment']['next_payment']}")
+        profile = guild_config['profile'][str(grinder_profile['profile_role'])]
+        embed = discord.Embed(color=0x2b2d31, description=f"<:tgk_money:1199223318662885426> `{user.name}'s Payment Status`\n\n")
+        formated_args = await get_formated_embed(["Total Payment", "Missed Payment", "Extra Payment", "Last Payment", "Next Payment"])
+        print(grinder_profile['payment'])
+        embed.description += f"{await get_formated_field(guild=interaction.guild, name=formated_args['Total Payment'], type='int', data=grinder_profile['payment']['total'])}\n"
+        embed.description += f"{await get_formated_field(guild=interaction.guild, name=formated_args['Missed Payment'], type='int', data=grinder_profile['payment']['due'])}\n"
+        embed.description += f"{await get_formated_field(guild=interaction.guild, name=formated_args['Extra Payment'], type='int', data=grinder_profile['payment']['credits'])}\n"
+        embed.description += f"{await get_formated_field(guild=interaction.guild, name=formated_args['Last Payment'], type='time', data=grinder_profile['payment']['last_payment'])}\n"
+        embed.description += f"{await get_formated_field(guild=interaction.guild, name=formated_args['Next Payment'], type='time', data=grinder_profile['payment']['next_payment'])}\n"
+
         await interaction.response.send_message(embed=embed)
 
 async def setup(bot):
