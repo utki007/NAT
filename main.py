@@ -37,6 +37,7 @@ intents = discord.Intents.all()
 intents.presences = False
 class MyBot(commands.Bot):
 	def __init__(self, application_id):
+		self.maintenance = False
 		super().__init__(
 			command_prefix=["nat ", "Nat ", "nAt", "naT ", "NAt ", "NaT ", "nAT ", "NAT "],
 			case_insensitive=True,
@@ -72,13 +73,25 @@ class MyBot(commands.Bot):
 		bot.db2 = bot.octane["Dank_Data"]
 		bot.dankItems = Document(bot.db2, "Item prices")
 
+		config = await bot.config.find(bot.user.id)
+		if config is None: pass
+		self.maintenance = config['maintenance']
+	
+		
 		for file in os.listdir('./cogs'):
 			if file.endswith('.py') and not file.startswith(("_", "donations")):
 				await bot.load_extension(f'cogs.{file[:-3]}')
 	
+	async def interaction_check(self, interaction: discord.Interaction):
+		if self.maintenance and interaction.user.id not in self.owner_ids:
+			await interaction.response.send_message("Bot is under maintenance. Please try again later.", ephemeral=True)
+			return False
+
 	async def on_ready(self):		
 		print(f"{bot.user} has connected to Discord!")
 		await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.watching, name=f"Beta Version 2.1.0!"))
+		if self.maintenance:
+			await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.watching, name="Under Maintenance!"))
 
 if os.path.exists(os.getcwd()+"./properties/tokens.json"):
 	application_id = 1010883367119638658
@@ -237,8 +250,9 @@ async def on_message(message):
 				if fish_event is None:
 					if data['dankFish'] != {}:
 						current_timestamp = int(datetime.datetime.now(pytz.utc).timestamp())
-						for key in data['dankFish']:
-							if data['dankFish'][key] < current_timestamp:
+						copy_data = data['dankFish'].copy()
+						for key in copy_data:
+							if copy_data[key] < current_timestamp:
 								del data['dankFish'][key]							
 					return await bot.dank.upsert(data)
 				fish_event = fish_event['value']
@@ -622,7 +636,7 @@ async def on_audit_log_entry_create(entry: discord.AuditLogEntry):
 								color=discord.Color.random()
 							)
 							await loggingChannel.send(embed=embed)
-							
+
 
 @bot.event
 async def on_guild_join(guild: discord.Guild):
