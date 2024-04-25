@@ -306,6 +306,7 @@ class owner(commands.Cog):
             await interaction.response.send_message("Db error", ephemeral=True)
             return
         data['maintenance'] = not data['maintenance']
+        self.bot.maintenance = data['maintenance']
         await self.bot.config.update(data)
         await interaction.response.send_message(embed=discord.Embed(description=f"Successfully toggled maintenance mode to {data['maintenance']}", color=2829617))
         if data['maintenance']:
