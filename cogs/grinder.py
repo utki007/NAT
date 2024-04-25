@@ -173,6 +173,13 @@ class Grinders(commands.GroupCog, name="grinders"):
         
     @commands.Cog.listener()
     async def on_grinder_payment(self, guild: discord.Guild, user: discord.Member, donation: DonationsInfo, profile: GrinderProfile, grinder_account: GrinderAccount, message: discord.Message):        
+        if donation.quantity < profile['payment']:
+            credits = grinder_account['payment']['credits'] + donation.quantity
+            grinder_account['payment']['credits'] = credits
+            await self.backend.grinders.update(grinder_account)
+            await message.reply(f"{user.mention}, you didn't pay enough to cover your payment. don't worry this has been added to your extra credits")
+            return
+        
         paid_for = int(donation.quantity/profile['payment'])
         lastPayment = grinder_account['payment']['last_payment']
         nextPayment = lastPayment + datetime.timedelta(days=paid_for)
