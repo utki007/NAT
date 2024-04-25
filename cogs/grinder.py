@@ -111,7 +111,7 @@ class Grinders(commands.GroupCog, name="grinders"):
         await interaction.response.send_message("You don't have permission to use this command", ephemeral=True)
         return False
 
-    @tasks.loop(seconds=60)
+    @tasks.loop(minutes=10)
     async def payment_reminder(self):
         guilds_configs = await self.backend.config.find_all()
 
@@ -302,11 +302,7 @@ class Grinders(commands.GroupCog, name="grinders"):
             
             else:
                 await interaction.edit_original_response(content="Cancelled")
-                return            
-
-    @appoint.error
-    async def appoint_error(self, interaction: Interaction, error):
-        print(error)
+                return
 
     @app_commands.command(name="dismiss", description="Dismiss a grinder")
     @app_commands.describe(user="User to dismiss")
