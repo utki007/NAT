@@ -111,7 +111,18 @@ class Grinders(commands.GroupCog, name="grinders"):
         await interaction.response.send_message("You don't have permission to use this command", ephemeral=True)
         return False
 
-    @tasks.loop(minutes=10)
+    async def CalMissedPayment(self, guild: discord.Guild, grinder_account: GrinderAccount, guild_config: GrinderConfig):
+        today = datetime.datetime.now()
+        if grinder_account['payment']['last_payment'] > grinder_account['payment']['next_payment']:
+            due_payment = (grinder_account['payment']['last_payment'] - grinder_account['payment']['next_payment']).days * guild_config['profile'][str(grinder_account['profile_role'])]['payment']
+        else:
+            due_payment = 0
+
+        return due_payment
+
+
+
+    @tasks.loop(seconds=30)
     async def payment_reminder(self):
         guilds_configs = await self.backend.config.find_all()
 
@@ -131,7 +142,11 @@ class Grinders(commands.GroupCog, name="grinders"):
 
     @commands.Cog.listener()
     async def on_grinder_reminder(self, guild: discord.Guild, user: discord.Member, grinder_account: GrinderAccount, guild_config: GrinderConfig):
-        try:await user.send(f"Hey {user.mention}, you have missed your payment. Please make sure to pay your due as soon as possible")
+        due_payment = await self.CalMissedPayment(guild, grinder_account, guild_config)
+        grinder_account['payment']['due'] = due_payment
+        await self.backend.grinders.update(grinder_account)
+
+        try:await user.send(f"Hey {user.mention}, you have missed your {due_payment} payment. Please pay as soon as possible to avoid any inconvenience")
         except discord.Forbidden: pass
 
     @commands.Cog.listener()
@@ -168,30 +183,20 @@ class Grinders(commands.GroupCog, name="grinders"):
         profile = guild_config['profile'][str(grinder_account['profile_role'])]
         if grinder_account['active'] == False: grinder_account['active'] = True
         await self.backend.grinders.update(grinder_account)
-        self.bot.dispatch("grinder_payment", message.guild, donation_info.donor, donation_info, profile, grinder_account, message)
+        self.bot.dispatch("grinder_payment", message.guild, donation_info.donor, donation_info, profile, grinder_account, message, guild_config)
 
         
     @commands.Cog.listener()
-    async def on_grinder_payment(self, guild: discord.Guild, user: discord.Member, donation: DonationsInfo, profile: GrinderProfile, grinder_account: GrinderAccount, message: discord.Message):        
-        if donation.quantity < profile['payment']:
-            credits = grinder_account['payment']['credits'] + donation.quantity
-            grinder_account['payment']['credits'] = credits
-            await self.backend.grinders.update(grinder_account)
-            await message.reply(f"{user.mention}, you didn't pay enough to cover your payment. don't worry this has been added to your extra credits")
-            return
-        
-        paid_for = int(donation.quantity/profile['payment'])
-        lastPayment = grinder_account['payment']['last_payment']
-        nextPayment = lastPayment + datetime.timedelta(days=paid_for)
+    async def on_grinder_payment(self, guild: discord.Guild, user: discord.Member, donation: DonationsInfo, profile: GrinderProfile, grinder_account: GrinderAccount, message: discord.Message, guild_config: GrinderConfig):                
+        paid_for = int(donation.quantity/profile['payment'])        
+        nextPayment = grinder_account['payment']['next_payment'] + datetime.timedelta(days=paid_for)
         lastPayment = datetime.datetime.now()
 
         profile_payment = profile['payment']
 
         total_payment = grinder_account['payment']['total'] + paid_for * profile_payment
-        if lastPayment < nextPayment:
-            due_payment = (nextPayment - lastPayment).days * profile_payment
-        else:
-            due_payment = 0
+
+        due_payment = await self.CalMissedPayment(guild, grinder_account, guild_config)
 
         grinder_account['payment']['total'] = total_payment
         grinder_account['payment']['last_payment'] = lastPayment
@@ -353,14 +358,15 @@ class Grinders(commands.GroupCog, name="grinders"):
             await interaction.response.send_message(f"{user.mention} is not a grinder", ephemeral=True)
             return
 
-        profile = guild_config['profile'][str(grinder_profile['profile_role'])]
+        due_payment = await self.CalMissedPayment(interaction.guild, grinder_profile, guild_config)
+        grinder_profile['payment']['due'] = due_payment
+        await self.backend.grinders.update(grinder_profile)
+
         embed = discord.Embed(color=0x2b2d31, description=f"<:tgk_money:1199223318662885426> `{user.name}'s Payment Status`\n\n")
         formated_args = await get_formated_embed(["Total Payment", "Missed Payment", "Extra Payment", "Last Payment", "Next Payment"])
-        print(grinder_profile['payment'])
         embed.description += f"{await get_formated_field(guild=interaction.guild, name=formated_args['Total Payment'], type='int', data=grinder_profile['payment']['total'])}\n"
-        embed.description += f"{await get_formated_field(guild=interaction.guild, name=formated_args['Missed Payment'], type='int', data=grinder_profile['payment']['due'])}\n"
+        embed.description += f"{await get_formated_field(guild=interaction.guild, name=formated_args['Missed Payment'], type='str', data=grinder_profile['payment']['due'])}\n"
         embed.description += f"{await get_formated_field(guild=interaction.guild, name=formated_args['Extra Payment'], type='int', data=grinder_profile['payment']['credits'])}\n"
-        embed.description += f"{await get_formated_field(guild=interaction.guild, name=formated_args['Last Payment'], type='time', data=grinder_profile['payment']['last_payment'])}\n"
         embed.description += f"{await get_formated_field(guild=interaction.guild, name=formated_args['Next Payment'], type='time', data=grinder_profile['payment']['next_payment'])}\n"
 
         await interaction.response.send_message(embed=embed)
