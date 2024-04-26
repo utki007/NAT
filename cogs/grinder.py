@@ -188,6 +188,9 @@ class Grinders(commands.GroupCog, name="grinders"):
         
     @commands.Cog.listener()
     async def on_grinder_payment(self, guild: discord.Guild, user: discord.Member, donation: DonationsInfo, profile: GrinderProfile, grinder_account: GrinderAccount, message: discord.Message, guild_config: GrinderConfig):                
+        if donation.quantity < profile['payment']:
+            await message.reply(f"{user.mention}, you have successfully paid {donation.format()} but you are still due for {profile['payment'] - donation.quantity}, if you are paying payment in installments contact the admin when you have paid the full amount so they can update your payment status")
+            return
         paid_for = int(donation.quantity/profile['payment'])        
         nextPayment = grinder_account['payment']['next_payment'] + datetime.timedelta(days=paid_for)
         lastPayment = datetime.datetime.now()
