@@ -128,20 +128,21 @@ class Grinders(commands.GroupCog, name="grinders"):
 
     @tasks.loop(seconds=30)
     async def payment_reminder(self):
-        guilds_configs = await self.backend.config.find_all()
+        guilds_configs = await self.backend.config.get_all()
 
         for guild_config in guilds_configs:
             guild = self.bot.get_guild(guild_config['_id'])
             if not guild: continue
 
-            grinders = await self.backend.grinders.find_many_by_custom({"guild": guild.id})
+            grinders: typing.List[GrinderAccount] = await self.backend.grinders.find_many_by_custom({"guild": guild.id})
             today = datetime.datetime.now()
             for grinder in grinders:
                 user = guild.get_member(grinder['user'])
                 if not isinstance(user, discord.Member): continue
 
                 if today > grinder['payment']['next_payment']:
-                    self.bot.dispatch("grinder_reminder", guild, user, grinder, guild_config)
+                    if grinder['reminded'] == False:
+                        self.bot.dispatch("grinder_reminder", guild, user, grinder, guild_config)
                     self.bot.dispatch("grinder_kick", guild, user, grinder, guild_config)
     
     @payment_reminder.before_loop
