@@ -152,6 +152,8 @@ class Grinders(commands.GroupCog, name="grinders"):
     async def on_grinder_reminder(self, guild: discord.Guild, user: discord.Member, grinder_account: GrinderAccount, guild_config: GrinderConfig):
         due_payment = await self.CalMissedPayment(guild, grinder_account, guild_config)
         grinder_account['payment']['due'] = due_payment
+        grinder_account['reminded'] = True
+
         await self.backend.grinders.update(grinder_account)
 
         try:await user.send(f"Hey {user.mention}, you have missed your {due_payment} payment. Please pay as soon as possible to avoid any inconvenience")
@@ -213,6 +215,7 @@ class Grinders(commands.GroupCog, name="grinders"):
         grinder_account['payment']['last_payment'] = lastPayment
         grinder_account['payment']['next_payment'] = nextPayment
         grinder_account['payment']['due'] = due_payment
+        grinder_account['reminded'] = False
 
         await self.backend.grinders.update(grinder_account)
 
@@ -280,7 +283,8 @@ class Grinders(commands.GroupCog, name="grinders"):
                     "last_payment": datetime.datetime.now(),
                     "next_payment": datetime.datetime.now(),
                 },
-                "active": True
+                "active": True,
+                'reminded': False
             }
 
             await self.backend.grinders.insert(dict(grinder_profile))
