@@ -81,6 +81,10 @@ class Grinders(commands.GroupCog, name="grinders"):
         self.bot = bot
         self.backend = GrinderDB(bot)
         self.bot.grinder = self.backend
+        self.payment_reminder.start()
+    
+    def cog_unload(self):
+        self.payment_reminder.stop()
     
     async def GrinderProfileAutoComplete(self, interaction: Interaction, current: str) -> discord.app_commands.Choice[str]:
         guild: discord.Guild = interaction.guild
@@ -139,6 +143,10 @@ class Grinders(commands.GroupCog, name="grinders"):
                 if today > grinder['payment']['next_payment']:
                     self.bot.dispatch("grinder_reminder", guild, user, grinder, guild_config)
                     self.bot.dispatch("grinder_kick", guild, user, grinder, guild_config)
+    
+    @payment_reminder.before_loop
+    async def before_payment_reminder(self):
+        await self.bot.wait_until_ready()
 
     @commands.Cog.listener()
     async def on_grinder_reminder(self, guild: discord.Guild, user: discord.Member, grinder_account: GrinderAccount, guild_config: GrinderConfig):
