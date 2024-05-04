@@ -69,7 +69,7 @@ class MyBot(commands.Bot):
         bot.dank = Document(bot.db, "dank")
 
         # Grinders DB
-        bot.grinder_db = bot.mongo["Grinders 2.0"]
+        bot.grinder_db = bot.mongo["Grinders_V2"]
         bot.grinderSettings = Document(bot.grinder_db, "settings")
         bot.grinderUsers = Document(bot.grinder_db, "users")    
 
