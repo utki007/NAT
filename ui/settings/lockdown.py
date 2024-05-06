@@ -129,6 +129,8 @@ class Lockdown_Profile_Panel(discord.ui.View):
 		await confirmation_view.wait()
 		if confirmation_view.value:
 			data['lockdown_profiles'].remove(view.profile.values[0])
+			del data[view.profile.values[0]]
+			await interaction.client.lockdown.unset(data['_id'],view.profile.values[0])
 			await interaction.client.lockdown.upsert(data)
 			embed = await get_success_embed(f"Protocol **`{view.profile.values[0].title()}`** has been deleted.")
 			await update_lockdown_embed(interaction, data)
@@ -191,6 +193,9 @@ class Lockdown_Profile_Add(discord.ui.Modal, title='Add Lockdown Profile'):
 		length = len(data['lockdown_profiles'])
 		if length >= 5 and interaction.user.id not in self.bot.owner_ids:
 			embed = await get_warning_embed(f"You can't create more than 5 lockdown protocols.")
+			return await interaction.response.send_message(embed=embed, ephemeral=True)
+		if name in data['lockdown_profiles']:
+			embed = await get_warning_embed(f"Lockdown profile named **`{name}`** already exists.")
 			return await interaction.response.send_message(embed=embed, ephemeral=True)
 		data['lockdown_profiles'].append(name)
 		data[name] = {
