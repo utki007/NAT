@@ -424,8 +424,17 @@ class Serversettings_Dropdown(discord.ui.Select):
 			
 			case "Dank's Grinder Manager":
 				
-				if interaction.guild not in [785839283847954433, 999551299286732871]:
-					return await interaction.response.send_message("This feature is not available for your server. We are testing it on our main servers.")
+				if interaction.guild.id not in [785839283847954433, 999551299286732871]:
+					self.view.stop()
+					nat_changelog_view = discord.ui.View()
+					nat_changelog_view.add_item(Serversettings_Dropdown(0))
+					embed = await get_invisible_embed(f"<:tgk_activeDevelopment:1088434070666612806> **|** This module is under development...")
+					await interaction.response.edit_message( 
+						embed=embed, 
+						view=nat_changelog_view
+					)
+					nat_changelog_view.message = await interaction.original_response()
+
 				data = await interaction.client.grinderSettings.find(interaction.guild.id)
 				if not data:
 					data = {
