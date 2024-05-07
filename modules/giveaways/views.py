@@ -1,13 +1,18 @@
 import discord
 from discord.ext import commands
-from typing import Any, List, Union
 from discord import Interaction, SelectOption
 from discord.interactions import Interaction
 from discord.ui import View, Button, Select
 from discord.ui.item import Item
+
+from typing import Any, List, Union
+from amari import User
+
 from utils.views.selects import Role_select, Channel_select, Select_General
 from utils.views.modal import General_Modal
 from utils.views.paginator import Paginator
+from .db import GiveawayConfig as GConfig
+from .db import Giveaways_Backend
 
 class Giveaway(View):
     def __init__(self):
@@ -34,18 +39,26 @@ class Giveaway(View):
             return await interaction.followup.send(embed=embed, view=view)
         
         result = {}
+        backend: Giveaways_Backend = interaction.client.giveaway
         if data['ended']: return await interaction.followup.send("This giveaway has ended.", ephemeral=True)
+
         if data['req_level'] or data['req_weekly']:
-            user_level = await interaction.client.level.get_member_level(interaction.user)
+            amari = interaction.guild.get_member(339254240012664832)
+            if amari is None:
+                return await interaction.followup.send("Amari is not in this server. Please contact the server owner to add Amari to the server.", ephemeral=True)
+            user_level: User = await backend.get_level(interaction.user, interaction.guild)
+
+            if not isinstance(user_level, User):
+                return await interaction.followup.send("Unable to fetch your level data. Please contact the Bot owner.", ephemeral=True)
 
             if data['req_level']:
-                if user_level['level'] >= data['req_level']: 
+                if user_level.level >= data['req_level']:
                     pass
                 else:
                     result['level'] = f"You don't have the required level to join this giveaway.\n> `Required levels: {data['req_level']}`"
 
             if data['req_weekly']:
-                if user_level['weekly'] >= data['req_weekly']:
+                if user_level.weeklyexp >= data['req_weekly']:
                     pass
                 else:
                     result['weekly'] = "You don't have the required weekly XP to join this giveaway.\n> `Required weekly XP: {}`".format(data['req_weekly'])
@@ -123,7 +136,7 @@ class Giveaway(View):
                 pass
             pages.append(embed)
         
-        await Paginator(interaction, pages).start(embeded=True, hidden=True, quick_navigation=False)
+        await Paginator(interaction=interaction, pages=pages, ephemeral=True).start(embeded=True, quick_navigation=False)
 
 class GiveawayLeave(View):
     def __init__(self, data: dict, user: discord.Member, interaction: discord.Interaction):
@@ -154,7 +167,7 @@ class GiveawayLeave(View):
             pass
         await interaction.response.edit_message(content="You have successfully left the giveaway.", view=None, delete_after=10, embed=None)
 
-class GiveawayConfig(View):
+class GiveawayConfigView(View):
     def __init__(self, data: dict, user: discord.Member, message: discord.Message=None):
         self.data = data
         self.user = user
@@ -167,19 +180,10 @@ class GiveawayConfig(View):
         else:
             return False
     
-    async def update_embed(self, interaction: discord.Interaction, giveaway_data: dict):
-        embed = discord.Embed(title=f"{interaction.guild.name} Giveaway Config", color=interaction.client.default_color, description="")
-        embed.description += f"**Manager Roles:** {', '.join([f'<@&{role}>' for role in giveaway_data['manager_roles']]) if len(giveaway_data['manager_roles']) > 0 else '`None`'}\n"
-        embed.description += f"**Logging Channel:** {interaction.guild.get_channel(giveaway_data['log_channel']).mention if giveaway_data['log_channel'] else '`None`'}\n"
-        embed.description += f"**Dm Message:** ```\n{giveaway_data['dm_message']}\n```\n"
-        embed.description += f"**Blacklist:**\n {', '.join([f'<@&{(role)}>' for role in giveaway_data['blacklist']]) if len(giveaway_data['blacklist']) > 0 else '`None`'}\n"
-        embed.description += f"**Global Bypass:**\n {', '.join([f'<@&{(role)}>' for role in giveaway_data['global_bypass']]) if len(giveaway_data['global_bypass']) > 0 else '`None`'}\n"
-        mults = giveaway_data['multipliers']                
-        mults = sorted(mults.items(), key=lambda x: int(x[1]))
-        embed.description += f"\n**Multipliers:**\n"
-        for value, multi in mults:
-            embed.description += f"> `{multi}` : <@&{value}>\n"
+    async def update_embed(self, interaction: discord.Interaction, giveaway_data: GConfig) -> discord.Embed:
+        embed = await interaction.client.giveaway.get_config_embed(giveaway_data, interaction.guild)
         return embed
+        
     
     @discord.ui.button(label="Manager Roles", style=discord.ButtonStyle.gray, emoji="<:tgk_role:1073908306713780284>", custom_id="giveaway:ManagerRoles")
     async def _manager_roles(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -223,21 +227,16 @@ class GiveawayConfig(View):
         await interaction.message.edit(embed=await self.update_embed(interaction, self.data))
         await interaction.client.giveaway.update_config(interaction.guild, self.data)
 
-    @discord.ui.button(label="Dm Message", style=discord.ButtonStyle.gray, emoji="<:tgk_edit:1073902428224757850>", custom_id="giveaway:DmMessage", row=1)
+    @discord.ui.button(label="Embeds", style=discord.ButtonStyle.gray, emoji="<:tgk_edit:1073902428224757850>", custom_id="giveaway:DmMessage", row=1)
     async def _dm_message(self, interaction: discord.Interaction, button: discord.ui.Button):
-        view = General_Modal(title="Giveaway Dm Message", interaction=interaction)
-        view.value = None
-        view.input = discord.ui.TextInput(label="Message",placeholder="Please enter the message you want to set as dm message.", min_length=1, max_length=300, style=discord.TextStyle.long)
-        if self.data['dm_message']:
-            view.input.default = str(self.data['dm_message'])
-        view.add_item(view.input)
-        await interaction.response.send_modal(view)
-        await view.wait()
-
-        if view.value is None: return
-        self.data['dm_message'] = str(view.input.value)
-        await view.interaction.response.edit_message(embed=await self.update_embed(interaction, self.data))
-        await interaction.client.giveaway.update_config(interaction.guild, self.data)
+        embed = discord.Embed(description="## Supported variables List\n", color=interaction.client.default_color)
+        embed.description += "- {prize} - The prize of the giveaway\n"
+        embed.description += "- {guild} - Name of the guild\n"
+        embed.description += "- {timestamp} - The timestamp of the giveaway\n"
+        embed.description += "- {winner} - The winners of the giveaway\n"
+        embed.description += "- {link} - The link to the giveaway message\n"        
+        view = Messages(self.data, interaction.user, interaction.message)
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=False)
 
     @discord.ui.button(label="Global Bypass", style=discord.ButtonStyle.gray, emoji="<:tgk_role:1073908306713780284>", custom_id="giveaway:GlobalBypass", row=0)
     async def _global_bypass(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -323,3 +322,92 @@ class GiveawayConfig(View):
             await roles_view.select.interaction.response.edit_message(content=f"Set multiplier for {', '.join([f'<@&{role.id}>' for role in roles])} to {multiplier}x", view=None, delete_after=5)
             await interaction.message.edit(embed=await self.update_embed(interaction, self.data))
         await interaction.client.giveaway.update_config(interaction.guild, self.data)
+
+class Messages(View):
+    def __init__(self, data: GConfig, user: discord.Member, message: discord.Message=None):
+        self.config: GConfig = data
+        self.user = user
+        self.message = message
+        self.current_message = None
+        super().__init__(timeout=120)
+
+    async def interaction_check(self, interaction: discord.Interaction):
+        if interaction.user.id == self.user.id:
+            return True
+        else:
+            await interaction.response.send_message("You are not allowed to interact with this view.", ephemeral=True)
+            return False
+    
+    async def on_error(self, interaction: Interaction, error: Exception, item: Item):
+        raise error
+
+    async def update_embed(self, interaction: discord.Interaction, giveaway_data: GConfig) -> discord.Embed:
+        embed = discord.Embed(title=self.config["messages"][self.current_message]['title'], description=self.config["messages"][self.current_message]['description'], color=self.config["messages"][self.current_message]['color'])
+        return embed
+
+    @discord.ui.select(placeholder="Select the message you want to edit", 
+        options=[SelectOption(label="Giveaway Embed", value="gaw"), 
+                 SelectOption(label="Dm Message", value="dm"), 
+                 SelectOption(label="Host Dm Message", value="host"), 
+                 #SelectOption(label="Win Message", value="dm"), 
+                 #SelectOption(label="End Message", value="end")
+                 ],
+        max_values=1, min_values=1, row=0)
+    async def select(self, interaction: discord.Interaction, select: discord.ui.Select, ):
+        self.current_message = select.values[0]
+        await interaction.response.edit_message(embeds=[interaction.message.embeds[0], await self.update_embed(interaction=interaction, giveaway_data=self.config)], view=self)
+
+    @discord.ui.button(label="Title", style=discord.ButtonStyle.gray, emoji="<:tgk_edit:1073902428224757850>", custom_id="giveaway:Title", row=1)
+    async def _title(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.current_message is None: return await interaction.response.send_message("Please select a message first.", ephemeral=True)
+        view = General_Modal(title="Title", interaction=interaction)
+        view.value = None
+        view.input = discord.ui.TextInput(label="Title",placeholder="Enter the embed title", min_length=1, max_length=250, style=discord.TextStyle.short)
+        if self.config['messages'][self.current_message]['title']:
+            view.input.default = str(self.config['messages'][self.current_message]['title'])
+        view.add_item(view.input)
+        await interaction.response.send_modal(view)
+        await view.wait()
+
+        if view.value is None: return
+        self.config["messages"][self.current_message]['title'] = view.input.value
+        await view.interaction.response.edit_message(embeds=[interaction.message.embeds[0], await self.update_embed(interaction, self.config)], view=self)
+        await interaction.client.giveaway.update_config(interaction.guild, self.config)
+
+
+    @discord.ui.button(label="Description", style=discord.ButtonStyle.gray, emoji="<:tgk_edit:1073902428224757850>", custom_id="giveaway:Description", row=1)
+    async def _description(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.current_message is None: return await interaction.response.send_message("Please select a message first.", ephemeral=True)
+        view = General_Modal(title="Description", interaction=interaction)
+        view.value = None
+        view.input = discord.ui.TextInput(label="Description",placeholder="Enter the embed description", min_length=1, max_length=2000, style=discord.TextStyle.paragraph)
+        if self.config['messages'][self.current_message]['description']:
+            view.input.default = str(self.config['messages'][self.current_message]['description'])
+        view.add_item(view.input)
+        await interaction.response.send_modal(view)
+        await view.wait()
+
+        if view.value is None: return
+        self.config["messages"][self.current_message]['description'] = view.input.value
+        await view.interaction.response.edit_message(embeds=[interaction.message.embeds[0], await self.update_embed(interaction, self.config)], view=self)
+        await interaction.client.giveaway.update_config(interaction.guild, self.config)
+
+    @discord.ui.button(label="Color", style=discord.ButtonStyle.gray, emoji="<:tgk_edit:1073902428224757850>", custom_id="giveaway:Color", row=1)
+    async def _color(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.current_message is None: return await interaction.response.send_message("Please select a message first.", ephemeral=True)
+        view = General_Modal(title="Color", interaction=interaction)
+        view.value = None
+        view.input = discord.ui.TextInput(label="Color",placeholder="Enter the embed color", min_length=1, max_length=2000, style=discord.TextStyle.short)
+        if self.config['messages'][self.current_message]['color']:
+            view.input.default = str(self.config['messages'][self.current_message]['color'])
+        view.add_item(view.input)
+        await interaction.response.send_modal(view)
+        await view.wait()
+
+        if view.value is None: return
+        try:color = discord.Color.from_str(view.input.value)
+        except ValueError: return await view.interaction.response.send_message(content="Invalid color value.", view=None)
+
+        self.config["messages"][self.current_message]['color'] = color.value
+        await view.interaction.response.edit_message(embeds=[interaction.message.embeds[0], await self.update_embed(interaction, self.config)], view=self)
+        await interaction.client.giveaway.update_config(interaction.guild, self.config)
