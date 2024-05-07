@@ -379,7 +379,7 @@ class Giveaways(commands.GroupCog, name="giveaways"):
 		if not config: return await ctx.send("This server is not set up!")
 		if len(config['multipliers'].keys()) == 0: return await ctx.send("This server does not have any multipliers!")
 		user_role = [role.id for role in user.roles]
-		embed = discord.Embed(color=self.bot.default_color, description=f"@everyone - `1x`\n")
+		embed = discord.Embed(color=0x2b2d31, description=f"@everyone - `1x`\n")
 		embed.set_author(name=f"{user}'s Multipliers", icon_url=user.avatar.url if user.avatar else user.default_avatar)
 		total = 1
 		for role, multi in config['multipliers'].items():
@@ -433,7 +433,7 @@ class Giveaways(commands.GroupCog, name="giveaways"):
 		chl = self.bot.get_channel(config['log_channel'])
 		if not chl: return
 
-		embed = discord.Embed(color=self.bot.default_color,description="", title="Giveaway Ended", timestamp=datetime.datetime.now())
+		embed = discord.Embed(color=0x2b2d31,description="", title="Giveaway Ended", timestamp=datetime.datetime.now())
 		embed.add_field(name="Host", value=giveaway_data['host'].mention)
 		embed.add_field(name="Channel", value=giveaway_data['channel'].mention)
 		embed.add_field(name="Number of Winners", value=giveaway_data['winner'])
@@ -457,7 +457,7 @@ class Giveaways(commands.GroupCog, name="giveaways"):
 		chl = self.bot.get_channel(config['log_channel'])
 		if not chl: return
 
-		embed = discord.Embed(color=self.bot.default_color,description="", title="Giveaway Hosted", timestamp=datetime.datetime.now())
+		embed = discord.Embed(color=0x2b2d31,description="", title="Giveaway Hosted", timestamp=datetime.datetime.now())
 		embed.add_field(name="Host", value=f"<@{data['host']}>")
 		embed.add_field(name="Channel", value=f"<#{data['channel']}>")
 		

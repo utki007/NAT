@@ -142,7 +142,7 @@ class Giveaways_Backend:
         
 
     async def get_config_embed(self, config: GiveawayConfig, guild: discord.Guild):
-        embed = discord.Embed(color=self.bot.default_color, description="")
+        embed = discord.Embed(color=0x2b2d31, description="")
         embed_args = await get_formated_embed(["Manager Roles", "Log Channel", "Blacklisted Roles", "Global Bypass", "Multipliers"])
         embed.description += f"<a:tgk_firstprize:1215646428085620756> `{guild.name} Giveaway Settings`\n\n"
         embed.description += f"{await get_formated_field(guild, name=embed_args['Manager Roles'], type='role', data=config['manager_roles'])}\n"

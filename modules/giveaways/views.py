@@ -35,7 +35,7 @@ class Giveaway(View):
 
         if str(interaction.user.id) in data['entries'].keys():
             view = GiveawayLeave(data, interaction.user, interaction)
-            embed = discord.Embed(description="You already joined this giveaway.",color=interaction.client.default_color)
+            embed = discord.Embed(description="You already joined this giveaway.",color=0x2b2d31)
             return await interaction.followup.send(embed=embed, view=view)
         
         result = {}
@@ -126,7 +126,7 @@ class Giveaway(View):
         pages = []
         i = 1
         for page in entries:
-            embed = discord.Embed(title="Giveaway Participants", description="", color=interaction.client.default_color)
+            embed = discord.Embed(title="Giveaway Participants", description="", color=0x2b2d31)
             for user in page:
                 embed.description += f"{i}. <@{user[0]}>\n"                
                 i += 1
@@ -155,7 +155,7 @@ class GiveawayLeave(View):
             if int(key) in entries: continue
             entries.extend([int(key)] * value)
         percentage = round(entries.count(self.user.id) / len(entries) * 100, 2)
-        embed = discord.Embed(description=f"You have a *{percentage}%* chance of winning this giveaway.", color=interaction.client.default_color)
+        embed = discord.Embed(description=f"You have a *{percentage}%* chance of winning this giveaway.", color=0x2b2d31)
         await interaction.response.send_message(embed=embed, ephemeral=True)
     
     @discord.ui.button(label="Leave", style=discord.ButtonStyle.gray, emoji="<:tgk_pepeexit:790189030569934849>", custom_id="giveaway:Leave")
@@ -229,7 +229,7 @@ class GiveawayConfigView(View):
 
     @discord.ui.button(label="Embeds", style=discord.ButtonStyle.gray, emoji="<:tgk_edit:1073902428224757850>", custom_id="giveaway:DmMessage", row=1)
     async def _dm_message(self, interaction: discord.Interaction, button: discord.ui.Button):
-        embed = discord.Embed(description="## Supported variables List\n", color=interaction.client.default_color)
+        embed = discord.Embed(description="## Supported variables List\n", color=0x2b2d31)
         embed.description += "- {prize} - The prize of the giveaway\n"
         embed.description += "- {guild} - Name of the guild\n"
         embed.description += "- {timestamp} - The timestamp of the giveaway\n"
