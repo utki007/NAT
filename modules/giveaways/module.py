@@ -284,21 +284,21 @@ class Giveaways(commands.GroupCog, name="giveaways"):
 		if any([req_roles, bypass_role, req_level, req_weekly, channel_message]):
 			value = ""
 			if req_roles and bypass_role:
-				value += f"**<a:tgk_blut_arrow:1236738254024474776> Roles:**\n<:nat_replycont:1146496789361479741>  Required: {', '.join([role.mention for role in req_roles])}\n<:nat_reply:1146498277068517386> Bypass: {', '.join([role.mention for role in bypass_role])}\n"
+				value += f"**<a:tgk_blut_arrow:1236738254024474776> Roles:**\n<:nat_reply:1011501024625827911>  Required: {', '.join([role.mention for role in req_roles])}\n<:nat_reply_cont:1011501118163013634> Bypass: {', '.join([role.mention for role in bypass_role])}\n"
 			elif req_roles and not bypass_role:
-				value += f"**<a:tgk_blut_arrow:1236738254024474776> Roles:**\n<:nat_reply:1146498277068517386> Required: {', '.join([role.mention for role in req_roles])}\n"
+				value += f"**<a:tgk_blut_arrow:1236738254024474776> Roles:**\n<:nat_reply_cont:1011501118163013634> Required: {', '.join([role.mention for role in req_roles])}\n"
 			elif bypass_role and not req_roles:
-				value += f"**<a:tgk_blut_arrow:1236738254024474776> Roles:**\n<:nat_reply:1146498277068517386> Bypass: {', '.join([role.mention for role in bypass_role])}\n"
+				value += f"**<a:tgk_blut_arrow:1236738254024474776> Roles:**\n<:nat_reply_cont:1011501118163013634> Bypass: {', '.join([role.mention for role in bypass_role])}\n"
 
 			if req_level and req_weekly:
-				value += f"**<a:tgk_blut_arrow:1236738254024474776> Amari Required:**\n<:nat_replycont:1146496789361479741>  Level: {req_level}\n<:nat_reply:1146498277068517386> Weekly XP: {req_weekly}\n"
+				value += f"**<a:tgk_blut_arrow:1236738254024474776> Amari Required:**\n<:nat_reply:1011501024625827911>  Level: {req_level}\n<:nat_reply_cont:1011501118163013634> Weekly XP: {req_weekly}\n"
 			elif req_level and not req_weekly:
-				value += f"**<a:tgk_blut_arrow:1236738254024474776> Amari Required:**\n<:nat_reply:1146498277068517386> Level: {req_level}\n"
+				value += f"**<a:tgk_blut_arrow:1236738254024474776> Amari Required:**\n<:nat_reply_cont:1011501118163013634> Level: {req_level}\n"
 			elif req_weekly and not req_level:
-				value += f"**<a:tgk_blut_arrow:1236738254024474776> Amari Required:**\n<:nat_reply:1146498277068517386> Weekly XP: {req_weekly}\n"
+				value += f"**<a:tgk_blut_arrow:1236738254024474776> Amari Required:**\n<:nat_reply_cont:1011501118163013634> Weekly XP: {req_weekly}\n"
 
 			if channel_message:
-				value += f"<a:tgk_blut_arrow:1236738254024474776> Required Message Count: {data['channel_messages']['count']}\n<:nat_replycont:1146496789361479741>  Channel: <#{data['channel_messages']['channel']}>\n<:nat_reply:1146498277068517386> Cooldown: 8 seconds\n"                
+				value += f"<a:tgk_blut_arrow:1236738254024474776> Required Message Count: {data['channel_messages']['count']}\n<:nat_reply:1011501024625827911>  Channel: <#{data['channel_messages']['channel']}>\n<:nat_reply_cont:1011501118163013634> Cooldown: 8 seconds\n"                
 			embed.add_field(name="Requirements", value=value, inline=False)
 		
 		embed.set_footer(text=f"Hosted by {interaction.user.display_name} | Winners: {winners}")
