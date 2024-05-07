@@ -99,20 +99,21 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         await self.bot.grinderUsers.upsert(grinder_profile)
 
         role_changed = False
+        user = message.guild.get_member(grinder_profile['user'])
         trial_role = message.guild.get_role(guild_config['trial']['role'])
-        if trial_role is not None and trial_role in donor.roles:
+        if trial_role is not None and trial_role in user.roles:
             date = datetime.date.today()
             today = datetime.datetime(date.year, date.month, date.day)
-            if grinder_profile['payment']['next_payment'] > today and (grinder_profile['payment']['next_payment'] - grinder_profile['payment']['first_payment']).days >= int(guild_config['trial']['duration']/3600*24):
-                if trial_role in donor.roles:
+            if grinder_profile['payment']['next_payment'] > today and (grinder_profile['payment']['next_payment'] - grinder_profile['payment']['first_payment']).days >= int(guild_config['trial']['duration'])/(3600*24):
+                if trial_role in user.roles:
                     try:
-                        await donor.remove_roles(trial_role)
+                        await user.remove_roles(trial_role)
                     except:
                         pass
                     grinder_role = message.guild.get_role(guild_config['grinder_role'])
-                    if grinder_role is not None and grinder_role not in donor.roles:
+                    if grinder_role is not None and grinder_role not in user.roles:
                         try:
-                            await donor.add_roles(grinder_role)
+                            await user.add_roles(grinder_role)
                             role_changed = True
                         except:
                             pass
@@ -143,6 +144,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             embeds.append(await get_invisible_embed(f"{donor.mention} has been promoted to {grinder_role.mention}"))
         msg = None
         try:
+            msg = await message.channel.send(embeds=embeds)
             await donor.send(embeds=embeds)
         except:
             pass
