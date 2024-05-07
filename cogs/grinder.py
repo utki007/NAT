@@ -58,6 +58,8 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             return
         
         guild_config = await self.bot.grinderSettings.find(message.guild.id)
+        if guild_config is None:
+            return
         if not guild_config['payment_channel']: 
             return
         if message.channel.id != guild_config['payment_channel']:
