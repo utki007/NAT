@@ -103,7 +103,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         if trial_role is not None and trial_role in donor.roles:
             date = datetime.date.today()
             today = datetime.datetime(date.year, date.month, date.day)
-            if grinder_profile['payment']['next_payment'] > today and (today - grinder_profile['payment']['first_payment']).days >= guild_config['trial']['duration']:
+            if grinder_profile['payment']['next_payment'] > today and (grinder_profile['payment']['next_payment'] - grinder_profile['payment']['first_payment']).days >= int(guild_config['trial']['duration']/3600*24):
                 if trial_role in donor.roles:
                     try:
                         await donor.remove_roles(trial_role)
@@ -139,6 +139,8 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             embeds.append(embed)
         if extra_amount > 0:
             embeds.append(await get_invisible_embed(f"**Extra amount:** ⏣ {extra_amount:,} hasn't been added to {donor.mention}."))
+        if role_changed:
+            embeds.append(await get_invisible_embed(f"{donor.mention} has been promoted to {grinder_role.mention}"))
         msg = None
         try:
             await donor.send(embeds=embeds)
@@ -205,6 +207,8 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
 
         for guild_config in guild_configs:
             guild = self.bot.get_guild(guild_config['_id'])
+            if guild is None:
+                continue
             grinder_channel = guild.get_channel(guild_config['payment_channel'])
             if grinder_channel is None:
                 continue
@@ -518,7 +522,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
     async def dismiss(self, interaction: Interaction, user: discord.Member):
 
         guild_config = await interaction.client.grinderSettings.find(interaction.guild.id)
-        await interaction.response.send_message(embed=await get_invisible_embed("<a:nat_timer:1010824320672604260> **|** Please wait..."))
+        await interaction.response.defer(ephemeral=False)
 
         grinder_profile = await interaction.client.grinderUsers.find({"guild": interaction.guild.id, "user": user.id})
         if not grinder_profile:
@@ -596,7 +600,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                 return await interaction.edit_original_response(embed= await get_error_embed(f"Can't deduct more than ⏣ {grinder_profile['payment']['total']}"), ephemeral=True)
             else:
                 grinder_profile['payment']['total'] += amount_paid
-                grinder_profile['payment']['next_payment'] = grinder_profile['payment']['next_payment'] - datetime.timedelta(days=days_paid)
+                grinder_profile['payment']['next_payment'] = grinder_profile['payment']['next_payment'] + datetime.timedelta(days=days_paid)
                 await interaction.client.grinderUsers.upsert(grinder_profile)
 
                 embed = await get_invisible_embed(f"⏣ {amount:,} has been deducted from {user.mention}")
@@ -640,6 +644,13 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                     view.add_item(discord.ui.Button(label="Jump to message", style=discord.ButtonStyle.link, url=msg.jump_url))
                     try:
                         await log_channel.send(embed=log_embed,view=view)
+                        log_embed.title = "Manual Payment Log"
+                        log_embed.remove_field(-1)
+                        log_embed.add_field(name="Sanctioned By:", value=f"{interaction.user.mention}", inline=True)
+                        try:
+                            log_embed.set_footer(text=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
+                        except:
+                            log_embed.set_footer(text=f"{interaction.guild.name}")
                         await user.send(embed=log_embed, view=view)
                     except:
                         pass
@@ -691,31 +702,38 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                 view.add_item(discord.ui.Button(label="Jump to message", style=discord.ButtonStyle.link, url=msg.jump_url))
                 try:
                     await log_channel.send(embed=log_embed, view=view)
+                    log_embed.title = "Manual Payment Log"
+                    log_embed.remove_field(-1)
+                    log_embed.add_field(name="Sanctioned By:", value=f"{interaction.user.mention}", inline=True)
+                    try:
+                        log_embed.set_footer(text=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
+                    except:
+                        log_embed.set_footer(text=f"{interaction.guild.name}")
                     await user.send(embed=log_embed, view=view)
                 except:
                     pass
             
-            role_changed = False
-            user = interaction.guild.get_member(grinder_profile['user'])
-            trial_role = interaction.guild.get_role(guild_config['trial']['role'])
-            if trial_role is not None and trial_role in user.roles:
-                date = datetime.date.today()
-                today = datetime.datetime(date.year, date.month, date.day)
-                if grinder_profile['payment']['next_payment'] > today and (today - grinder_profile['payment']['first_payment']).days >= guild_config['trial']['duration']:
-                    if trial_role in user.roles:
+        role_changed = False
+        user = interaction.guild.get_member(grinder_profile['user'])
+        trial_role = interaction.guild.get_role(guild_config['trial']['role'])
+        if trial_role is not None and trial_role in user.roles:
+            date = datetime.date.today()
+            today = datetime.datetime(date.year, date.month, date.day)
+            if grinder_profile['payment']['next_payment'] > today and (grinder_profile['payment']['next_payment'] - grinder_profile['payment']['first_payment']).days >= int(guild_config['trial']['duration'])/(3600*24):
+                if trial_role in user.roles:
+                    try:
+                        await user.remove_roles(trial_role)
+                    except:
+                        pass
+                    grinder_role = interaction.guild.get_role(guild_config['grinder_role'])
+                    if grinder_role is not None and grinder_role not in user.roles:
                         try:
-                            await user.remove_roles(trial_role)
+                            await user.add_roles(grinder_role)
+                            role_changed = True
                         except:
                             pass
-                        grinder_role = interaction.guild.get_role(guild_config['grinder_role'])
-                        if grinder_role is not None and grinder_role not in user.roles:
-                            try:
-                                await user.add_roles(grinder_role)
-                                role_changed = True
-                            except:
-                                pass
-            if role_changed:
-                await interaction.followup.send(embed= await get_invisible_embed(f"{user.mention} has been promoted to {grinder_role.name}"), ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
+        if role_changed:
+            await interaction.followup.send(embed= await get_invisible_embed(f"{user.mention} has been promoted to {grinder_role.mention}"), ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
 
     @app_commands.command(name="bank", description="Check your grinder details")
     @app_commands.describe(user="User to check grinder details")
