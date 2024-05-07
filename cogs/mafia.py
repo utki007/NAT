@@ -57,8 +57,10 @@ class Mafia(commands.GroupCog):
         if message.channel.id in self.mafia_inprosses:
             return
         if not message.guild: return
-        if message.guild.id in self.disabled_guilds: return
-
+        if message.guild.id in self.disabled_guilds: 
+            return
+        if message.channel.type != discord.ChannelType.text: 
+            return
         if message.channel.name == "mafia" and message.channel.id not in self.mafia_channels.keys():
             guildData: GuildConfig = await self.db.find(message.guild.id)
             if not guildData:
