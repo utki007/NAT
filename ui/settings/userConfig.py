@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 from itertools import islice
 
 import discord
@@ -69,6 +70,17 @@ async def update_timestamp_embed(interaction: Interaction, data: dict):
 	)
 	return embed
 
+
+async def update_grinder_embed(interaction: Interaction, time: int):
+
+	date = datetime.date.today()
+	timestamp = f"<t:{int(datetime.datetime(date.year, date.month, date.day, time, tzinfo = datetime.timezone.utc).timestamp())}>"
+	embed = discord.Embed(
+		color=3092790,
+		title="Grinder Reminder",
+		description= 	f"Your current reminder time is **{timestamp}**."
+	)
+	return embed
 
 class Changelogs_Panel(discord.ui.View):
 	def __init__(self, interaction: discord.Interaction, data: dict):
@@ -219,6 +231,60 @@ class Timestamp_Panel(discord.ui.View):
 		data['timezone'] = None
 		await interaction.client.userSettings.upsert(data)
 		embed = await update_timestamp_embed(self.interaction, data)
+		await interaction.response.edit_message(embed=embed, view=self)
+
+	async def interaction_check(self, interaction: discord.Interaction):
+		if interaction.user.id != self.interaction.user.id:
+			warning = await get_invisible_embed(f"This is not for you")
+			return await interaction.response.send_message(embed=warning, ephemeral=True)	
+		return True
+
+	async def on_timeout(self):
+		for button in self.children:
+			button.disabled = True
+		
+		try:
+			await self.message.edit(view=self)
+		except:
+			pass
+
+class Grinder_Reminder_Panel(discord.ui.View):
+	def __init__(self, interaction: discord.Interaction, data: dict):
+		super().__init__(timeout=180)
+		self.interaction = interaction
+		self.message = None # req for disabling buttons after timeout
+		self.data = data
+
+	@discord.ui.button(label="Set Time", style=discord.ButtonStyle.gray, emoji="<:tgk_clock:1198684272446414928>",row=1)
+	async def setTimezone(self, interaction: discord.Interaction, button: discord.ui.Button):
+				
+		modal = General_Modal("Set Grinder Reminder!", interaction=interaction)
+		modal.question = discord.ui.TextInput(label="Enter hour (in UTC):", placeholder="Enter hr from 0 to 23", min_length=1, max_length=2)    
+		modal.value = None
+		modal.add_item(modal.question)
+		await interaction.response.send_modal(modal)
+
+		await modal.wait()
+		if modal.value:
+			try:
+				time = int(modal.question.value)
+				if time > 23 or time < 0:
+					return await modal.interaction.response.send_message(embed = await get_error_embed('Invalid time chosen! Please choose a number between 0 to 23.'), ephemeral=True)
+			except:
+				return await modal.interaction.response.send_message(embed = await get_error_embed('Invalid time chosen! Please choose a number between 0 to 23.'), ephemeral=True)
+			utc = datetime.timezone.utc
+			reminder_time = str(datetime.time(hour=int(time), tzinfo=utc))
+			await interaction.client.grinderUsers.update_by_custom({'user': interaction.user.id}, {'reminder_time': reminder_time})
+			embed = await update_grinder_embed(self.interaction, time)
+			await modal.interaction.response.edit_message(embed=embed, view=self)
+
+	@discord.ui.button(label="Reset Grinder Reminder", style=discord.ButtonStyle.red, emoji="<:tgk_delete:1113517803203461222>",row=1)
+	async def resetTimezone(self, interaction: discord.Interaction, button: discord.ui.Button):
+		time = 12
+		utc = datetime.timezone.utc
+		reminder_time = str(datetime.time(hour=int(time), tzinfo=utc))
+		await interaction.client.grinderUsers.update_by_custom({'user': interaction.user.id}, {'reminder_time': reminder_time})	
+		embed = await update_grinder_embed(self.interaction, time)
 		await interaction.response.edit_message(embed=embed, view=self)
 
 	async def interaction_check(self, interaction: discord.Interaction):

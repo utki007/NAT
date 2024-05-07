@@ -80,7 +80,8 @@ class MyBot(commands.Bot):
 
         config = await bot.config.find(bot.user.id)
         if config is None: pass
-        self.maintenance = config['maintenance']
+        if bot.user.id != 1010883367119638658:
+            self.maintenance = config['maintenance']
     
         
         for file in os.listdir('./cogs'):
@@ -571,7 +572,6 @@ async def on_audit_log_entry_create(entry: discord.AuditLogEntry):
                                 color=discord.Color.random()
                             )
                             await loggingChannel.send(embed=embed)
-
 
 @bot.event
 async def on_guild_join(guild: discord.Guild):

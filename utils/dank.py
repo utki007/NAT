@@ -27,7 +27,7 @@ class DonationsInfo:
         else:
             return f"`⏣ {self.quantity:,}`"
 
-async def get_doantion_from_message(message: discord.Message) -> DonationsInfo:
+async def get_donation_from_message(message: discord.Message) -> DonationsInfo:
     """
     Parse a message from Dank Memer and return the donation information.
 
