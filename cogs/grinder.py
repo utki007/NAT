@@ -640,6 +640,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                     view.add_item(discord.ui.Button(label="Jump to message", style=discord.ButtonStyle.link, url=msg.jump_url))
                     try:
                         await log_channel.send(embed=log_embed,view=view)
+                        await user.send(embed=log_embed, view=view)
                     except:
                         pass
                 
@@ -690,6 +691,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                 view.add_item(discord.ui.Button(label="Jump to message", style=discord.ButtonStyle.link, url=msg.jump_url))
                 try:
                     await log_channel.send(embed=log_embed, view=view)
+                    await user.send(embed=log_embed, view=view)
                 except:
                     pass
             
