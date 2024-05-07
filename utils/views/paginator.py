@@ -116,7 +116,7 @@ class Paginator:
 		self.pages = pages
 
 
-	async def start(self, embeded: Optional[bool] = False, quick_navigation: bool = True) -> None:
+	async def start(self, embeded: Optional[bool] = False, quick_navigation: bool = True, deffer: bool = False) -> None:
 		"""Starts the paginator.
 
 		Parameters
@@ -175,7 +175,11 @@ class Paginator:
 		kwargs = {'content': self.pages[view.current_page]} if not (embeded) else {'embed': self.pages[view.current_page], 'ephemeral': self.ephemeral}
 		kwargs['view'] = view
 
-		await self.interaction.response.send_message(**kwargs)
+		if deffer is True:
+			del kwargs['ephemeral']			
+			await self.interaction.followup.send(**kwargs)
+		else:
+			await self.interaction.response.send_message(**kwargs)
 
 		await view.wait()
 
