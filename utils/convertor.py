@@ -134,7 +134,10 @@ class DMCConverter(commands.Converter):
         if len(value) > 2: raise Exception(f"Invalid number format try using 1e3 or 1k: {value}")
 
         price = value[0]
-        multi = int(value[1])
-        price = float(price) * (10 ** multi)
+        try:
+            multi = int(value[1])
+            price = float(price) * (10 ** multi)
+        except:
+            return None
 
         return int(price)
