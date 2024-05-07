@@ -1,3 +1,4 @@
+import asyncio
 import re
 import discord
 import datetime
@@ -37,7 +38,7 @@ class Giveaways(commands.GroupCog, name="giveaways"):
 		else:
 			return choices[:24]
 		
-	@tasks.loop(seconds=5)
+	@tasks.loop(minutes=5)
 	async def giveaway_loop(self):
 		if self.giveaway_task_progress == True:
 			return
@@ -57,6 +58,13 @@ class Giveaways(commands.GroupCog, name="giveaways"):
 					self.giveaway_in_prosses.append(giveaway["_id"])
 					if giveaway['_id'] in self.backend.giveaways_cache.keys():
 						del self.backend.giveaways_cache[giveaway["_id"]]
+				else:
+					# get how many seconds are left for the giveaway to end
+					seconds_left = (giveaway["end_time"] - now).total_seconds()
+					if seconds_left < 100:
+						self.bot.dispatch("giveaway_end", giveaway, await self.backend.get_config(giveaway['guild']), seconds_left)
+						self.giveaway_in_prosses.append(giveaway["_id"])
+
 			except:
 				pass
 			self.giveaway_task_progress = False
@@ -68,7 +76,11 @@ class Giveaways(commands.GroupCog, name="giveaways"):
 		await self.bot.wait_until_ready()
 
 	@commands.Cog.listener()
-	async def on_giveaway_end(self, giveaway: GiveawayData, config: GiveawayConfig):
+	async def on_giveaway_end(self, giveaway: GiveawayData, config: GiveawayConfig, sleep_time: int=None):
+		if sleep_time != None:
+			await asyncio.sleep(sleep_time)
+			giveaway = await self.backend.giveaways.find(giveaway['_id'])
+	
 		guild: discord.Guild = self.bot.get_guild(giveaway['guild'])
 		channel: discord.TextChannel = guild.get_channel(giveaway['channel'])
 		host: discord.Member = guild.get_member(giveaway['host'])
@@ -254,19 +266,17 @@ class Giveaways(commands.GroupCog, name="giveaways"):
 		
 		embed = discord.Embed(title=f"{config['messages']['gaw']['title']}", description=f"{config['messages']['gaw']['description']}", color=config['messages']['gaw']['color'])
 
-		prize = ""
 		if dank:
 			if item:
 				prize = f"{prize}x {item}"
 			else:
 				prize = f"{prize:,}"
-		else:
-			prize = prize
+
 		
 		guild_name = interaction.guild.name
 		donor_name = donor.mention if donor else interaction.user.mention
 		raw_timestap = int((datetime.datetime.now() + datetime.timedelta(seconds=duration)).timestamp())
-		timestamp = f"<t:{raw_timestap}:R> (<t:{raw_timestap}:f>)"
+		timestamp = f"<t:{raw_timestap}:R> <t:{raw_timestap}:t>"
 		winners_num = winners
 		embed.title = embed.title.format(prize=prize, guild=guild_name, donor=donor_name, timestamp=timestamp)
 		embed.description = embed.description.format(prize=prize, guild=guild_name, donor=donor_name, timestamp=timestamp)
@@ -463,5 +473,6 @@ class Giveaways(commands.GroupCog, name="giveaways"):
 		embed.add_field(name="Ends At", value=data['end_time'].strftime("%d/%m/%Y %H:%M:%S"))
 		await chl.send(embed=embed)
 
+
 async def setup(bot):
-	await bot.add_cog(Giveaways(bot))
+	await bot.add_cog(Giveaways(bot), guilds=[discord.Object(785839283847954433), discord.Object(999551299286732871)])
