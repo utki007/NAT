@@ -87,6 +87,12 @@ class MyBot(commands.Bot):
         for file in os.listdir('./cogs'):
             if file.endswith('.py') and not file.startswith(("_", "donations")):
                 await bot.load_extension(f'cogs.{file[:-3]}')
+
+        for folder in os.listdir("./modules"):
+            if folder == "giveaways":                
+                for file in os.listdir(f"./modules/{folder}"):
+                    if file == "module.py":
+                        await bot.load_extension(f"modules.{folder}.{file[:-3]}")
     
     async def interaction_check(self, interaction: discord.Interaction):
         if self.maintenance and interaction.user.id not in self.owner_ids:
