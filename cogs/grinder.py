@@ -206,7 +206,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
 
         date = datetime.date.today()
         today = datetime.datetime(date.year, date.month, date.day)
-        time = datetime.datetime.now()
+        time = datetime.datetime.now(utc)
         time = datetime.time(hour=time.hour, tzinfo=utc)
 
         for guild_config in guild_configs:
