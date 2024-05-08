@@ -302,6 +302,11 @@ class GrinderConfigPanel(discord.ui.View):
             value = f"**Thumbnail:** [Link]({data['dismiss_embed']['thumbnail']})\n**Description:** ```{data['dismiss_embed']['description']}```\n",
             inline = False
         )
+        embed.add_field(
+            name = "Vacation Embed",
+            value = f"**Thumbnail:** [Link]({data['vacation_embed']['thumbnail']})\n**Description:** ```{data['vacation_embed']['description']}```\n",
+            inline = False
+        )
         view = GrinderEmbedPanel(interaction, data)
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
         view.message = await interaction.original_response()
@@ -487,6 +492,11 @@ class GrinderEmbedPanel(discord.ui.View):
             value = f"**Thumbnail:** [Link]({data['dismiss_embed']['thumbnail']})\n**Description:** ```{data['dismiss_embed']['description']}```\n",
             inline = False
         )
+        embed.add_field(
+            name = "Vacation Embed",
+            value = f"**Thumbnail:** [Link]({data['vacation_embed']['thumbnail']})\n**Description:** ```{data['vacation_embed']['description']}```\n",
+            inline = False
+        )
         await profile_modal.interaction.response.edit_message(embed=embed)
 
     @discord.ui.button(label="Dismiss Embed", style=discord.ButtonStyle.gray, emoji="<:tgk_message:1113527047373979668>",row=1)
@@ -529,19 +539,36 @@ class GrinderEmbedPanel(discord.ui.View):
             value = f"**Thumbnail:** [Link]({data['dismiss_embed']['thumbnail']})\n**Description:** ```{data['dismiss_embed']['description']}```\n",
             inline = False
         )
+        embed.add_field(
+            name = "Vacation Embed",
+            value = f"**Thumbnail:** [Link]({data['vacation_embed']['thumbnail']})\n**Description:** ```{data['vacation_embed']['description']}```\n",
+            inline = False
+        )
         await profile_modal.interaction.response.edit_message(embed=embed)
     
-    # reset embeds
-    @discord.ui.button(label="Reset Embeds", style=discord.ButtonStyle.red, emoji="<:tgk_delete:1113517803203461222>",row=1)
-    async def reset_embeds(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @discord.ui.button(label="Vacation Embed", style=discord.ButtonStyle.gray, emoji="<:tgk_message:1113527047373979668>",row=1)
+    async def vacation_embed(self, interaction: discord.Interaction, button: discord.ui.Button):
+
+        profile_modal = General_Modal(title="Modify Vacation Embed", interaction=interaction)
+        profile_modal.profile_tb = discord.ui.TextInput(custom_id="profile_tb", label="Thumbnail:",placeholder="Enter thumbnail url", max_length=1000, style=discord.TextStyle.long, default=self.data['vacation_embed']['thumbnail'])
+        profile_modal.profile_desc = discord.ui.TextInput(custom_id="profile_desc", label="Description:",placeholder="Enter content you wish to dm grinders", max_length=3000, style=discord.TextStyle.paragraph, default=self.data['vacation_embed']['description'])
+
+        profile_modal.add_item(profile_modal.profile_tb)
+        profile_modal.add_item(profile_modal.profile_desc)
+
+        await interaction.response.send_modal(profile_modal)
+
+        await profile_modal.wait()
+        if profile_modal.value is None or profile_modal.value is False:
+            return await interaction.delete_original_response()
+
+        tb = profile_modal.profile_tb.value
+        desc = profile_modal.profile_desc.value
+
         data = self.data
-        data["appoint_embed"] = {
-            'description' : f'Thank you for applying, you have been selected as a trial grinder at **{interaction.guild.name}** !! Hope you enjoy and work together with staff to grow our server and reach new heights.',
-            'thumbnail' : 'https://cdn.discordapp.com/emojis/814161045966553138.webp?size=128&quality=lossless',
-        }
-        data["dismiss_embed"] = {
-            'description' : f"Feel free to apply later if you're still interested. Thank you for being part of the team!!",
-            'thumbnail' : 'https://cdn.discordapp.com/emojis/830548561329782815.gif?v=1',
+        data['vacation_embed'] = {
+            "thumbnail": tb,
+            "description": desc,
         }
         await interaction.client.grinderSettings.upsert(data)
 
@@ -557,6 +584,49 @@ class GrinderEmbedPanel(discord.ui.View):
         embed.add_field(
             name = "Dismiss Embed",
             value = f"**Thumbnail:** [Link]({data['dismiss_embed']['thumbnail']})\n**Description:** ```{data['dismiss_embed']['description']}```\n",
+            inline = False
+        )
+        embed.add_field(
+            name = "Vacation Embed",
+            value = f"**Thumbnail:** [Link]({data['vacation_embed']['thumbnail']})\n**Description:** ```{data['vacation_embed']['description']}```\n",
+            inline = False
+        )
+        await profile_modal.interaction.response.edit_message(embed=embed)
+
+    @discord.ui.button(label="Reset Embeds", style=discord.ButtonStyle.red, emoji="<:tgk_delete:1113517803203461222>",row=1)
+    async def reset_embeds(self, interaction: discord.Interaction, button: discord.ui.Button):
+        data = self.data
+        data["appoint_embed"] = {
+            'description' : f"We're excited to inform you that you've been appointed as one of our newest trial grinders! If you have any questions or need further information, feel free to reach out to us anytime. Let's make this journey memorable and enjoyable together! ",
+            'thumbnail' : 'https://cdn.discordapp.com/emojis/814161045966553138.webp?size=128&quality=lossless',
+        }
+        data["dismiss_embed"] = {
+            'description' : f"We understand that this may come as a disappointment, and we want to express our gratitude for your contributions during your time with us. However, please know that if you're still interested in being part of our team in the future, you're welcome to apply again.",
+            'thumbnail' : 'https://cdn.discordapp.com/emojis/830548561329782815.gif?v=1',
+        }
+        data["vacation_embed"] = {
+            'description' : f"We understand that you're taking a well-deserved break, and we wanted to acknowledge and support your decision. While you're away, your role as a Dank Memer grinder will be put on hold. We'll look forward to having you back on the team soon! In case of any queries, please feel free to reach out to us anytime.",
+            'thumbnail' : 'https://cdn.discordapp.com/emojis/1109396272382759043.webp?size=128&quality=lossless',
+        }
+        await interaction.client.grinderSettings.upsert(data)
+
+        embed = discord.Embed(
+            color=3092790,
+            title="Manage DM Embeds"
+        )
+        embed.add_field(
+            name = "Appoint Embed",
+            value = f"**Thumbnail:** [Link]({data['appoint_embed']['thumbnail']})\n**Description:** ```{data['appoint_embed']['description']}```\n",
+            inline = False
+        )
+        embed.add_field(
+            name = "Dismiss Embed",
+            value = f"**Thumbnail:** [Link]({data['dismiss_embed']['thumbnail']})\n**Description:** ```{data['dismiss_embed']['description']}```\n",
+            inline = False
+        )
+        embed.add_field(
+            name = "Vacation Embed",
+            value = f"**Thumbnail:** [Link]({data['vacation_embed']['thumbnail']})\n**Description:** ```{data['vacation_embed']['description']}```\n",
             inline = False
         )
         await interaction.response.edit_message(embed=embed)
