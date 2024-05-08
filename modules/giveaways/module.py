@@ -16,7 +16,7 @@ from utils.transformers import TimeConverter, MutipleRole
 from utils.convertor import DMCConverter
 from utils.embeds import get_formated_embed, get_formated_field
 
-class Giveaways(commands.GroupCog, name="giveaways"):
+class Giveaways(commands.GroupCog, name="g"):
 	def __init__(self, bot):
 		self.bot = bot
 		self.backend = Giveaways_Backend(bot)
@@ -38,7 +38,7 @@ class Giveaways(commands.GroupCog, name="giveaways"):
 		else:
 			return choices[:24]
 		
-	@tasks.loop(minutes=5)
+	@tasks.loop(seconds=60)
 	async def giveaway_loop(self):
 		if self.giveaway_task_progress == True:
 			return
@@ -82,6 +82,14 @@ class Giveaways(commands.GroupCog, name="giveaways"):
 			giveaway = await self.backend.giveaways.find(giveaway['_id'])
 	
 		guild: discord.Guild = self.bot.get_guild(giveaway['guild'])
+		if not guild:
+			try:
+				guild = await self.bot.fetch_guild(giveaway['guild'])
+			except discord.HTTPException:
+				await self.backend.giveaways.delete(giveaway)
+				if giveaway['_id'] in self.giveaway_in_prosses:
+					self.giveaway_in_prosses.remove(giveaway['_id'])
+				return
 		channel: discord.TextChannel = guild.get_channel(giveaway['channel'])
 		host: discord.Member = guild.get_member(giveaway['host'])
 
@@ -109,7 +117,7 @@ class Giveaways(commands.GroupCog, name="giveaways"):
 			embed = gaw_message.embeds[0]
 			embed.description  = "Could not determine a winner!" + "\n" + embed.description
 
-			await gaw_message.edit(embed=embed, view=view)
+			await gaw_message.edit(embed=embed, view=view, content="Giveaway Ended")
 			end_emd = discord.Embed(title="Giveaway Ended", description="Could not determine a winner!", color=discord.Color.red())
 			await gaw_message.reply(embed=end_emd, view=None)
 
@@ -132,8 +140,11 @@ class Giveaways(commands.GroupCog, name="giveaways"):
 					winners.append(winner)
 
 			embed = gaw_message.embeds[0]
+			for field in embed.fields:
+				if field.name == "Winners":
+					embed.remove_field(embed.fields.index(field))
 			embed.insert_field_at(0, name="Winners", value="\n".join([winner.mention for winner in winners]))
-			await gaw_message.edit(embed=embed, view=view)
+			await gaw_message.edit(embed=embed, view=view, content="Giveaway Ended")
 
 			end_emd = discord.Embed(title=config['messages']['end']['title'], description=config['messages']['end']['description'], color=config['messages']['end']['color'])
 			host_dm = discord.Embed(title=config['messages']['host']['title'], description=config['messages']['host']['description'], color=config['messages']['host']['color'])
@@ -173,10 +184,15 @@ class Giveaways(commands.GroupCog, name="giveaways"):
 					await host.send(embed=host_dm)
 				except discord.Forbidden:
 					pass
-			
+			payout_config = await self.bot.payouts.get_config(guild_id=guild.id, new=True)
+			if giveaway['item']:
+				item = await self.bot.dankItems.find(giveaway['item'])
+			else:
+				item = None
 			for winner in winners:
-				winner = guild.get_member(winner)
-				if winner:
+				if isinstance(winner, discord.Member):
+					if giveaway['dank'] is True:
+						await self.bot.payouts.create_payout(config=payout_config, event="Giveaway", winner=winner, host=host, prize=giveaway['prize'], message=gaw_message, item=item)
 					try:
 						await winner.send(embed=dm_emd)
 					except discord.Forbidden:
@@ -270,7 +286,7 @@ class Giveaways(commands.GroupCog, name="giveaways"):
 			if item:
 				prize = f"{prize}x {item}"
 			else:
-				prize = f"{prize:,}"
+				prize = f"⏣ {prize:,}"
 
 		
 		guild_name = interaction.guild.name
@@ -342,15 +358,20 @@ class Giveaways(commands.GroupCog, name="giveaways"):
 		except:
 			return await interaction.response.send_message("Invalid message ID!", ephemeral=True)
 		
+		if message.author.id != self.bot.user.id or "Giveaway" not in message.content:
+			return await interaction.response.send_message("This message is not a giveaway!", ephemeral=True)
+		
 		giveawa_data = await self.backend.get_giveaway(message)
+
+		if not giveawa_data: 
+			return await interaction.response.send_message("This giveaway is expired and can't be rerolled!", ephemeral=True)
+
 		if not giveawa_data: return await interaction.response.send_message("This message is not a giveaway!", ephemeral=True)
 		if not giveawa_data['ended']: return await interaction.response.send_message("This giveaway has not ended!", ephemeral=True)
 		giveawa_data['winners'] = winners
-		self.bot.dispatch("giveaway_end", giveawa_data)
+		giveawa_data['ended'] = False		
+		self.bot.dispatch("giveaway_end", giveawa_data, config)
 		await interaction.response.send_message("Giveaway rerolled successfully! Make sure to cancel the already queued payouts use `/payout search`", ephemeral=True)
-		chl = interaction.client.get_channel(1130057933468745849)
-		await chl.send(f"Rerolled giveaway by {interaction.user.mention} in {interaction.guild.name} for {winners} winners {message.jump_url}")    
-
 
 	@app_commands.command(name="end", description="End a giveaway")
 	@app_commands.describe(
@@ -358,14 +379,25 @@ class Giveaways(commands.GroupCog, name="giveaways"):
 	)
 	@app_commands.rename(message="message_id")
 	async def _end(self, interaction: discord.Interaction, message: str):
+		config = await self.backend.get_config(interaction.guild)
+		user_role = [role.id for role in interaction.user.roles]
+		if not (set(user_role) & set(config['manager_roles'])): return await interaction.response.send_message("You do not have permission to end giveaways!", ephemeral=True)
+		
 		try:
 			message = await interaction.channel.fetch_message(int(message))
 		except:
 			return await interaction.response.send_message("Invalid message ID!", ephemeral=True)
+		
+		if message.author.id != self.bot.user.id or "Giveaway" not in message.content:
+			return await interaction.response.send_message("This message is not a giveaway!", ephemeral=True)
+
 		giveaway_data = await self.backend.get_giveaway(message)
-		if not giveaway_data: return await interaction.response.send_message("This message is not a giveaway!", ephemeral=True)
+		if not giveaway_data: 
+			return await interaction.response.send_message("This giveaway Not Found!", ephemeral=True)
 		if giveaway_data['ended']: return await interaction.response.send_message("This giveaway has already ended!", ephemeral=True)
-		self.bot.dispatch("giveaway_end", giveaway_data)
+		giveaway_data['end_time'] = datetime.datetime.utcnow()
+		await self.backend.update_giveaway(giveaway_data)
+		self.bot.dispatch("giveaway_end", giveaway_data, config)
 		await interaction.response.send_message("Giveaway ended successfully!", ephemeral=True)
 		try:
 			self.bot.giveaway.giveaways_cache.pop(message.id)
@@ -475,4 +507,4 @@ class Giveaways(commands.GroupCog, name="giveaways"):
 
 
 async def setup(bot):
-	await bot.add_cog(Giveaways(bot), guilds=[discord.Object(785839283847954433), discord.Object(999551299286732871)])
+	await bot.add_cog(Giveaways(bot))

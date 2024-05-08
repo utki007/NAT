@@ -26,6 +26,8 @@ from utils.views.paginator import Paginator
 from itertools import islice
 from ui.settings.voiceView import Voice_config
 
+from modules.giveaways.views import GiveawayConfigView
+
 def chunk(it, size):
 	it = iter(it)
 	return iter(lambda: tuple(islice(it, size)), ())
@@ -130,6 +132,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 			discord.SelectOption(label="Dank's Grinder Manager", description='Manage Dank Grinders', emoji='<:tgk_cc:1150394902585290854>'),
 			discord.SelectOption(label='Dank Payout Management', description='Manage Dank Payouts', emoji='<:level_roles:1123938667212312637>'),
 			discord.SelectOption(label='Dank Pool Access', description="Who all can access Server's Donation Pool", emoji='<:tgk_bank:1073920882130558987>'),
+			discord.SelectOption(label='Giveaways', description='Configure Giveaways', emoji='<:tgk_newYearPoppers:1072400795028434954>'),
 			discord.SelectOption(label='Mafia Logs Setup', description='Log entire game', emoji='<:tgk_amongUs:1103542462628253726>'),
 			discord.SelectOption(label='Server Lockdown', description='Configure Lockdown Profiles', emoji='<:tgk_lock:1072851190213259375>'),
 			discord.SelectOption(label="Private Voice", description='Create a private voice channel', emoji='<:tgk_voice:1156454028109168650>')
@@ -287,7 +290,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 					mafia_view.children[0].label = 'Logging Disabled'
 					mafia_view.children[0].emoji = "<:toggle_off:1123932890993020928>"
 
-				mafia_view.add_item(Serversettings_Dropdown(3))
+				mafia_view.add_item(Serversettings_Dropdown(4))
 
 				await interaction.response.edit_message(embed=embed, view=mafia_view)
 				mafia_view.message = await interaction.original_response()
@@ -386,7 +389,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 				
 				self.view.stop()
 				grinder_config_view =  Lockdown_Profile_Panel(interaction)			
-				grinder_config_view.add_item(Serversettings_Dropdown(4))
+				grinder_config_view.add_item(Serversettings_Dropdown(5))
 				await interaction.response.edit_message(embed=embed, view=grinder_config_view)
 				grinder_config_view.message = await interaction.original_response()
 
@@ -414,7 +417,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 				embed.add_field(name="Join to create:", value=f"{channel}", inline=False)
 				self.view.stop()
 				voice_view = Voice_config(interaction.user , data)
-				voice_view.add_item(Serversettings_Dropdown(5))
+				voice_view.add_item(Serversettings_Dropdown(6))
 
 				await interaction.response.edit_message(embed=embed, view=voice_view)
 				voice_view.message = await interaction.original_response()
@@ -528,6 +531,14 @@ class Serversettings_Dropdown(discord.ui.Select):
 
 				await interaction.message.edit(embed=embed, view=grinder_config_view)
 				grinder_config_view.message = await interaction.original_response()
+
+			case "Giveaways":
+				self.view.stop()
+				data = await interaction.client.giveaway.get_config(interaction.guild)
+				embed = await interaction.client.giveaway.get_config_embed(config=data, guild=interaction.guild)
+				view = GiveawayConfigView(data=data, user=interaction.user, dropdown=Serversettings_Dropdown(3))
+				await interaction.response.send_message(embed=embed, ephemeral=False, view=view)
+				view.message = await interaction.original_response()
 
 			case _:
 				self.view.stop()

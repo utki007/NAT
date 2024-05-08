@@ -114,8 +114,13 @@ class Giveaway(View):
             embed.description += "\nYou have bypassed the requirements due to your bypass role."       
         await interaction.followup.send(embed=embed)
 
+        self.children[1].label = f"{len(data['entries'].keys())}"
+        if self.children[1].disabled:
+            self.children[1].disabled = False
+        await interaction.followup.edit_message(message_id=interaction.message.id, view=self)
 
-    @discord.ui.button(label="Participants", style=discord.ButtonStyle.gray, emoji="<:tgk_entries:1124995375548338176>", custom_id="giveaway:Entries")
+
+    @discord.ui.button(label=None, style=discord.ButtonStyle.gray, emoji="<:tgk_member:1064253964842975232>", custom_id="giveaway:Entries", disabled=True)
     async def _entries(self, interaction: discord.Interaction, button: discord.ui.Button):
         data = await interaction.client.giveaway.get_giveaway(interaction.message)
         if data is None: return await interaction.followup.send("This giveaway is not available anymore/invalid.", ephemeral=True)
@@ -168,11 +173,14 @@ class GiveawayLeave(View):
         await interaction.response.edit_message(content="You have successfully left the giveaway.", view=None, delete_after=10, embed=None)
 
 class GiveawayConfigView(View):
-    def __init__(self, data: dict, user: discord.Member, message: discord.Message=None):
+    def __init__(self, data: dict, user: discord.Member, message: discord.Message=None, dropdown: Item=None):
         self.data = data
         self.user = user
         self.message = message
         super().__init__(timeout=120)
+        if dropdown is not None:
+            dropdown.row = 0
+            self.add_item(dropdown)     
 
     async def interaction_check(self, interaction: discord.Interaction):
         if interaction.user.id == self.user.id:
@@ -185,7 +193,7 @@ class GiveawayConfigView(View):
         return embed
         
     
-    @discord.ui.button(label="Manager Roles", style=discord.ButtonStyle.gray, emoji="<:tgk_role:1073908306713780284>", custom_id="giveaway:ManagerRoles")
+    @discord.ui.button(label="Manager Roles", style=discord.ButtonStyle.gray, emoji="<:tgk_role:1073908306713780284>", custom_id="giveaway:ManagerRoles", row=1)
     async def _manager_roles(self, interaction: discord.Interaction, button: discord.ui.Button):
         view = View()
         view.value = None
@@ -210,35 +218,32 @@ class GiveawayConfigView(View):
         await interaction.message.edit(embed=await self.update_embed(interaction, self.data))
         await interaction.client.giveaway.update_config(interaction.guild, self.data)
     
-    @discord.ui.button(label="Logging Channel", style=discord.ButtonStyle.gray, emoji="<:tgk_channel:1073908465405268029>", custom_id="giveaway:LoggingChannel", row=1)
-    async def _logging_channel(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @discord.ui.button(label="Blacklist", style=discord.ButtonStyle.gray, emoji="<:tgk_role:1073908306713780284>", custom_id="giveaway:Blacklist", row=1)
+    async def _blacklist(self, interaction: discord.Interaction, button: discord.ui.Button):
         view = View()
         view.value = None
-        view.select = Channel_select(placeholder="Please select the channel you want to set as logging channel.", min_values=1, max_values=1, channel_types=[discord.ChannelType.text])
+        view.select = Role_select(placeholder="Please select the roles you want to add/remove.", min_values=1, max_values=10)
         view.add_item(view.select)
         await interaction.response.send_message(view=view, ephemeral=True)
         await view.wait()
 
         if view.value is None:
             return await interaction.delete_original_response()
-        self.data['log_channel'] = view.select.values[0].id
-        await view.select.interaction.response.edit_message(content=f"Set logging channel to {view.select.values[0].mention}", view=None)
+        added = ""
+        removed = ""
+        for role in view.select.values:
+            if role.id not in self.data['blacklist']:
+                self.data['blacklist'].append(role.id)
+                added += f"<@&{role.id}> "
+            else:
+                self.data['blacklist'].remove(role.id)
+                removed += f"<@&{role.id}> "
+        await view.select.interaction.response.edit_message(content=f"Added: {added}\nRemoved: {removed}", view=None)
         await interaction.delete_original_response()
         await interaction.message.edit(embed=await self.update_embed(interaction, self.data))
         await interaction.client.giveaway.update_config(interaction.guild, self.data)
-
-    @discord.ui.button(label="Embeds", style=discord.ButtonStyle.gray, emoji="<:tgk_edit:1073902428224757850>", custom_id="giveaway:DmMessage", row=1)
-    async def _dm_message(self, interaction: discord.Interaction, button: discord.ui.Button):
-        embed = discord.Embed(description="## Supported variables List\n", color=0x2b2d31)
-        embed.description += "- {prize} - The prize of the giveaway\n"
-        embed.description += "- {guild} - Name of the guild\n"
-        embed.description += "- {timestamp} - The timestamp of the giveaway\n"
-        embed.description += "- {winner} - The winners of the giveaway\n"
-        embed.description += "- {link} - The link to the giveaway message\n"        
-        view = Messages(self.data, interaction.user, interaction.message)
-        await interaction.response.send_message(embed=embed, view=view, ephemeral=False)
-
-    @discord.ui.button(label="Global Bypass", style=discord.ButtonStyle.gray, emoji="<:tgk_role:1073908306713780284>", custom_id="giveaway:GlobalBypass", row=0)
+    
+    @discord.ui.button(label="Global Bypass", style=discord.ButtonStyle.gray, emoji="<:tgk_role:1073908306713780284>", custom_id="giveaway:GlobalBypass", row=1)
     async def _global_bypass(self, interaction: discord.Interaction, button: discord.ui.Button):
         view = View()
         view.value = None
@@ -264,33 +269,35 @@ class GiveawayConfigView(View):
         await interaction.message.edit(embed=await self.update_embed(interaction, self.data))
         await interaction.client.giveaway.update_config(interaction.guild, self.data)
 
-    @discord.ui.button(label="Blacklist", style=discord.ButtonStyle.gray, emoji="<:tgk_role:1073908306713780284>", custom_id="giveaway:Blacklist", row=0)
-    async def _blacklist(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @discord.ui.button(label="Logging Channel", style=discord.ButtonStyle.gray, emoji="<:tgk_channel:1073908465405268029>", custom_id="giveaway:LoggingChannel", row=2)
+    async def _logging_channel(self, interaction: discord.Interaction, button: discord.ui.Button):
         view = View()
         view.value = None
-        view.select = Role_select(placeholder="Please select the roles you want to add/remove.", min_values=1, max_values=10)
+        view.select = Channel_select(placeholder="Please select the channel you want to set as logging channel.", min_values=1, max_values=1, channel_types=[discord.ChannelType.text])
         view.add_item(view.select)
         await interaction.response.send_message(view=view, ephemeral=True)
         await view.wait()
 
         if view.value is None:
             return await interaction.delete_original_response()
-        added = ""
-        removed = ""
-        for role in view.select.values:
-            if role.id not in self.data['blacklist']:
-                self.data['blacklist'].append(role.id)
-                added += f"<@&{role.id}> "
-            else:
-                self.data['blacklist'].remove(role.id)
-                removed += f"<@&{role.id}> "
-        await view.select.interaction.response.edit_message(content=f"Added: {added}\nRemoved: {removed}", view=None)
+        self.data['log_channel'] = view.select.values[0].id
+        await view.select.interaction.response.edit_message(content=f"Set logging channel to {view.select.values[0].mention}", view=None)
         await interaction.delete_original_response()
         await interaction.message.edit(embed=await self.update_embed(interaction, self.data))
         await interaction.client.giveaway.update_config(interaction.guild, self.data)
 
+    @discord.ui.button(label="Embeds", style=discord.ButtonStyle.gray, emoji="<:tgk_edit:1073902428224757850>", custom_id="giveaway:DmMessage", row=2)
+    async def _dm_message(self, interaction: discord.Interaction, button: discord.ui.Button):
+        embed = discord.Embed(description="## Supported variables List\n", color=0x2b2d31)
+        embed.description += "- {prize} - The prize of the giveaway\n"
+        embed.description += "- {guild} - Name of the guild\n"
+        embed.description += "- {timestamp} - The timestamp of the giveaway\n"
+        embed.description += "- {winner} - The winners of the giveaway\n"
+        embed.description += "- {link} - The link to the giveaway message\n"        
+        view = Messages(self.data, interaction.user, interaction.message)
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=False)
     
-    @discord.ui.button(label="Multipliers", style=discord.ButtonStyle.gray, emoji="<:tgk_role:1073908306713780284>", custom_id="giveaway:Multipliers", row=0)
+    @discord.ui.button(label="Multipliers", style=discord.ButtonStyle.gray, emoji="<:tgk_role:1073908306713780284>", custom_id="giveaway:Multipliers", row=2)
     async def _multipliers(self, interaction: discord.Interaction, button: discord.ui.Button):
         multi_view = View()
         multi_view.value = None

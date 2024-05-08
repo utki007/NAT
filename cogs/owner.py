@@ -17,8 +17,10 @@ from utils.checks import App_commands_Checks
 from utils.db import Document
 from utils.views.confirm import Confirm
 from utils.transformers import TimeConverter
+from utils.views.ui import Reload
 from typing import List, Literal
 import os
+
 
 class owner(commands.Cog):
     def __init__(self, bot):
@@ -30,15 +32,13 @@ class owner(commands.Cog):
         self.reload_timer.cancel()
     
     async def cog_autocomplete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
-        current_cogs = []
-        for file in os.listdir("./cogs"):
-            if file.endswith(".py") and not file.startswith("_"):
-                current_cogs.append(file[:-3])
-        new_options = [app_commands.Choice(name="reload all cogs", value="*")]
-        for cog in current_cogs:
-            if current.lower() in cog.lower():
-                new_options.append(app_commands.Choice(name=cog, value=cog))                
-        return new_options[:24]
+        _list =  [
+            app_commands.Choice(name=extention, value=extention)
+            for extention in self.bot.extensions if current.lower() in extention.lower()
+        ]
+        return _list[:24]
+
+    dev = app_commands.Group(name="dev", description="Dev commands")
 
     dev = app_commands.Group(name="dev", description="Developer commands")
     pool = app_commands.Group(name="pool", description="Server pool commands")
@@ -139,30 +139,16 @@ class owner(commands.Cog):
         if interaction.user.id not in self.bot.owner_ids:
             await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
             return
-        if cog != "*":
-            try:
-                await self.bot.unload_extension(f"cogs.{cog}")
-                await self.bot.load_extension(f"cogs.{cog}")
-                embed = discord.Embed(description=f"{cog} has been reloaded.", color=discord.Color.green())
-                await interaction.response.send_message(embed=embed)
-            except Exception as e:
-                embed = discord.Embed(description="Error **|** {}".format(e), color=0xFF0000)
-                await interaction.response.send_message(embed=embed)
-                return
-        elif cog == "*":
-            embed = discord.Embed(description="Relading Cogs..", color=discord.Color.green())
-            await interaction.response.send_message(embed=embed)
-            for module in os.listdir("./cogs"):
-                if module.endswith(".py") and not module.startswith("_"):
-                    try:
-                        await self.bot.unload_extension(f"cogs.{module[:-3]}")
-                        await self.bot.load_extension(f"cogs.{module[:-3]}")
-                        embed.add_field(name=f"{module[:-3]}", value="Reloaded", inline=True)
-                        await interaction.edit_original_response(embed=embed)
-                    except Exception as e:
-                        error = "".join(format_exception(e,e,e.__traceback__))
-                        embed.add_field(name=f"{module}", value=f"Failure **|** {error[:100]}", inline=True)
-                        await interaction.edit_original_response(embed=embed)
+        await interaction.response.send_message(embed=discord.Embed(description=f"Reloading cog `{cog}`...", color=interaction.client.default_color))
+        view = Reload(cog)
+        view.children[0].label = f"{cog}"
+        try:
+            await self.bot.reload_extension(cog)
+            await interaction.edit_original_response(embed=discord.Embed(description=f"Successfully reloaded cog `{cog}`", color=interaction.client.default_color), view=view)
+        except Exception as e:
+            await interaction.edit_original_response(content=None, embed=discord.Embed(description=f"Error while reloading cog `{cog}`: {e}", color=interaction.client.default_color), view=view)
+        
+        view.message = await interaction.original_response()
     
     @dev.command(name="server", description="VPS cmds")
     @app_commands.default_permissions(administrator=True)

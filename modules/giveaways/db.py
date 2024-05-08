@@ -153,14 +153,14 @@ class Giveaways_Backend:
         if config['multipliers'] == {}:
             embed.description += "* No Multipliers Set"
             return embed
-        mutils = {}
-        for value in config['multipliers'].values():
-            if value not in mutils.keys():
-                mutils[value] = []
-        for key, value in config['multipliers'].items():
-            mutils[value].append(int(key))
-        for key, value in mutils.items():
-            embed.description += f"* {await get_formated_field(guild, name=f'`{key}x`: ', type='role', data=value)}\n"
+
+        for key, multi in config['multipliers'].items():
+            role = guild.get_role(int(key))
+            if not isinstance(role, discord.Role):
+                del config['multipliers'][key]
+                await self.update_config(guild, config)
+                continue
+            embed.description += f"* `{multi}`x {role.mention}\n"
         return embed
 
         
