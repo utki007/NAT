@@ -561,7 +561,7 @@ class PayoutV2(commands.GroupCog, name="payout"):
 
             embed.description += f"**Channel:** <#{payout['channel']}>\n"
             embed.description += f"**Host:** <@{payout['set_by']}>\n"
-            embed.description += f"**Quick actions:**\n* skip: skip this payout\n* reject: reject this payout\n* exit: forcefully exit the express payout\n"
+            embed.description += f"\n**Type the below commands to execute:**\n* skip: skip this payout\n* reject: reject this payout\n* exit: exit the entire payout queue\n"
             if 'claimed_at' in payout.keys():
                 embed.description += f"\n**Payout Claimed At:** <t:{int(payout['claimed_at'].timestamp())}:R>\n"
             embed.description += f"**Timeout in:** <t:{int((datetime.datetime.now() + datetime.timedelta(seconds=60)).timestamp())}:R>\n"
