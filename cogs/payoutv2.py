@@ -555,7 +555,7 @@ class PayoutV2(commands.GroupCog, name="payout"):
             embed.description += f"**Winner:** <@{payout['winner']}>\n"
 
             if payout['item']:
-                embed.description += f"**Price:** {payout['prize']}x{payout['item']}\n"
+                embed.description += f"**Price:** {payout['prize']}x {payout['item']}\n"
             else:
                 embed.description += f"**Price:** ⏣ {payout['prize']:,}\n"
 
@@ -564,7 +564,7 @@ class PayoutV2(commands.GroupCog, name="payout"):
             embed.description += f"\n**Type the below commands to execute:**\n* skip: skip this payout\n* reject: reject this payout\n* exit: exit the entire payout queue\n"
             if 'claimed_at' in payout.keys():
                 embed.description += f"\n**Payout Claimed At:** <t:{int(payout['claimed_at'].timestamp())}:R>\n"
-            embed.description += f"**Timeout in:** <t:{int((datetime.datetime.now() + datetime.timedelta(seconds=60)).timestamp())}:R>\n"
+            embed.description += f"**Timeout:** <t:{int((datetime.datetime.now() + datetime.timedelta(seconds=60)).timestamp())}:R>\n"
             cmd = ""
             if not payout['item']:
                 cmd += f"/serverevents payout user:{payout['winner']} quantity:{payout['prize']}"
