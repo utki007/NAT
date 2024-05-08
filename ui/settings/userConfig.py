@@ -274,7 +274,7 @@ class Grinder_Reminder_Panel(discord.ui.View):
 				return await modal.interaction.response.send_message(embed = await get_error_embed('Invalid time chosen! Please choose a number between 0 to 23.'), ephemeral=True)
 			utc = datetime.timezone.utc
 			reminder_time = str(datetime.time(hour=int(time), tzinfo=utc))
-			await interaction.client.grinderUsers.update_by_custom({'user': interaction.user.id}, {'reminder_time': reminder_time})
+			await interaction.client.grinderUsers.update_many_by_custom({'user': interaction.user.id}, {'reminder_time': reminder_time})
 			embed = await update_grinder_embed(self.interaction, time)
 			await modal.interaction.response.edit_message(embed=embed, view=self)
 
@@ -283,7 +283,7 @@ class Grinder_Reminder_Panel(discord.ui.View):
 		time = 12
 		utc = datetime.timezone.utc
 		reminder_time = str(datetime.time(hour=int(time), tzinfo=utc))
-		await interaction.client.grinderUsers.update_by_custom({'user': interaction.user.id}, {'reminder_time': reminder_time})	
+		await interaction.client.grinderUsers.update_many_by_custom({'user': interaction.user.id}, {'reminder_time': reminder_time})	
 		embed = await update_grinder_embed(self.interaction, time)
 		await interaction.response.edit_message(embed=embed, view=self)
 
