@@ -36,7 +36,6 @@ class Botbase(commands.Bot):
                          owner_ids=[488614633670967307, 301657045248114690],
                          activity=discord.Activity(type=discord.ActivityType.custom, name="Startup"),
                          status=discord.Status.offline, help_command=None, application_id=application_id)
-        self.default_color = 0x2b2d31
         self.start_time = datetime.datetime.now()
         self.sync = sync
         self.token = os.environ.get("TEST_TOKEN")

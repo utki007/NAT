@@ -139,14 +139,14 @@ class owner(commands.Cog):
         if interaction.user.id not in self.bot.owner_ids:
             await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
             return
-        await interaction.response.send_message(embed=discord.Embed(description=f"Reloading cog `{cog}`...", color=interaction.client.default_color))
+        await interaction.response.send_message(embed=discord.Embed(description=f"Reloading cog `{cog}`...", color=2829617))
         view = Reload(cog)
         view.children[0].label = f"{cog}"
         try:
             await self.bot.reload_extension(cog)
-            await interaction.edit_original_response(embed=discord.Embed(description=f"Successfully reloaded cog `{cog}`", color=interaction.client.default_color), view=view)
+            await interaction.edit_original_response(embed=discord.Embed(description=f"Successfully reloaded cog `{cog}`", color=2829617), view=view)
         except Exception as e:
-            await interaction.edit_original_response(content=None, embed=discord.Embed(description=f"Error while reloading cog `{cog}`: {e}", color=interaction.client.default_color), view=view)
+            await interaction.edit_original_response(content=None, embed=discord.Embed(description=f"Error while reloading cog `{cog}`: {e}", color=2829617), view=view)
         
         view.message = await interaction.original_response()
     
