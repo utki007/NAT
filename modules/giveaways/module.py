@@ -213,6 +213,7 @@ class Giveaways(commands.GroupCog, name="g"):
 		req_roles="Roles required to enter the giveaway", bypass_role="Roles that can bypass the giveaway", req_level="Level required to enter the giveaway",
 		req_weekly="Weekly XP required to enter the giveaway", donor="Donor of the giveaway", message="Message to accompany the giveaway", dank="Dank Memer Giveaway? (Set it to True for Auto Payout Queue)",
 		channel_message="Number of Messages required in specific channel to enter the giveaway")
+	@app_commands.autocomplete(item=item_autocomplete)
 	async def _start(self, interaction: discord.Interaction, prize: str,
 					 time: app_commands.Transform[int, TimeConverter],
 					 winners: app_commands.Range[int, 1, 20] = 1,
