@@ -209,12 +209,13 @@ class Giveaways(commands.GroupCog, name="g"):
 		self.bot.add_view(Giveaway())
 
 	@app_commands.command(name="start", description="Start a giveaway")
-	@app_commands.describe(winners="Number of winners", prize="Prize of the giveaway", item="Item to giveaway", duration="Duration of the giveaway",
+	@app_commands.describe(winners="Number of winners", prize="Prize of the giveaway", item="Item to giveaway", time="Duration of the giveaway",
 		req_roles="Roles required to enter the giveaway", bypass_role="Roles that can bypass the giveaway", req_level="Level required to enter the giveaway",
 		req_weekly="Weekly XP required to enter the giveaway", donor="Donor of the giveaway", message="Message to accompany the giveaway", dank="Dank Memer Giveaway? (Set it to True for Auto Payout Queue)",
 		channel_message="Number of Messages required in specific channel to enter the giveaway")
-	async def _start(self, interaction: discord.Interaction, winners: app_commands.Range[int, 1, 20], prize: str,
-					 duration: app_commands.Transform[int, TimeConverter],
+	async def _start(self, interaction: discord.Interaction, prize: str,
+					 time: app_commands.Transform[int, TimeConverter],
+					 winners: app_commands.Range[int, 1, 20] = 1,
 					 dank: bool=True,
 					 item:str=None,
 					 req_roles: app_commands.Transform[discord.Role, MutipleRole]=None, 
@@ -246,14 +247,14 @@ class Giveaways(commands.GroupCog, name="g"):
 			"winners": winners,
 			"prize": prize,
 			"item": item,
-			"duration": duration,
+			"duration": time,
 			"req_roles": [role.id for role in req_roles] if req_roles else [],
 			"bypass_role": [role.id for role in bypass_role] if bypass_role else [],
 			"req_level": req_level,
 			"req_weekly": req_weekly,
 			"entries": {},
 			"start_time": datetime.datetime.utcnow(),
-			"end_time": datetime.datetime.utcnow() + datetime.timedelta(seconds=duration),
+			"end_time": datetime.datetime.utcnow() + datetime.timedelta(seconds=time),
 			"ended": False,
 			"host": interaction.user.id,
 			"donor": donor.id if donor else None,
@@ -283,7 +284,7 @@ class Giveaways(commands.GroupCog, name="g"):
 		
 		guild_name = interaction.guild.name
 		donor_name = donor.mention if donor else interaction.user.mention
-		raw_timestap = int((datetime.datetime.now() + datetime.timedelta(seconds=duration)).timestamp())
+		raw_timestap = int((datetime.datetime.now() + datetime.timedelta(seconds=time)).timestamp())
 		timestamp = f"<t:{raw_timestap}:R> <t:{raw_timestap}:t>"
 		winners_num = winners
 		embed.title = embed.title.format(prize=prize, guild=guild_name, donor=donor_name, timestamp=timestamp)
