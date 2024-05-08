@@ -352,7 +352,7 @@ class Giveaways(commands.GroupCog, name="g"):
 		except:
 			return await interaction.response.send_message("Invalid message ID!", ephemeral=True)
 		
-		if message.author.id != self.bot.user.id or "Giveaway" not in message.content:
+		if message.author.id != self.bot.user.id or "giveaway" not in message.content..lower():
 			return await interaction.response.send_message("This message is not a giveaway!", ephemeral=True)
 		
 		giveawa_data = await self.backend.get_giveaway(message)
@@ -382,7 +382,7 @@ class Giveaways(commands.GroupCog, name="g"):
 		except:
 			return await interaction.response.send_message("Invalid message ID!", ephemeral=True)
 		
-		if message.author.id != self.bot.user.id or "Giveaway" not in message.content:
+		if message.author.id != self.bot.user.id or "giveaway" not in message.content.lower():
 			return await interaction.response.send_message("This message is not a giveaway!", ephemeral=True)
 
 		giveaway_data = await self.backend.get_giveaway(message)
