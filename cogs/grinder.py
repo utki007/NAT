@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+from typing import Literal
 import discord
 from discord import Interaction, app_commands
 from discord.ext import commands, tasks
@@ -7,6 +8,7 @@ from humanfriendly import format_timespan
 
 from utils.dank import get_donation_from_message
 from utils.embeds import get_error_embed, get_invisible_embed, get_warning_embed
+from utils.transformers import DMCConverter
 
 utc = datetime.timezone.utc
 midnight = datetime.time(tzinfo=utc)
@@ -90,11 +92,13 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         if not grinder_profile['active']:
             return await message.channel.send(embed = await get_error_embed(f"{donor.mention} is either demoted or on a break. Contact support to join grinders again!"))
         
-        days_paid = int(amount / grinder_profile['payment']['amount_per_grind'])
+        days_paid = int((amount+grinder_profile['payment']['extra']) / grinder_profile['payment']['amount_per_grind'])
         amount_paid = days_paid * grinder_profile['payment']['amount_per_grind']
-        extra_amount = amount - amount_paid
+        extra_amount = int((amount+grinder_profile['payment']['extra']) - amount_paid)
 
         grinder_profile['payment']['total'] += amount_paid
+        if extra_amount>=0:
+            grinder_profile['payment']['extra'] = extra_amount
         grinder_profile['payment']['next_payment'] = grinder_profile['payment']['next_payment'] + datetime.timedelta(days=days_paid)
         await self.bot.grinderUsers.upsert(grinder_profile)
 
@@ -118,13 +122,15 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                         except:
                             pass
 
-        embed = await get_invisible_embed(f"⏣ {amount_paid:,} has been added to {donor.mention}")
+        embed = await get_invisible_embed(f"⏣ {amount:,} has been added to {donor.mention}")
         embed.title = f"{donor.display_name}'s Grinder Payment"
         embed.description = None
         embed.add_field(name="Profile:", value=f"{grinder_profile['profile']}", inline=True)
         embed.add_field(name="Paid for:", value=f"{days_paid} {'day' if days_paid==1 else 'days'}", inline=True)
         embed.add_field(name="Sanctioned By:", value=f"Automatic Detection", inline=True)
-        embed.add_field(name="Amount Credited:", value=f"⏣ {amount_paid:,}", inline=True)
+        embed.add_field(name="Amount Credited:", value=f"⏣ {amount:,}", inline=True)
+        if extra_amount > 0:
+            embed.add_field(name="Grinder Wallet:", value=f"⏣ {extra_amount:,}", inline=True)
         embed.add_field(name="Grinder Bank:", value=f"⏣ {grinder_profile['payment']['total']:,}", inline=True)
         embed.timestamp = datetime.datetime.now()
         try:
@@ -135,17 +141,13 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             embed.set_thumbnail(url=donor.avatar.url)
         except:
             embed.set_thumbnail(url=donor.default_avatar.url)
-        embeds = []
-        if days_paid > 0:
-            embeds.append(embed)
-        if extra_amount > 0:
-            embeds.append(await get_invisible_embed(f"**Extra amount:** ⏣ {extra_amount:,} hasn't been added to {donor.mention}."))
+        embeds = [embed]
         if role_changed:
             embeds.append(await get_invisible_embed(f"{donor.mention} has been promoted to {grinder_role.mention}"))
         msg = None
         try:
             msg = await message.channel.send(embeds=embeds)
-            await donor.send(embeds=embeds)
+            await donor.send(embed=embed)
         except:
             pass
 
@@ -153,11 +155,11 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             return
         log_channel = message.guild.get_channel(guild_config['grinder_logs'])
         if log_channel:
-            log_embed = await get_invisible_embed(f"⏣ {amount_paid:,} has been added to {donor.mention}")
+            log_embed = await get_invisible_embed(f"⏣ {amount:,} has been added to {donor.mention}")
             log_embed.title = f"Amount Added"
             log_embed.description = None
             log_embed.add_field(name="Paid for:", value=f"{days_paid} {'day' if days_paid==1 else 'days'}", inline=True)
-            log_embed.add_field(name="Amount Credited:", value=f"⏣ {amount_paid:,}", inline=True)
+            log_embed.add_field(name="Amount Credited:", value=f"⏣ {amount:,}", inline=True)
             log_embed.add_field(name="Credited To:", value=f"{donor.mention}", inline=True)
             log_embed.timestamp = datetime.datetime.now()
             try:
@@ -356,7 +358,15 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         grinder_profile = await interaction.client.grinderUsers.find({"guild": interaction.guild.id, "user": user.id})
 
         date = datetime.date.today()
+        today = datetime.datetime(date.year, date.month, date.day)
+        reminder_dm = False
         if not grinder_profile:
+
+            record = await interaction.client.grinderUsers.find({"reminder_time": {"$exists":"true"}, "user": interaction.user.id})
+            if record:
+                reminder_time = datetime.time.fromisoformat(record['reminder_time'])
+            else:
+                reminder_time = datetime.time(hour=12, tzinfo=utc)
 
             grinder_profile = {
                 "guild": interaction.guild.id,
@@ -365,14 +375,21 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                 "profile_role": profile['role'],
                 "payment": {
                     "total": 0,
+                    "extra": 0,
                     "amount_per_grind": profile['payment'],
-                    "grinder_since": datetime.datetime(date.year, date.month, date.day),
-                    "first_payment": datetime.datetime(date.year, date.month, date.day),
-                    "next_payment": datetime.datetime(date.year, date.month, date.day),
+                    "grinder_since": today,
+                    "first_payment": today,
+                    "next_payment": today,
                 },
-                "reminder_time": str(datetime.time(hour=12, tzinfo=utc)),
+                "reminder_time": str(reminder_time),
                 "active": True
             }
+            reminder_dm = True
+            reminder_embed = await get_invisible_embed(
+                f">>> You will be reminded to donate everyday at <t:{int(datetime.datetime.combine(today, reminder_time).timestamp())}:t>. Use </settings:1196688324207853590> to change the reminder time."
+            )
+            reminder_embed.title = "Custom Grinder Reminder"
+            reminder_embed.set_thumbnail(url='https://cdn.discordapp.com/emojis/841624339169935390.gif?size=128&quality=lossless')
             await interaction.client.grinderUsers.insert(grinder_profile)
 
         elif grinder_profile['profile'] == profile['name'] and grinder_profile['profile_role'] == profile['role'] and grinder_profile['payment']['amount_per_grind'] == profile['payment']:
@@ -421,7 +438,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                 grind_channel = interaction.guild.get_channel(guild_config['payment_channel'])
                 if grind_channel:
                     view = discord.ui.View()
-                    view.add_item(discord.ui.Button(label="#Grinder-donation channel", style=discord.ButtonStyle.primary, url=f"{grind_channel.jump_url}"))
+                    view.add_item(discord.ui.Button(label="Grinder's Donation Channel", emoji="<:tgk_channel:1073908465405268029>" , style=discord.ButtonStyle.primary, url=f"{grind_channel.jump_url}"))
                 try:
                     if view:
                         await user.send(embed=appoint_dm, view=view)
@@ -492,12 +509,16 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         grind_channel = interaction.guild.get_channel(guild_config['payment_channel'])
         if grind_channel:
             view = discord.ui.View()
-            view.add_item(discord.ui.Button(label="#Grinder-donation channel", style=discord.ButtonStyle.primary, url=f"{grind_channel.jump_url}"))
+            view.add_item(discord.ui.Button(label="Grinder's Donation Channel", emoji="<:tgk_channel:1073908465405268029>" , style=discord.ButtonStyle.primary, url=f"{grind_channel.jump_url}"))
         try:
-            if view:
-                await user.send(embed=appoint_dm, view=view)
+            if reminder_dm:
+                embeds = [appoint_dm, reminder_embed]
             else:
-                await user.send(embed=appoint_dm)
+                embeds = [appoint_dm]
+            if view:
+                await user.send(embeds=embeds, view=view)
+            else:
+                await user.send(embeds=embeds)
         except:
             pass
 
@@ -521,7 +542,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
     @app_commands.command(name="dismiss", description="Remove Grinder")
     @app_commands.describe(user="User to dismiss")
     @app_commands.check(GrinderCheck)
-    async def dismiss(self, interaction: Interaction, user: discord.Member):
+    async def dismiss(self, interaction: Interaction, user: discord.Member, reason: Literal['Inactivity', 'Vacation', 'Others']):
 
         guild_config = await interaction.client.grinderSettings.find(interaction.guild.id)
         await interaction.response.defer(ephemeral=False)
@@ -542,20 +563,29 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             embed = await get_error_embed(f"Unable to remove roles from {user.mention}.")
             return await interaction.edit_original_response(embed=embed)
         
-        dismiss_embed = await get_invisible_embed(f"{user.mention} has been dismissed from grinders. Thanks for your support!")
-        dismiss_embed.title = f"Dismissed from Grinders"
-        dismiss_embed.description = guild_config['dismiss_embed']['description']
-        dismiss_embed.timestamp = datetime.datetime.now()
+        embed = await get_invisible_embed(f"thanks for support")
+        if reason == 'Vacation':
+            embed.title = f"We'll miss you!"
+            embed.description = guild_config['vacation_embed']['description']
+            embed.timestamp = datetime.datetime.now()
+            try:
+                embed.set_thumbnail(url = guild_config['vacation_embed']['thumbnail'])
+            except:
+                pass
+        else:
+            embed.title = f"Dismissed from Grinders"
+            embed.description = guild_config['dismiss_embed']['description']
+            embed.timestamp = datetime.datetime.now()
+            try:
+                embed.set_thumbnail(url = guild_config['dismiss_embed']['thumbnail'])
+            except:
+                pass
         try:
-            dismiss_embed.set_footer(text = interaction.guild.name, icon_url = interaction.guild.icon.url)
+            embed.set_footer(text = interaction.guild.name, icon_url = interaction.guild.icon.url)
         except:
-            dismiss_embed.set_footer(text = interaction.guild.name)
+            embed.set_footer(text = interaction.guild.name)
         try:
-            dismiss_embed.set_thumbnail(url = guild_config['dismiss_embed']['thumbnail'])
-        except:
-            pass
-        try:
-            await user.send(embed=dismiss_embed)
+            await user.send(embed=embed)
         except:
             pass
         
@@ -580,7 +610,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
     @app_commands.command(name="log-donation", description="Log Grinder Payment")
     @app_commands.describe(user="Whose donation to log?", amount="Amount to log, negative for deduction")
     @app_commands.check(GrinderCheck)
-    async def log(self, interaction: Interaction, user: discord.Member, amount: int):
+    async def log(self, interaction: Interaction, user: discord.Member, amount: app_commands.Transform[int, DMCConverter]):
         guild_config = await interaction.client.grinderSettings.find(interaction.guild.id)
         grinder_profile = await interaction.client.grinderUsers.find({"guild": interaction.guild.id, "user": user.id})
         if not grinder_profile:
@@ -589,19 +619,21 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             return await interaction.response.send_message(embed= await get_error_embed(f"{user.mention} is either demoted or on a break. Contact support to join grinders again!"), ephemeral=True)
         
         
-        days_paid = int(amount / grinder_profile['payment']['amount_per_grind'])
-        if days_paid == 0:
-            return await interaction.response.send_message(embed= await get_error_embed(f"Amount should be in multiples of ⏣ {grinder_profile['payment']['amount_per_grind']:,}"))
+        days_paid = int((amount+grinder_profile['payment']['extra'])/ grinder_profile['payment']['amount_per_grind'])
         amount_paid = days_paid * grinder_profile['payment']['amount_per_grind']
-        extra_amount = amount - amount_paid
+        extra_amount = int((amount+grinder_profile['payment']['extra'])-amount_paid)
 
         await interaction.response.defer(ephemeral=False)
         if amount < 0:
-            extra_amount = amount + amount_paid
             if amount_paid + grinder_profile['payment']['total'] < 0:
                 return await interaction.edit_original_response(embed= await get_error_embed(f"Can't deduct more than ⏣ {grinder_profile['payment']['total']}"), ephemeral=True)
             else:
-                grinder_profile['payment']['total'] += amount_paid
+                if extra_amount < 0:
+                    grinder_profile['payment']['total'] += amount_paid - grinder_profile['payment']['amount_per_grind']
+                    grinder_profile['payment']['extra'] = grinder_profile['payment']['amount_per_grind'] + extra_amount
+                else:
+                    grinder_profile['payment']['total'] += amount_paid
+                    grinder_profile['payment']['extra'] = extra_amount
                 grinder_profile['payment']['next_payment'] = grinder_profile['payment']['next_payment'] + datetime.timedelta(days=days_paid)
                 await interaction.client.grinderUsers.upsert(grinder_profile)
 
@@ -612,6 +644,8 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                 embed.add_field(name="Paid for:", value=f"{days_paid} {'day' if days_paid==1 else 'days'}", inline=True)
                 embed.add_field(name="Sanctioned By:", value=f"{interaction.user.mention}", inline=True)
                 embed.add_field(name="Amount Debited:", value=f"⏣ {-amount:,}", inline=True)
+                if grinder_profile['payment']['extra'] > 0:
+                    embed.add_field(name="Grinder Wallet:", value=f"⏣ {grinder_profile['payment']['extra']:,}", inline=True)
                 embed.add_field(name="Grinder Bank:", value=f"⏣ {grinder_profile['payment']['total']:,}", inline=True)
                 
                 embed.timestamp = datetime.datetime.now()
@@ -624,6 +658,13 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                 except:
                     embed.set_thumbnail(url=user.default_avatar.url)
                 msg = await interaction.edit_original_response(embed=embed)
+                view = discord.ui.View()
+                view.add_item(discord.ui.Button(label="Jump to message", style=discord.ButtonStyle.link, url=msg.jump_url))
+                try:
+                    embed.title = f"Manually Deducted by {interaction.user.name}"
+                    await user.send(embed=embed, view=view)
+                except:
+                    pass
 
                 log_channel = interaction.guild.get_channel(guild_config['grinder_logs'])
                 if log_channel:
@@ -639,36 +680,32 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                     except:
                         log_embed.set_thumbnail(url=user.default_avatar.url)
                     try:
-                        log_embed.set_footer(text=f"Deducted by {interaction.user.name} | ID: {interaction.user.id}", icon_url=interaction.guild.icon.url)
+                        log_embed.set_footer(text=f"Deducted by {interaction.user.name} | ID: {interaction.user.id}", icon_url=interaction.user.avatar.url)
                     except:
-                        log_embed.set_footer(text=f"Deducted by {interaction.user.name} | ID: {interaction.user.id}")
+                        log_embed.set_footer(text=f"Deducted by {interaction.user.name} | ID: {interaction.user.id}", icon_url=interaction.user.default_avatar.url)
                     view = discord.ui.View()
                     view.add_item(discord.ui.Button(label="Jump to message", style=discord.ButtonStyle.link, url=msg.jump_url))
                     try:
                         await log_channel.send(embed=log_embed,view=view)
-                        log_embed.title = "Manual Payment Log"
-                        log_embed.remove_field(-1)
-                        log_embed.add_field(name="Sanctioned By:", value=f"{interaction.user.mention}", inline=True)
-                        try:
-                            log_embed.set_footer(text=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
-                        except:
-                            log_embed.set_footer(text=f"{interaction.guild.name}")
-                        await user.send(embed=log_embed, view=view)
                     except:
                         pass
                 
         else:
             grinder_profile['payment']['total'] += amount_paid
+            if extra_amount >= 0:
+                grinder_profile['payment']['extra'] = extra_amount
             grinder_profile['payment']['next_payment'] = grinder_profile['payment']['next_payment'] + datetime.timedelta(days=days_paid)
             await interaction.client.grinderUsers.upsert(grinder_profile)
 
-            embed = await get_invisible_embed(f"⏣ {amount_paid:,} has been added to {user.mention}")
+            embed = await get_invisible_embed(f"⏣ {amount:,} has been added to {user.mention}")
             embed.title = f"{user.display_name}'s Grinder Payment"
             embed.description = None
             embed.add_field(name="Profile:", value=f"{grinder_profile['profile']}", inline=True)
             embed.add_field(name="Paid for:", value=f"{days_paid} {'day' if days_paid==1 else 'days'}", inline=True)
             embed.add_field(name="Sanctioned By:", value=f"{interaction.user.mention}", inline=True)
-            embed.add_field(name="Amount Credited:", value=f"⏣ {amount_paid:,}", inline=True)
+            embed.add_field(name="Amount Credited:", value=f"⏣ {amount:,}", inline=True)
+            if extra_amount > 0:
+                embed.add_field(name="Grinder Wallet:", value=f"⏣ {extra_amount:,}", inline=True)
             embed.add_field(name="Grinder Bank:", value=f"⏣ {grinder_profile['payment']['total']:,}", inline=True)
             embed.timestamp = datetime.datetime.now()
             try:
@@ -680,16 +717,21 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             except:
                 embed.set_thumbnail(url=user.default_avatar.url)
             msg = await interaction.edit_original_response(embed=embed)
-            if extra_amount > 0: 
-                await interaction.followup.send(embed= await get_invisible_embed(f"**Extra amount:** ⏣ {extra_amount:,} hasn't been added to {user.mention}."), ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
+            view = discord.ui.View()
+            view.add_item(discord.ui.Button(label="Jump to message", style=discord.ButtonStyle.link, url=msg.jump_url))
+            try:
+                embed.title = f"Manually Credited by {interaction.user.name}"
+                await user.send(embed=embed, view=view)
+            except:
+                pass
             
             log_channel = interaction.guild.get_channel(guild_config['grinder_logs'])
             if log_channel:
-                log_embed = await get_invisible_embed(f"⏣ {amount_paid:,} has been added to {user.mention}")
+                log_embed = await get_invisible_embed(f"⏣ {amount:,} has been added to {user.mention}")
                 log_embed.title = f"Amount Added"
                 log_embed.description = None
                 log_embed.add_field(name="Paid for:", value=f"{days_paid} {'day' if days_paid==1 else 'days'}", inline=True)
-                log_embed.add_field(name="Amount Credited:", value=f"⏣ {amount_paid:,}", inline=True)
+                log_embed.add_field(name="Amount Credited:", value=f"⏣ {amount:,}", inline=True)
                 log_embed.add_field(name="Credited To:", value=f"{user.mention}", inline=True)
                 log_embed.timestamp = datetime.datetime.now()
                 try:
@@ -704,14 +746,6 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                 view.add_item(discord.ui.Button(label="Jump to message", style=discord.ButtonStyle.link, url=msg.jump_url))
                 try:
                     await log_channel.send(embed=log_embed, view=view)
-                    log_embed.title = "Manual Payment Log"
-                    log_embed.remove_field(-1)
-                    log_embed.add_field(name="Sanctioned By:", value=f"{interaction.user.mention}", inline=True)
-                    try:
-                        log_embed.set_footer(text=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
-                    except:
-                        log_embed.set_footer(text=f"{interaction.guild.name}")
-                    await user.send(embed=log_embed, view=view)
                 except:
                     pass
             
@@ -759,8 +793,17 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         embed.title = f"{user.display_name}'s Grinder Stats"
         embed.add_field(name="Profile:", value=f"{grinder_profile['profile']}", inline=True)
         embed.add_field(name="Next Payment:", value=f'<t:{int(grinder_profile["payment"]["next_payment"].timestamp())}:D>', inline=True)
-        embed.add_field(name="Grinder Since:", value=f'{format_timespan(today - grinder_profile["payment"]["grinder_since"])}', inline=True)
-        embed.add_field(name="Amount per grind", value=f"⏣ {grinder_profile['payment']['amount_per_grind']:,}", inline=True)
+        embed.add_field(name="Grinder Since:", value=f'<t:{int(grinder_profile["payment"]["grinder_since"].timestamp())}:R>', inline=True)
+        
+        if grinder_profile['payment']['extra'] > 0:
+            embed.add_field(name="Grinder Wallet:", value=f"⏣ {grinder_profile['payment']['extra']:,}", inline=True)
+        else:
+            embed.add_field(name="Amount per grind", value=f"⏣ {grinder_profile['payment']['amount_per_grind']:,}", inline=True)
+        # amount to clear dues
+        if grinder_profile['payment']['next_payment'] < today:
+            pending_days = (today - grinder_profile['payment']['next_payment']).days
+            amount = grinder_profile['payment']['amount_per_grind'] * pending_days - grinder_profile['payment']['extra']
+            embed.add_field(name="Pending Amount:", value=f"⏣ {amount:,}", inline=True)
         embed.add_field(name="Grinder Bank:", value=f"⏣ {grinder_profile['payment']['total']:,}", inline=True)
 
         try:
