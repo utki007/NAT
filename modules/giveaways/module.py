@@ -390,7 +390,7 @@ class Giveaways(commands.GroupCog, name="g"):
 			return await interaction.response.send_message("This giveaway Not Found!", ephemeral=True)
 		if giveaway_data['ended']: return await interaction.response.send_message("This giveaway has already ended!", ephemeral=True)
 		giveaway_data['end_time'] = datetime.datetime.utcnow()
-		await self.backend.update_giveaway(giveaway_data)
+		await self.backend.update_giveaway(message=message, data=giveaway_data)
 		self.bot.dispatch("giveaway_end", giveaway_data, config)
 		await interaction.response.send_message("Giveaway ended successfully!", ephemeral=True)
 		try:
