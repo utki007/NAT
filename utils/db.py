@@ -428,6 +428,37 @@ class Document:
             filter_dict, {f"${option}": update_data}, *args, **kwargs
         )
 
+
+    async def update_many_by_custom(
+        self,
+        filter_dict: Dict[str, Any],
+        update_data: Dict[str, Any],
+        option: str = "set",
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Performs an update operation.
+
+        Parameters
+        ----------
+        filter_dict: Dict[str, Any]
+            The data to filter on
+        update_data: Dict[str, Any]
+            The data to upsert
+        option: str
+            The optional option to pass to mongo,
+            default is set
+        """
+        self.__ensure_dict(filter_dict)
+        self.__ensure_dict(update_data)
+
+        # Update
+        await self._document.update_many(
+            filter_dict, {f"${option}": update_data}, *args, **kwargs
+        )
+    
+
     async def unset(self, _id: Union[Dict, Any], field: Any) -> None:
         """
         Remove a given param, basically dict.pop on the db.
