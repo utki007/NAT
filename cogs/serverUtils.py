@@ -111,7 +111,6 @@ class serverUtils(commands.Cog):
 		await interaction.response.send_message(embed=embed, view=view)
 
 	@app_commands.command(name="settings", description="Adjust user-specific settings! ⚙️")
-	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
 	async def usersettings(self, interaction:  discord.Interaction):
 		embed = discord.Embed(
@@ -450,12 +449,16 @@ class Serversettings_Dropdown(discord.ui.Select):
 						"max_profiles" : 5,
 						"grinder_profiles" : {},
 						"appoint_embed" : {
-							'description' : f'Thanks for applying, you have been selected as a trial grinder at **{interaction.guild.name}** !! Hope you enjoy and work together with staff to grow our server and reach new heights.',
+							'description' : f"We're excited to inform you that you've been appointed as one of our newest trial grinders! If you have any questions or need further information, feel free to reach out to us anytime. Let's make this journey memorable and enjoyable together! ",
 							'thumbnail' : 'https://cdn.discordapp.com/emojis/814161045966553138.webp?size=128&quality=lossless',
 						},
 						"dismiss_embed" : {
-							'description' : f"Feel free to apply later if you're still interested. Thank you for being part of the team!!",
+							'description' : f"We understand that this may come as a disappointment, and we want to express our gratitude for your contributions during your time with us. However, please know that if you're still interested in being part of our team in the future, you're welcome to apply again.",
 							'thumbnail' : 'https://cdn.discordapp.com/emojis/830548561329782815.gif?v=1',
+						},
+						"vacation_embed" : {
+							'description' : f"We understand that you're taking a well-deserved break, and we wanted to acknowledge and support your decision. While you're away, your role as a Dank Memer grinder will be put on hold. We'll look forward to having you back on the team soon! In case of any queries, please feel free to reach out to us anytime.",
+							'thumbnail' : 'https://cdn.discordapp.com/emojis/1109396272382759043.webp?size=128&quality=lossless',
 						}
 					}
 					await interaction.client.grinderSettings.upsert(data)
@@ -690,8 +693,8 @@ class Usersettings_Dropdown(discord.ui.Select):
 					return await interaction.response.edit_message(embed=embed)
 
 				date = datetime.date.today()
-				hr = int(datas[0]['reminder_time'].split(':')[0])
-				timestamp = f"<t:{int(datetime.datetime(date.year, date.month, date.day, hr, tzinfo = datetime.timezone.utc).timestamp())}>"
+				time = datetime.time.fromisoformat(datas[0]['reminder_time'])
+				timestamp = f"<t:{int(datetime.datetime.combine(date, time).timestamp())}>"
 				embed = discord.Embed(
 					color=3092790,
 					title="Grinder Reminder",
