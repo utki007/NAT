@@ -208,14 +208,6 @@ class Giveaways(commands.GroupCog, name="g"):
 	async def on_ready(self):
 		self.bot.add_view(Giveaway())
 
-	@app_commands.command(name="setup")
-	async def _set(self, interaction: discord.Interaction):
-		config = await self.backend.get_config(interaction.guild)
-		embed = await self.backend.get_config_embed(config=config, guild=interaction.guild)
-		view = GiveawayConfigView(data=config, user=interaction.user)
-		await interaction.response.send_message(embed=embed, ephemeral=False, view=view)
-		view.message = await interaction.original_response()
-
 	@app_commands.command(name="start", description="Start a giveaway")
 	@app_commands.describe(winners="Number of winners", prize="Prize of the giveaway", item="Item to giveaway", duration="Duration of the giveaway",
 		req_roles="Roles required to enter the giveaway", bypass_role="Roles that can bypass the giveaway", req_level="Level required to enter the giveaway",
