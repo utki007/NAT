@@ -228,20 +228,21 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                     amount = grinder_user['payment']['amount_per_grind'] * pending_days
                     embed = await get_invisible_embed(f"Hey {user.mention}, you have pending payment of ⏣ {amount:,} for {pending_days} days. Please grind soon.")
                     
-                    embed.title = f"{guild.name}'s Grinder Reminder"
+                    embed.title = f"Grinder Reminder"
                     embed.description = None
-                    embed.add_field(name="Pending From:", value = f"{pending_days} {'day' if pending_days==1 else 'days'}", inline=True)
+                    embed.add_field(name="Pending For:", value = f"{pending_days} {'day' if pending_days==1 else 'days'}", inline=True)
                     embed.add_field(name="Amount:", value = f"⏣ {amount:,}", inline=True)
-                    embed.add_field(name="Donation Channel:", value = f"{grinder_channel.mention}", inline=True)
+                    embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/951400609322512435.webp?size=128&quality=lossless")
                     embed.timestamp = datetime.datetime.now()
-                    embed.set_footer(text=f"Inform manager if you have any trouble with donations.")
                     try:
-                        embed.set_thumbnail(url=guild.icon.url)
+                        embed.set_footer(text=f"{guild.name}", icon_url=guild.icon.url)
                     except:
-                        pass
+                        embed.set_footer(text=f"{guild.name}")
                     try:
-                        await user.send(embed=embed)
-                        await asyncio.sleep(1)
+                        view = discord.ui.View()
+                        view.add_item(discord.ui.Button(label="Grinder's Donation Channel", emoji="<:tgk_channel:1073908465405268029>" , style=discord.ButtonStyle.primary, url=f"{grinder_channel.jump_url}"))
+                        await user.send(embed=embed, view=view)
+                        await asyncio.sleep(0.1)
                     except:
                         pass
 
@@ -286,7 +287,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                             await user.remove_roles(*roles_to_remove)
                         except:
                             pass
-                        embed.title = f"Kicked from {grinder_user['profile'].title()}"
+                        embed.title = f"Kicked from Grinders Team!"
                     elif days > demote_days:
                         roles_to_remove = [role.id for role in user.roles if role.id in [guild_config['grinder_role'], grinder_user['profile_role']]]
                         roles_to_remove = [guild.get_role(role) for role in roles_to_remove]
@@ -573,7 +574,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             except:
                 pass
         else:
-            embed.title = f"Dismissed from Grinders"
+            embed.title = f"Dismissed from Grinders!"
             embed.description = guild_config['dismiss_embed']['description']
             embed.timestamp = datetime.datetime.now()
             try:
@@ -589,7 +590,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         except:
             pass
         
-        msg = await interaction.edit_original_response(embed= await get_invisible_embed(f"{user.mention} has been dismissed from grinders. Thanks for your support!"))
+        msg = await interaction.edit_original_response(embed= await get_invisible_embed(f"{user.mention} has been dismissed from grinders."))
         
         log_channel = interaction.guild.get_channel(guild_config['grinder_logs'])
         if log_channel:
@@ -825,8 +826,6 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
     async def summary(self, interaction: Interaction):
         guild_config = await interaction.client.grinderSettings.find(interaction.guild.id)
         await interaction.response.defer(ephemeral=False)
-
-        
 
         date = datetime.date.today()
         today = datetime.datetime(date.year, date.month, date.day)

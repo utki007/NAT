@@ -1,4 +1,6 @@
 import asyncio
+import datetime
+from itertools import islice
 import discord
 from humanfriendly import format_timespan
 
@@ -72,6 +74,9 @@ async def update_grinder_settings_embed(interaction: discord.Interaction, data: 
 
     await interaction.message.edit(embed=embed)
 
+def chunk(it, size):
+	it = iter(it)
+	return iter(lambda: tuple(islice(it, size)), ())
 
 class GrinderConfigPanel(discord.ui.View):
 
@@ -601,7 +606,7 @@ class GrinderEmbedPanel(discord.ui.View):
             'thumbnail' : 'https://cdn.discordapp.com/emojis/814161045966553138.webp?size=128&quality=lossless',
         }
         data["dismiss_embed"] = {
-            'description' : f"We understand that this may come as a disappointment, and we want to express our gratitude for your contributions during your time with us. However, please know that if you're still interested in being part of our team in the future, you're welcome to apply again.",
+            'description' : "We understand that this may come as a disappointment, and we want to express our gratitude for your contributions during your time with us. Feel free to apply later if you're still interested.",
             'thumbnail' : 'https://cdn.discordapp.com/emojis/830548561329782815.gif?v=1',
         }
         data["vacation_embed"] = {

@@ -132,7 +132,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 			discord.SelectOption(label="Dank's Grinder Manager", description='Manage Dank Grinders', emoji='<:tgk_cc:1150394902585290854>'),
 			discord.SelectOption(label='Dank Payout Management', description='Manage Dank Payouts', emoji='<:level_roles:1123938667212312637>'),
 			discord.SelectOption(label='Dank Pool Access', description="Who all can access Server's Donation Pool", emoji='<:tgk_bank:1073920882130558987>'),
-			discord.SelectOption(label='Giveaways', description='Configure Giveaways', emoji='<:tgk_newYearPoppers:1072400795028434954>'),
+			discord.SelectOption(label='Giveaways', description='Configure Giveaways', emoji='<:tgk_tada:1237994553932251199>'),
 			discord.SelectOption(label='Mafia Logs Setup', description='Log entire game', emoji='<:tgk_amongUs:1103542462628253726>'),
 			discord.SelectOption(label='Server Lockdown', description='Configure Lockdown Profiles', emoji='<:tgk_lock:1072851190213259375>'),
 			discord.SelectOption(label="Private Voice", description='Create a private voice channel', emoji='<:tgk_voice:1156454028109168650>')
@@ -144,7 +144,188 @@ class Serversettings_Dropdown(discord.ui.Select):
 	async def callback(self, interaction: discord.Interaction):
 		
 		match self.values[0]:
-			
+						
+			case "Dank's Grinder Manager":
+				
+				if interaction.guild.id not in [785839283847954433, 999551299286732871]:
+					self.view.stop()
+					nat_changelog_view = discord.ui.View()
+					nat_changelog_view.add_item(Serversettings_Dropdown(0))
+					embed = await get_invisible_embed(f"<:tgk_activeDevelopment:1088434070666612806> **|** This module is under development...")
+					await interaction.response.edit_message( 
+						embed=embed, 
+						view=nat_changelog_view
+					)
+					nat_changelog_view.message = await interaction.original_response()
+					return
+
+				data = await interaction.client.grinderSettings.find(interaction.guild.id)
+				if not data:
+					data = {
+						"_id": interaction.guild.id,
+						"payment_channel" : None,
+						"grinder_logs" : None,
+						"trial" : {
+							"duration"	: 0,
+							"role" : None
+						},
+						"grinder_role" : None,
+						"manager_roles" : [],
+						"max_profiles" : 5,
+						"grinder_profiles" : {},
+						"appoint_embed" : {
+							'description' : f"We're excited to inform you that you've been appointed as one of our newest trial grinders! If you have any questions or need further information, feel free to reach out to us anytime. Let's make this journey memorable and enjoyable together! ",
+							'thumbnail' : 'https://cdn.discordapp.com/emojis/814161045966553138.webp?size=128&quality=lossless',
+						},
+						"dismiss_embed" : {
+							'description' : f"We understand that this may come as a disappointment, and we want to express our gratitude for your contributions during your time with us. Feel free to apply later if you're still interested.",
+							'thumbnail' : 'https://cdn.discordapp.com/emojis/830548561329782815.gif?v=1',
+						},
+						"vacation_embed" : {
+							'description' : f"We understand that you're taking a well-deserved break, and we wanted to acknowledge and support your decision. While you're away, your role as a Dank Memer grinder will be put on hold. We'll look forward to having you back on the team soon! In case of any queries, please feel free to reach out to us anytime.",
+							'thumbnail' : 'https://cdn.discordapp.com/emojis/1109396272382759043.webp?size=128&quality=lossless',
+						}
+					}
+					await interaction.client.grinderSettings.upsert(data)
+
+				embed = discord.Embed(
+					color=3092790,
+					title="Configure Dank's Grinder Manager"
+				)
+
+				channel = interaction.guild.get_channel(data['payment_channel'])
+				if channel is None:
+					channel = f"`None`"
+				else:
+					channel = f"{channel.mention}"
+				embed.add_field(name="Payment Channel:", value=f"<:nat_reply:1146498277068517386> {channel}", inline=True)
+
+				channel = interaction.guild.get_channel(data['grinder_logs'])
+				if channel is None:
+					channel = f"`None`"
+				else:
+					channel = f"{channel.mention}"
+				embed.add_field(name="Logs Channel:", value=f"<:nat_reply:1146498277068517386> {channel}", inline=True)
+				embed.add_field(name="\u200b", value='\u200b', inline=True)
+
+				role = interaction.guild.get_role(data['grinder_role'])
+				if role is None:
+					role = f"`None`"
+				else:
+					role = f"{role.mention}"
+				embed.add_field(name="Grinder Role:", value=f"<:nat_reply:1146498277068517386> {role}", inline=True)
+				
+				trial_duration = data['trial']['duration']
+				trial_role = interaction.guild.get_role(data['trial']['role'])
+				if trial_duration == 0:
+					trial_duration = f"**Trial Duration:** `None`"
+				else:
+					trial_duration = f"**Trial Duration:** {format_timespan(trial_duration)}"
+				if trial_role is None:
+					trial_role = f"**Trial Role:** `None`"
+				else:
+					trial_role = f"**Trial Role:** {trial_role.mention}"
+				embed.add_field(name="Trial Config:", value=f"<:nat_replycont:1146496789361479741> {trial_role} \n <:nat_reply:1146498277068517386> {trial_duration}", inline=True)
+				embed.add_field(name="\u200b", value='\u200b', inline=True)
+
+				roles = data['manager_roles']
+				roles = [interaction.guild.get_role(role) for role in roles if interaction.guild.get_role(role) is not None]
+				roles = [f'1. {role.mention}' for role in roles]
+				role = "\n".join(roles)
+				if len(roles) == 0 :
+					role = f"` - ` Add grinder mangers when?"
+				embed.add_field(name="Manager Roles:", value=f">>> {role}", inline=False)
+
+				if len(data['grinder_profiles']) == 0:
+					profiles = f"` - ` **Add profiles when?**\n"
+				else:
+					profiles = ""
+					for key in data['grinder_profiles'].keys():
+						profiles += f"1. **{data['grinder_profiles'][key]['name'].title()}** : <@&{key}>\n"
+				embed.add_field(name='Grinder Profiles:', value=f">>> {profiles}", inline=False)
+
+				self.view.stop()
+				grinder_config_view =  GrinderConfigPanel(interaction)
+		
+				grinder_config_view.add_item(Serversettings_Dropdown(0))
+				await interaction.response.edit_message(embed=embed, view=grinder_config_view)
+				grinder_config_view.message = await interaction.original_response()
+
+				await interaction.message.edit(embed=embed, view=grinder_config_view)
+				grinder_config_view.message = await interaction.original_response()
+		
+			case "Dank Payout Management":
+				data = await interaction.client.payouts.get_config(interaction.guild.id)
+				
+				embed = discord.Embed(title="Dank Payout Management", color=3092790)
+				
+				if isinstance(data['claim_channel'], discord.Webhook):
+					try:
+						channel = f"{data['claim_channel'].channel.mention}"
+					except:
+						channel = f"`None`"
+				else:
+					channel = f"`None`"
+				embed.add_field(name="Claim Channel:", value=f"<:nat_reply:1146498277068517386> {channel}", inline=True)
+
+				if isinstance(data['claimed_channel'], discord.Webhook):
+					try:
+						channel = f"{data['claimed_channel'].channel.mention}"
+					except:
+						channel = f"`None`"
+				else:
+					channel = f"`None`"
+				embed.add_field(name="Queue Channel:", value=f"<:nat_reply:1146498277068517386> {channel}", inline=True)
+
+				channel = interaction.guild.get_channel(data['payout_channel'])
+				if channel is None:
+					channel = f"`None`"
+				else:
+					channel = f"{channel.mention}"
+				embed.add_field(name="Payout Channel:", value=f"<:nat_reply:1146498277068517386> {channel}", inline=True)
+
+				channel = interaction.guild.get_channel(data['log_channel'])
+				if channel is None:
+					channel = f"`None`"
+				else:
+					channel = f"{channel.mention}"
+				embed.add_field(name="Log Payouts:", value=f"<:nat_reply:1146498277068517386> {channel}", inline=True)
+				embed.add_field(name="Claim Time:", value=f"<:nat_reply:1146498277068517386> **{humanfriendly.format_timespan(data['default_claim_time'])}**", inline=True)
+
+				roles = data['manager_roles']
+				roles = [interaction.guild.get_role(role) for role in roles if interaction.guild.get_role(role) is not None]
+				roles = [f'1. {role.mention}' for role in roles]
+				role = "\n".join(roles)
+				if len(roles) == 0 :
+					role = f"`None`"
+				embed.add_field(name="Payout Managers (Admin):", value=f">>> {role}", inline=False)
+
+				roles = data['event_manager_roles']
+				roles = [interaction.guild.get_role(role) for role in roles if interaction.guild.get_role(role) is not None]
+				roles = [f'1. {role.mention}' for role in roles]
+				role = "\n".join(roles)
+				if len(roles) == 0:
+					role = f"`None`"
+				embed.add_field(name="Staff Roles (Queue Payouts):", value=f">>> {role}", inline=False)
+				
+				self.view.stop()
+				payouts_view = Payouts_Panel(interaction , data)
+
+				# Initialize the button
+				if data['enable_payouts']:
+					payouts_view.children[0].style = discord.ButtonStyle.gray
+					payouts_view.children[0].label = 'Module Enabled'
+					payouts_view.children[0].emoji = "<:toggle_on:1123932825956134912>"
+				else:
+					payouts_view.children[0].style = discord.ButtonStyle.gray
+					payouts_view.children[0].label = 'Module Disabled'
+					payouts_view.children[0].emoji = "<:toggle_off:1123932890993020928>"
+
+				payouts_view.add_item(Serversettings_Dropdown(1))
+
+				await interaction.response.edit_message(embed=embed, view=payouts_view)
+				payouts_view.message = await interaction.original_response()
+  
 			case "Dank Pool Access":
 				data = await interaction.client.dankSecurity.find(interaction.guild.id)
 				if data is None:
@@ -250,6 +431,27 @@ class Serversettings_Dropdown(discord.ui.Select):
 					await interaction.response.edit_message(embed=embed, view=nat_changelog_view)
 					nat_changelog_view.message = await interaction.original_response()
 
+			case "Giveaways":
+
+				if interaction.guild.id not in [785839283847954433, 999551299286732871]:
+					self.view.stop()
+					nat_changelog_view = discord.ui.View()
+					nat_changelog_view.add_item(Serversettings_Dropdown(0))
+					embed = await get_invisible_embed(f"<:tgk_activeDevelopment:1088434070666612806> **|** This module is under development...")
+					await interaction.response.edit_message( 
+						embed=embed, 
+						view=nat_changelog_view
+					)
+					nat_changelog_view.message = await interaction.original_response()
+					return
+				
+				self.view.stop()
+				data = await interaction.client.giveaway.get_config(interaction.guild)
+				embed = await interaction.client.giveaway.get_config_embed(config=data, guild=interaction.guild)
+				view = GiveawayConfigView(data=data, user=interaction.user, dropdown=Serversettings_Dropdown(3))
+				await interaction.response.send_message(embed=embed, ephemeral=False, view=view)
+				view.message = await interaction.original_response()
+
 			case "Mafia Logs Setup":
 
 				data = await interaction.client.mafiaConfig.find(interaction.guild.id)
@@ -294,79 +496,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 
 				await interaction.response.edit_message(embed=embed, view=mafia_view)
 				mafia_view.message = await interaction.original_response()
-		
-			case "Dank Payout Management":
-				data = await interaction.client.payouts.get_config(interaction.guild.id)
-				
-				embed = discord.Embed(title="Dank Payout Management", color=3092790)
-				
-				if isinstance(data['claim_channel'], discord.Webhook):
-					try:
-						channel = f"{data['claim_channel'].channel.mention}"
-					except:
-						channel = f"`None`"
-				else:
-					channel = f"`None`"
-				embed.add_field(name="Claim Channel:", value=f"<:nat_reply:1146498277068517386> {channel}", inline=True)
 
-				if isinstance(data['claimed_channel'], discord.Webhook):
-					try:
-						channel = f"{data['claimed_channel'].channel.mention}"
-					except:
-						channel = f"`None`"
-				else:
-					channel = f"`None`"
-				embed.add_field(name="Queue Channel:", value=f"<:nat_reply:1146498277068517386> {channel}", inline=True)
-
-				channel = interaction.guild.get_channel(data['payout_channel'])
-				if channel is None:
-					channel = f"`None`"
-				else:
-					channel = f"{channel.mention}"
-				embed.add_field(name="Payout Channel:", value=f"<:nat_reply:1146498277068517386> {channel}", inline=True)
-
-				channel = interaction.guild.get_channel(data['log_channel'])
-				if channel is None:
-					channel = f"`None`"
-				else:
-					channel = f"{channel.mention}"
-				embed.add_field(name="Log Payouts:", value=f"<:nat_reply:1146498277068517386> {channel}", inline=True)
-				embed.add_field(name="Claim Time:", value=f"<:nat_reply:1146498277068517386> **{humanfriendly.format_timespan(data['default_claim_time'])}**", inline=True)
-
-				roles = data['manager_roles']
-				roles = [interaction.guild.get_role(role) for role in roles if interaction.guild.get_role(role) is not None]
-				roles = [f'1. {role.mention}' for role in roles]
-				role = "\n".join(roles)
-				if len(roles) == 0 :
-					role = f"`None`"
-				embed.add_field(name="Payout Managers (Admin):", value=f">>> {role}", inline=False)
-
-				roles = data['event_manager_roles']
-				roles = [interaction.guild.get_role(role) for role in roles if interaction.guild.get_role(role) is not None]
-				roles = [f'1. {role.mention}' for role in roles]
-				role = "\n".join(roles)
-				if len(roles) == 0:
-					role = f"`None`"
-				embed.add_field(name="Staff Roles (Queue Payouts):", value=f">>> {role}", inline=False)
-				
-				self.view.stop()
-				payouts_view = Payouts_Panel(interaction , data)
-
-				# Initialize the button
-				if data['enable_payouts']:
-					payouts_view.children[0].style = discord.ButtonStyle.gray
-					payouts_view.children[0].label = 'Module Enabled'
-					payouts_view.children[0].emoji = "<:toggle_on:1123932825956134912>"
-				else:
-					payouts_view.children[0].style = discord.ButtonStyle.gray
-					payouts_view.children[0].label = 'Module Disabled'
-					payouts_view.children[0].emoji = "<:toggle_off:1123932890993020928>"
-
-				payouts_view.add_item(Serversettings_Dropdown(1))
-
-				await interaction.response.edit_message(embed=embed, view=payouts_view)
-				payouts_view.message = await interaction.original_response()
-  
 			case "Server Lockdown":
 
 				data = await interaction.client.lockdown.find(interaction.guild.id)
@@ -423,136 +553,6 @@ class Serversettings_Dropdown(discord.ui.Select):
 				voice_view.message = await interaction.original_response()
 
 				pass
-			
-			case "Dank's Grinder Manager":
-				
-				if interaction.guild.id not in [785839283847954433, 999551299286732871]:
-					self.view.stop()
-					nat_changelog_view = discord.ui.View()
-					nat_changelog_view.add_item(Serversettings_Dropdown(0))
-					embed = await get_invisible_embed(f"<:tgk_activeDevelopment:1088434070666612806> **|** This module is under development...")
-					await interaction.response.edit_message( 
-						embed=embed, 
-						view=nat_changelog_view
-					)
-					nat_changelog_view.message = await interaction.original_response()
-					return
-
-				data = await interaction.client.grinderSettings.find(interaction.guild.id)
-				if not data:
-					data = {
-						"_id": interaction.guild.id,
-						"payment_channel" : None,
-						"grinder_logs" : None,
-						"trial" : {
-							"duration"	: 0,
-							"role" : None
-						},
-						"grinder_role" : None,
-						"manager_roles" : [],
-						"max_profiles" : 5,
-						"grinder_profiles" : {},
-						"appoint_embed" : {
-							'description' : f"We're excited to inform you that you've been appointed as one of our newest trial grinders! If you have any questions or need further information, feel free to reach out to us anytime. Let's make this journey memorable and enjoyable together! ",
-							'thumbnail' : 'https://cdn.discordapp.com/emojis/814161045966553138.webp?size=128&quality=lossless',
-						},
-						"dismiss_embed" : {
-							'description' : f"We understand that this may come as a disappointment, and we want to express our gratitude for your contributions during your time with us. However, please know that if you're still interested in being part of our team in the future, you're welcome to apply again.",
-							'thumbnail' : 'https://cdn.discordapp.com/emojis/830548561329782815.gif?v=1',
-						},
-						"vacation_embed" : {
-							'description' : f"We understand that you're taking a well-deserved break, and we wanted to acknowledge and support your decision. While you're away, your role as a Dank Memer grinder will be put on hold. We'll look forward to having you back on the team soon! In case of any queries, please feel free to reach out to us anytime.",
-							'thumbnail' : 'https://cdn.discordapp.com/emojis/1109396272382759043.webp?size=128&quality=lossless',
-						}
-					}
-					await interaction.client.grinderSettings.upsert(data)
-
-				embed = discord.Embed(
-					color=3092790,
-					title="Configure Dank's Grinder Manager"
-				)
-
-				channel = interaction.guild.get_channel(data['payment_channel'])
-				if channel is None:
-					channel = f"`None`"
-				else:
-					channel = f"{channel.mention}"
-				embed.add_field(name="Payment Channel:", value=f"<:nat_reply:1146498277068517386> {channel}", inline=True)
-
-				channel = interaction.guild.get_channel(data['grinder_logs'])
-				if channel is None:
-					channel = f"`None`"
-				else:
-					channel = f"{channel.mention}"
-				embed.add_field(name="Logs Channel:", value=f"<:nat_reply:1146498277068517386> {channel}", inline=True)
-				embed.add_field(name="\u200b", value='\u200b', inline=True)
-
-				role = interaction.guild.get_role(data['grinder_role'])
-				if role is None:
-					role = f"`None`"
-				else:
-					role = f"{role.mention}"
-				embed.add_field(name="Grinder Role:", value=f"<:nat_reply:1146498277068517386> {role}", inline=True)
-				
-				trial_duration = data['trial']['duration']
-				trial_role = interaction.guild.get_role(data['trial']['role'])
-				if trial_duration == 0:
-					trial_duration = f"**Trial Duration:** `None`"
-				else:
-					trial_duration = f"**Trial Duration:** {format_timespan(trial_duration)}"
-				if trial_role is None:
-					trial_role = f"**Trial Role:** `None`"
-				else:
-					trial_role = f"**Trial Role:** {trial_role.mention}"
-				embed.add_field(name="Trial Config:", value=f"<:nat_replycont:1146496789361479741> {trial_role} \n <:nat_reply:1146498277068517386> {trial_duration}", inline=True)
-				embed.add_field(name="\u200b", value='\u200b', inline=True)
-
-				roles = data['manager_roles']
-				roles = [interaction.guild.get_role(role) for role in roles if interaction.guild.get_role(role) is not None]
-				roles = [f'1. {role.mention}' for role in roles]
-				role = "\n".join(roles)
-				if len(roles) == 0 :
-					role = f"` - ` Add grinder mangers when?"
-				embed.add_field(name="Manager Roles:", value=f">>> {role}", inline=False)
-
-				if len(data['grinder_profiles']) == 0:
-					profiles = f"` - ` **Add profiles when?**\n"
-				else:
-					profiles = ""
-					for key in data['grinder_profiles'].keys():
-						profiles += f"1. **{data['grinder_profiles'][key]['name'].title()}** : <@&{key}>\n"
-				embed.add_field(name='Grinder Profiles:', value=f">>> {profiles}", inline=False)
-
-				self.view.stop()
-				grinder_config_view =  GrinderConfigPanel(interaction)
-		
-				grinder_config_view.add_item(Serversettings_Dropdown(0))
-				await interaction.response.edit_message(embed=embed, view=grinder_config_view)
-				grinder_config_view.message = await interaction.original_response()
-
-				await interaction.message.edit(embed=embed, view=grinder_config_view)
-				grinder_config_view.message = await interaction.original_response()
-
-			case "Giveaways":
-
-				if interaction.guild.id not in [785839283847954433, 999551299286732871]:
-					self.view.stop()
-					nat_changelog_view = discord.ui.View()
-					nat_changelog_view.add_item(Serversettings_Dropdown(0))
-					embed = await get_invisible_embed(f"<:tgk_activeDevelopment:1088434070666612806> **|** This module is under development...")
-					await interaction.response.edit_message( 
-						embed=embed, 
-						view=nat_changelog_view
-					)
-					nat_changelog_view.message = await interaction.original_response()
-					return
-				
-				self.view.stop()
-				data = await interaction.client.giveaway.get_config(interaction.guild)
-				embed = await interaction.client.giveaway.get_config_embed(config=data, guild=interaction.guild)
-				view = GiveawayConfigView(data=data, user=interaction.user, dropdown=Serversettings_Dropdown(3))
-				await interaction.response.send_message(embed=embed, ephemeral=False, view=view)
-				view.message = await interaction.original_response()
 
 			case _:
 				self.view.stop()
