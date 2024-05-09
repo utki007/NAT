@@ -174,7 +174,7 @@ class Giveaways(commands.GroupCog, name="g"):
 			else:
 				donor_name = host.mention
 			winners_mention = ""
-			
+
 			for winner in winners:
 				winners_mention += f"{winners.index(winner)+1}. {winner.mention}\n"
 
@@ -327,7 +327,7 @@ class Giveaways(commands.GroupCog, name="g"):
 		embed.timestamp = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=time)
 		embed.set_footer(text=f"{winners}w | Ends at")
 
-		await interaction.followup.send(embed=embed, view=Giveaway(), content="<a:TGK_TADA:830525854013849680> **GIVEAWAY STARTED** <a:TGK_TADA:830525854013849680>")
+		await interaction.followup.send(embed=embed, view=Giveaway(), content="<a:tgk_tadaa:806631994770849843> **GIVEAWAY STARTED** <a:tgk_tadaa:806631994770849843>")
 		gaw_message = await interaction.original_response()
 		if message and interaction.guild.me.guild_permissions.manage_webhooks:
 			host_webhook = None
