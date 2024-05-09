@@ -13,6 +13,7 @@ from utils.embeds import (get_error_embed, get_invisible_embed,
 						  get_success_embed, get_warning_embed)
 from utils.views.modal import General_Modal
 from utils.views.paginator import Paginator
+from utils.views.selects import Select_General
 from utils.views.ui import Dropdown_Channel
 
 def chunk(it, size):
@@ -257,26 +258,36 @@ class Grinder_Reminder_Panel(discord.ui.View):
 
 	@discord.ui.button(label="Set Time", style=discord.ButtonStyle.gray, emoji="<:tgk_clock:1198684272446414928>",row=1)
 	async def setTimezone(self, interaction: discord.Interaction, button: discord.ui.Button):
-				
-		modal = General_Modal("Set Grinder Reminder!", interaction=interaction)
-		modal.question = discord.ui.TextInput(label="Enter hour (in UTC):", placeholder="Enter hr from 0 to 23", min_length=1, max_length=2)    
-		modal.value = None
-		modal.add_item(modal.question)
-		await interaction.response.send_modal(modal)
 
-		await modal.wait()
-		if modal.value:
-			try:
-				time = int(modal.question.value)
-				if time > 23 or time < 0:
-					return await modal.interaction.response.send_message(embed = await get_error_embed('Invalid time chosen! Please choose a number between 0 to 23.'), ephemeral=True)
-			except:
-				return await modal.interaction.response.send_message(embed = await get_error_embed('Invalid time chosen! Please choose a number between 0 to 23.'), ephemeral=True)
-			utc = datetime.timezone.utc
-			reminder_time = str(datetime.time(hour=int(time), tzinfo=utc))
-			await interaction.client.grinderUsers.update_many_by_custom({'user': interaction.user.id}, {'reminder_time': reminder_time})
-			embed = await update_grinder_embed(self.interaction, time)
-			await modal.interaction.response.edit_message(embed=embed, view=self)
+		view = discord.ui.View()
+		view.value = None
+		view.select = Select_General(interaction=interaction, options=[
+			discord.SelectOption(label=f"{i if i>9 else f'0{i}'}:00 (UTC)", value=int(i))
+			for i in range(0, 24)
+		], placeholder = "Choose a time to get grinder reminders.", min_values=1, max_values=1, disabled=False)
+		view.add_item(view.select)
+
+		await interaction.response.send_message(view=view, ephemeral=True)
+
+		await view.wait()
+		if view.value != True:
+			return await interaction.delete_original_response()
+		
+		try:
+			time = int(view.select.values[0])
+			if time > 23 or time < 0:
+				return await view.select.interaction.response.edit_message(embed = await get_error_embed('Invalid time chosen! '), view=None, ephemeral=True)
+		except:
+			return await view.select.interaction.response.edit_message(embed = await get_error_embed('Invalid time chosen! Please choose a number between 0 to 23.'), view=None, ephemeral=True)
+		utc = datetime.timezone.utc
+		reminder_time = str(datetime.time(hour=int(time), tzinfo=utc))
+		await interaction.client.grinderUsers.update_many_by_custom({'user': interaction.user.id}, {'reminder_time': reminder_time})
+		date = datetime.date.today()
+		timestamp = f"<t:{int(datetime.datetime(date.year, date.month, date.day, time, tzinfo = datetime.timezone.utc).timestamp())}>"
+	
+		await view.select.interaction.response.edit_message(embed = await get_success_embed(f"Reminder time set to **{time}:00 UTC** ({timestamp})."), view=None)
+		embed = await update_grinder_embed(self.interaction, time)
+		await self.interaction.edit_original_response(embed=embed)
 
 	@discord.ui.button(label="Reset Grinder Reminder", style=discord.ButtonStyle.red, emoji="<:tgk_delete:1113517803203461222>",row=1)
 	async def resetTimezone(self, interaction: discord.Interaction, button: discord.ui.Button):
