@@ -1,6 +1,8 @@
 import asyncio
+import re
 import discord
 import datetime
+from discord import app_commands
 from discord.ext import commands, tasks
 
 import random
@@ -8,9 +10,10 @@ from typing import List, Dict
 import discord.http
 
 from .db import Giveaways_Backend, GiveawayConfig, GiveawayData
-from .views import Giveaway
+from .views import Giveaway, GiveawayConfigView
 from utils.transformers import TimeConverter, MutipleRole
 from utils.convertor import DMCConverter
+from utils.embeds import get_formated_embed, get_formated_field
 
 class Giveaways(commands.GroupCog, name="g"):
 	def __init__(self, bot):
