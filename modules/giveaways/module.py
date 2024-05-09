@@ -1,20 +1,16 @@
 import asyncio
-import re
 import discord
 import datetime
 from discord.ext import commands, tasks
-from discord import app_commands, Interaction
 
 import random
 from typing import List, Dict
-from amari import AmariClient
 import discord.http
 
 from .db import Giveaways_Backend, GiveawayConfig, GiveawayData
-from .views import Giveaway, GiveawayConfigView
+from .views import Giveaway
 from utils.transformers import TimeConverter, MutipleRole
 from utils.convertor import DMCConverter
-from utils.embeds import get_formated_embed, get_formated_field
 
 class Giveaways(commands.GroupCog, name="g"):
 	def __init__(self, bot):
@@ -179,7 +175,7 @@ class Giveaways(commands.GroupCog, name="g"):
 				winners_mention += f"{winners.index(winner)+1}. {winner.mention}\n"
 
 			end_emd.title = end_emd.title.format(prize=prize, winner=winners_mention, guild=guild_name, donor=donor_name)
-			end_emd.description = end_emd.description.format(prize=prize, winner=winners_mention, guild=guild_name, donor=donor_name)
+			end_emd.description = end_emd.description.format(prize=prize, winner=",".join([winner.mention for winner in winners]), guild=guild_name, donor=donor_name)
 
 			host_dm.title = host_dm.title.format(prize=prize)
 			host_dm.description = host_dm.description.format(prize=prize, winner=winners_mention, guild=guild_name, donor=donor_name)
