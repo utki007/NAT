@@ -40,46 +40,37 @@ class Giveaways(commands.GroupCog, name="g"):
 		
 	@tasks.loop(seconds=60)
 	async def giveaway_loop(self):
-		if self.giveaway_task_progress == True:
-			return
-		self.giveaway_task_progress = True
 		now = datetime.datetime.utcnow()
-		giveaways: Dict[int, GiveawayData] = {giveaway['_id']: giveaway for giveaway in await self.backend.giveaways.get_all()}
-		for giveaway in giveaways.values():
-			try:
-				if giveaway["end_time"] <= now:
-					if giveaway["_id"] in self.giveaway_in_prosses:
-						continue
-					if giveaway["ended"] == True:
-						if giveaway['delete_at'] and giveaway['delete_at'] <= now:
-							await self.backend.giveaways.delete(giveaway)
-
-					self.bot.dispatch("giveaway_end", giveaway, await self.backend.get_config(giveaway['guild']))
-					self.giveaway_in_prosses.append(giveaway["_id"])
-					if giveaway['_id'] in self.backend.giveaways_cache.keys():
-						del self.backend.giveaways_cache[giveaway["_id"]]
-				else:
-					# get how many seconds are left for the giveaway to end
-					seconds_left = (giveaway["end_time"] - now).total_seconds()
-					if seconds_left < 100:
-						self.bot.dispatch("giveaway_end", giveaway, await self.backend.get_config(giveaway['guild']), seconds_left)
-						self.giveaway_in_prosses.append(giveaway["_id"])
-
-			except:
-				pass
-			self.giveaway_task_progress = False
-
-		self.giveaway_task_progress = False
+		giveaways: Dict[int, GiveawayData] = {giveaway['_id']: giveaway for giveaway in await self.backend.giveaways.find_many_by_custom({"ended": False})}
+		for key, value in giveaways.items():
+			timediff = int((value['end_time'] - now).total_seconds())
+			if timediff <= 0:
+				if key not in self.giveaway_in_prosses:
+					self.giveaway_in_prosses.append(key)
+					self.bot.dispatch("giveaway_end", value, await self.backend.get_config(self.bot.get_guild(value['guild'])))
+			elif timediff <= 60:
+				if key not in self.giveaway_in_prosses:
+					self.giveaway_in_prosses.append(key)
+					self.bot.dispatch("giveaway_end", giveaway=value, config=await self.backend.get_config(self.bot.get_guild(value['guild'])), sleep_time=timediff)
+		
+		ended_gaw: Dict[int, GiveawayData] = {giveaway['_id']: giveaway for giveaway in await self.backend.giveaways.find_many_by_custom({"ended": True})}
+		for key, value in ended_gaw.items():
+			if value['delete_at'] is not None and value['delete_at'] <= now:
+				await self.backend.giveaways.delete(value)
+				if key in self.giveaway_in_prosses:
+					self.giveaway_in_prosses.remove(key)
 
 	@giveaway_loop.before_loop
 	async def before_giveaway_loop(self):
 		await self.bot.wait_until_ready()
 
 	@commands.Cog.listener()
-	async def on_giveaway_end(self, giveaway: GiveawayData, config: GiveawayConfig, sleep_time: int=None):
+	async def on_giveaway_end(self, giveaway: GiveawayData, config: GiveawayConfig, sleep_time: int=None, reroll=False):
 		if sleep_time != None:
 			await asyncio.sleep(sleep_time)
 			giveaway = await self.backend.giveaways.find(giveaway['_id'])
+		
+		if not giveaway: return
 	
 		guild: discord.Guild = self.bot.get_guild(giveaway['guild'])
 		if not guild:
@@ -90,9 +81,14 @@ class Giveaways(commands.GroupCog, name="g"):
 				if giveaway['_id'] in self.giveaway_in_prosses:
 					self.giveaway_in_prosses.remove(giveaway['_id'])
 				return
-		channel: discord.TextChannel = guild.get_channel(giveaway['channel'])
+			
+		channel: discord.TextChannel = guild.get_channel(giveaway['channel'])		
+		if not channel:
+			await self.backend.giveaways.delete(giveaway)
+			if giveaway['_id'] in self.giveaway_in_prosses: self.giveaway_in_prosses.remove(giveaway['_id'])
+			return
+		
 		host: discord.Member = guild.get_member(giveaway['host'])
-
 		view = Giveaway()
 		for child in view.children:
 			child.disabled = True
@@ -111,13 +107,24 @@ class Giveaways(commands.GroupCog, name="g"):
 			if giveaway['delete_at'] is not None and giveaway['delete_at'] <= datetime.datetime.utcnow():
 				await self.backend.giveaways.delete(giveaway)
 			return
+		
+		if "Giveaway Ended" in gaw_message.content:			
+			giveaway['ended'] = True
+			await self.backend.update_giveaway(gaw_message, giveaway)
+			return
+		
+		giveaway['ended'] = True
+		giveaway['delete_at'] = datetime.datetime.utcnow() + datetime.timedelta(days=7)		
+		await self.backend.update_giveaway(gaw_message, giveaway)
 
 		if not len(giveaway['entries'].keys()) >= giveaway['winners']:
 
 			embed = gaw_message.embeds[0]
 			embed.description  = "Could not determine a winner!" + "\n" + embed.description
-
-			await gaw_message.edit(embed=embed, view=view, content="Giveaway Ended")
+			content = "Giveaway Ended"
+			if reroll == True:
+				content = "Giveaway Rerolled!"
+			await gaw_message.edit(embed=embed, view=view, content=content)
 			end_emd = discord.Embed(title="Giveaway Ended", description="Could not determine a winner!", color=discord.Color.red())
 			await gaw_message.reply(embed=end_emd, view=None)
 
@@ -132,6 +139,7 @@ class Giveaways(commands.GroupCog, name="g"):
 				entries.extend([int(key)] * value)
 			
 			winners = []
+
 			while len(winners) != giveaway['winners']:
 				winner = random.choice(entries)
 				winner = guild.get_member(winner)
@@ -165,7 +173,10 @@ class Giveaways(commands.GroupCog, name="g"):
 					donor_name = donor.mention
 			else:
 				donor_name = host.mention
-			winners_mention = ",".join([winner.mention for winner in winners])
+			winners_mention = ""
+			
+			for winner in winners:
+				winners_mention += f"{winners.index(winner)+1}. {winner.mention}\n"
 
 			end_emd.title = end_emd.title.format(prize=prize, winner=winners_mention, guild=guild_name, donor=donor_name)
 			end_emd.description = end_emd.description.format(prize=prize, winner=winners_mention, guild=guild_name, donor=donor_name)
@@ -176,12 +187,14 @@ class Giveaways(commands.GroupCog, name="g"):
 			dm_emd.title = dm_emd.title.format(prize=prize)
 			dm_emd.description = dm_emd.description.format(prize=prize, winner=winners_mention, guild=guild_name, donor=donor_name)
 
-			await gaw_message.reply(embed=end_emd, view=None)
+			await gaw_message.reply(embed=end_emd, view=None, content=",".join([winner.mention for winner in winners]))
 			
 			host = guild.get_member(giveaway['host'])
+			link_view = discord.ui.View()
+			link_view.add_item(discord.ui.Button(label="Jump", style=discord.ButtonStyle.link, url=gaw_message.jump_url, emoji="<:tgk_link:1105189183523401828>"))
 			if host:
 				try:
-					await host.send(embed=host_dm)
+					await host.send(embed=host_dm, view=link_view)
 				except discord.Forbidden:
 					pass
 			payout_config = await self.bot.payouts.get_config(guild_id=guild.id, new=True)
@@ -194,7 +207,7 @@ class Giveaways(commands.GroupCog, name="g"):
 					if giveaway['dank'] is True:
 						await self.bot.payouts.create_payout(config=payout_config, event="Giveaway", winner=winner, host=host, prize=giveaway['prize'], message=gaw_message, item=item)
 					try:
-						await winner.send(embed=dm_emd)
+						await winner.send(embed=dm_emd, view=link_view)
 					except discord.Forbidden:
 						pass
 			
@@ -227,8 +240,10 @@ class Giveaways(commands.GroupCog, name="g"):
 					 donor: discord.Member=None,
 					 message: app_commands.Range[str, 1, 250]=None,
 	):
-		
-		await interaction.response.defer(ephemeral=True)
+		if time < 60:
+			await interaction.response.send_message("Duration of the giveaway should be atleast 60 seconds!", ephemeral=True)
+
+		await interaction.response.defer(thinking=True)
 		config = await self.backend.get_config(interaction.guild)
 		if config['enabled'] is False:
 			return await interaction.followup.send("Giveaways are disabled in this server!")
@@ -281,12 +296,11 @@ class Giveaways(commands.GroupCog, name="g"):
 				prize = f"{prize}x {item}"
 			else:
 				prize = f"⏣ {prize:,}"
-
 		
 		guild_name = interaction.guild.name
 		donor_name = donor.mention if donor else interaction.user.mention
 		raw_timestap = int((datetime.datetime.now() + datetime.timedelta(seconds=time)).timestamp())
-		timestamp = f"<t:{raw_timestap}:R> <t:{raw_timestap}:t>"
+		timestamp = f"<t:{raw_timestap}:R> (<t:{raw_timestap}:t>)"
 		winners_num = winners
 		embed.title = embed.title.format(prize=prize, guild=guild_name, donor=donor_name, timestamp=timestamp)
 		embed.description = embed.description.format(prize=prize, guild=guild_name, donor=donor_name, timestamp=timestamp)
@@ -310,11 +324,11 @@ class Giveaways(commands.GroupCog, name="g"):
 			if channel_message:
 				value += f"<a:tgk_blut_arrow:1236738254024474776> Required Message Count: {data['channel_messages']['count']}\n<:nat_reply:1011501024625827911>  Channel: <#{data['channel_messages']['channel']}>\n<:nat_reply_cont:1011501118163013634> Cooldown: 8 seconds\n"                
 			embed.add_field(name="Requirements", value=value, inline=False)
-		
-		embed.set_footer(text=f"Hosted by {interaction.user.display_name} | Winners: {winners}")
+		embed.timestamp = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=time)
+		embed.set_footer(text=f"{winners}w | Ends at")
 
-		await interaction.followup.send(content="Giveaway started!")
-		gaw_message = await interaction.channel.send(embed=embed, view=Giveaway(), content="<a:tgk_tadaa:806631994770849843> **GIVEAWAY STARTED** <a:tgk_tadaa:806631994770849843>")
+		await interaction.followup.send(embed=embed, view=Giveaway(), content="<a:TGK_TADA:830525854013849680> **GIVEAWAY STARTED** <a:TGK_TADA:830525854013849680>")
+		gaw_message = await interaction.original_response()
 		if message and interaction.guild.me.guild_permissions.manage_webhooks:
 			host_webhook = None
 			for webhook in await interaction.channel.webhooks():
@@ -364,7 +378,7 @@ class Giveaways(commands.GroupCog, name="g"):
 		if not giveawa_data['ended']: return await interaction.response.send_message("This giveaway has not ended!", ephemeral=True)
 		giveawa_data['winners'] = winners
 		giveawa_data['ended'] = False		
-		self.bot.dispatch("giveaway_end", giveawa_data, config)
+		self.bot.dispatch("giveaway_end", giveaway=giveawa_data, config=config, reroll=True)
 		await interaction.response.send_message("Giveaway rerolled successfully! Make sure to cancel the already queued payouts use `/payout search`", ephemeral=True)
 
 	@app_commands.command(name="end", description="End a giveaway")

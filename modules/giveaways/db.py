@@ -85,23 +85,23 @@ class Giveaways_Backend:
             "global_bypass": [],
             "messages":{
                 "host": {
-                    "title": "your giveaway for {prize} has ended!",
-                    "description": "Your giveaway has ended\nWinners: {winner}",
+                    "title": "Your giveaway has ended!",
+                    "description": "**Ended At**{timestamp}\nWinners:\n{winners}",
                     "color": 2829617
                 },
                 "gaw": {
                     "title": "{prize}",
-                    "description": "Ends At: {timestamp}\nDonated By: {donor}\nClick Below To Enter!",
+                    "description": "**Ends At:** {timestamp}\n**Donated By:** {donor}\n",
                     "color": 2829617
                 },
                 "dm": {
-                    "title": "You won {prize}!",
-                    "description": "You have won the giveaway for {prize} in {guild}! Please contact the host to claim your prize!",
+                    "title": "You won Giveaway!",
+                    "description": "**Congratulations!** You won {prize} in {guild}.",
                     "color": 2829617
                 },
                 "end": {
                     "title": "Congratulations!",
-                    "description": "Congratulations to {winner} for winning the giveaway for {prize}! Please contact the host to claim your prize!",
+                    "description": "<a:tgk_blackCrown:1097514279973961770> **Won:** {prize}",
                     "color": 2829617
                 }
             

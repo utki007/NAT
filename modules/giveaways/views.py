@@ -21,7 +21,7 @@ class Giveaway(View):
     async def on_error(self, interaction: Interaction, error: Exception, item: Item):
         return await interaction.followup.send(content=f"An error occured: {error}", ephemeral=True)
     
-    @discord.ui.button(emoji="<a:tgk_tadaa:806631994770849843>", style=discord.ButtonStyle.gray, custom_id="giveaway:Join")
+    @discord.ui.button(emoji="<a:TGK_TADA:830525854013849680>", style=discord.ButtonStyle.gray, custom_id="giveaway:Join")
     async def _join(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer(thinking=True, ephemeral=True)
         data = await interaction.client.giveaway.get_giveaway(interaction.message)
@@ -120,7 +120,7 @@ class Giveaway(View):
         await interaction.followup.edit_message(message_id=interaction.message.id, view=self)
 
 
-    @discord.ui.button(label=None, style=discord.ButtonStyle.gray, emoji="<:tgk_member:1064253964842975232>", custom_id="giveaway:Entries", disabled=True)
+    @discord.ui.button(label=None, style=discord.ButtonStyle.gray, emoji="<:tgk_people_group:1168173646796300420>", custom_id="giveaway:Entries", disabled=True)
     async def _entries(self, interaction: discord.Interaction, button: discord.ui.Button):
         data = await interaction.client.giveaway.get_giveaway(interaction.message)
         if data is None: return await interaction.followup.send("This giveaway is not available anymore/invalid.", ephemeral=True)
