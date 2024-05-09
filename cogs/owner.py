@@ -1,3 +1,4 @@
+import asyncio
 import discord
 from discord.ext import commands, tasks
 import contextlib
@@ -91,6 +92,7 @@ class owner(commands.Cog):
         await interaction.response.send_message(file=discord.File("./bot.log", filename="discord.log"))
     
     @commands.command(name="eval", description="Evaluate code")
+    @App_commands_Checks.is_owner()
     async def _eval(self, ctx, *,code):
         if ctx.author.id not in self.bot.owner_ids:
             raise commands.CheckFailure(ctx.message)
@@ -134,6 +136,7 @@ class owner(commands.Cog):
     
     @dev.command(name="reload", description="Reload a cog")
     @app_commands.default_permissions(administrator=True)
+    @App_commands_Checks.is_owner()
     @app_commands.autocomplete(cog=cog_autocomplete)
     async def reload(self, interaction: discord.Interaction, cog: str):
         if interaction.user.id not in self.bot.owner_ids:
@@ -300,6 +303,56 @@ class owner(commands.Cog):
         else:
             await interaction.client.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.watching, name=f"Beta Version 2.1.0!"))
 
+    # dm about changelog
+    @dev.command(name="changelog", description="Send changelog to user")
+    @App_commands_Checks.is_owner()
+    async def changelog(self, interaction: discord.Interaction, message_link:str ,action: Literal["test", "dm"]):
+        if interaction.user.id not in self.bot.owner_ids:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+        await interaction.response.send_message("Sending messages...", ephemeral=False)
+
+        guild_id = message_link.split("/")[-3]
+        guild = interaction.client.get_guild(int(guild_id))
+        if guild is None:
+            return await interaction.edit_original_message(content="Invalid guild id")
+        
+        channel_id = message_link.split("/")[-2]
+        channel = guild.get_channel(int(channel_id))
+        if channel is None:
+            return await interaction.edit_original_message(content="Invalid channel id")
+        
+        message_id = message_link.split("/")[-1]
+        message = await channel.fetch_message(int(message_id))
+        if message is None:
+            return await interaction.edit_original_message(content="Invalid message id")
+        
+        if action == 'test':
+            users = self.bot.owner_ids
+        else:
+            data = await self.bot.userSettings.find_many_by_custom({'changelog_dms':True})
+            users = [int(user['_id']) for user in data]
+
+        
+        await interaction.edit_original_response(content="Will be sending messages to {len(users)} users.")
+        sent_to = 0
+        failured = 0
+        for user in users:
+            user = interaction.client.get_user(int(user))
+            if user is None:
+                continue
+            try:
+                await user.send(content=message.content)
+                await interaction.followup.send(embed = await get_success_embed(f"Sent to {user.mention}(`{user.id}`)"))
+                sent_to += 1
+                await asyncio.sleep(1)
+            except:
+                await interaction.followup.send(embed = await get_error_embed(f"Failed to send to {user.mention}(`{user.id}`)"))
+                failured += 1
+                await asyncio.sleep(1)
+                pass
+        
+        await interaction.followup.send(embed = await get_success_embed(f"Sent to {sent_to} users, failed to send to {failured} users"))
 
     @commands.Cog.listener()
     async def on_app_command_completion(self, interaction: discord.Interaction, command: app_commands.Command | app_commands.ContextMenu):
