@@ -305,7 +305,7 @@ class Document:
 
         await self._document.insert_one(data)
 
-    async def insert_many(self, data: Dict[str, Any]) -> None:
+    async def insert_many(self, data: List) -> None:
         """
         Insert the given data into the _document
 
@@ -314,10 +314,9 @@ class Document:
         data: Dict[str, Any]
             The data to insert
         """
-        self.__ensure_dict(data)
+        self.__ensure_list_of_dicts(data)
 
         await self._document.insert_many(data)
-
 
     async def upsert(
         self,
