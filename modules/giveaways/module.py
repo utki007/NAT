@@ -92,7 +92,7 @@ class Giveaways(commands.GroupCog, name="g"):
 		for child in view.children:
 			child.disabled = True
 			if child.custom_id == "giveaway:Entries":
-				child.label = len(giveaway['entries'].keys())
+				child.label = len(giveaway['entries'].keys()) if len(giveaway['entries'].keys()) > 0 else None
 
 		try:
 			gaw_message = await channel.fetch_message(giveaway['_id'])
@@ -300,9 +300,18 @@ class Giveaways(commands.GroupCog, name="g"):
 		donor_name = donor.mention if donor else interaction.user.mention
 		raw_timestap = int((datetime.datetime.now() + datetime.timedelta(seconds=time)).timestamp())
 		timestamp = f"<t:{raw_timestap}:R> (<t:{raw_timestap}:t>)"
-		winners_num = winners
-		embed.title = embed.title.format(prize=prize, guild=guild_name, donor=donor_name, timestamp=timestamp)
-		embed.description = embed.description.format(prize=prize, guild=guild_name, donor=donor_name, timestamp=timestamp)
+		values = {'guild': guild_name, 'prize': prize, 'donor': donor_name, 'timestamp': timestamp}
+		title_kewrd = {}
+		description_kewrd = {}
+
+		for key, value in values.items():
+			if key in embed.title:
+				title_kewrd[key] = value
+			if key in embed.description:
+				description_kewrd[key] = value
+				
+		embed.title = embed.title.format(**title_kewrd)
+		embed.description = embed.description.format(**description_kewrd)
 
 		if any([req_roles, bypass_role, req_level, req_weekly, channel_message]):
 			value = ""

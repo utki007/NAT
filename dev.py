@@ -56,11 +56,10 @@ class Botbase(commands.Bot):
             if file.endswith(".py") and not file.startswith(("__",)) and file.startswith(("owner", "serverUtils", "mafia")):
                 await self.load_extension(f"cogs.{file[:-3]}")
 
-        # for folder in os.listdir("./modules"):
-        #     if folder == "Security":                
-        #         for file in os.listdir(f"./modules/{folder}"):
-        #             if file == "module.py":
-        #                 await self.load_extension(f"modules.{folder}.{file[:-3]}")
+        for folder in os.listdir("./modules"):           
+                for file in os.listdir(f"./modules/{folder}"):
+                    if file == "module.py":
+                        await self.load_extension(f"modules.{folder}.{file[:-3]}")
 
 
 bot = Botbase(998152864201457754, False)

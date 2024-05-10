@@ -449,7 +449,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 				data = await interaction.client.giveaway.get_config(interaction.guild)
 				embed = await interaction.client.giveaway.get_config_embed(config=data, guild=interaction.guild)
 				view = GiveawayConfigView(data=data, user=interaction.user, dropdown=Serversettings_Dropdown(3))
-				await interaction.response.send_message(embed=embed, ephemeral=False, view=view)
+				await interaction.response.edit_message(embed=embed, view=view)
 				view.message = await interaction.original_response()
 
 			case "Mafia Logs Setup":
