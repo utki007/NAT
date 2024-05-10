@@ -743,9 +743,9 @@ class GrinderSummeris(discord.ui.View):
 			embed.set_footer(text=f"{len(pages)+1}/{len(ping_group)}")
 			pages.append(embed)
 		
-		custom_button = [discord.ui.Button(label="<<", style=discord.ButtonStyle.gray),discord.ui.Button(label="<", style=discord.ButtonStyle.gray),discord.ui.Button(label=">", style=discord.ButtonStyle.gray),discord.ui.Button(label=">>", style=discord.ButtonStyle.gray)]
+		custom_button = [discord.ui.Button(label="<<", style=discord.ButtonStyle.gray),discord.ui.Button(label="<", style=discord.ButtonStyle.gray),discord.ui.Button(label="◼", style=discord.ButtonStyle.gray),discord.ui.Button(label=">", style=discord.ButtonStyle.gray),discord.ui.Button(label=">>", style=discord.ButtonStyle.gray)]
 
-		await Paginator(interaction, pages, custom_button).start(embeded=True, quick_navigation=False)
+		await Paginator(interaction, pages, custom_button, True).start(embeded=True, quick_navigation=False)
 
 	@discord.ui.button(label="Inactive Grinders", style=discord.ButtonStyle.gray, emoji="<:toggle_off:1123932890993020928>",row=1)
 	async def inactive_grinder(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -769,6 +769,6 @@ class GrinderSummeris(discord.ui.View):
 			embed.set_footer(text=f"{len(pages)+1}/{len(ping_group)}")
 			pages.append(embed)
 
-		custom_button = [discord.ui.Button(label="<<", style=discord.ButtonStyle.gray),discord.ui.Button(label="<", style=discord.ButtonStyle.gray),discord.ui.Button(label=">", style=discord.ButtonStyle.gray),discord.ui.Button(label=">>", style=discord.ButtonStyle.gray)]
-		await Paginator(interaction, pages, custom_button).start(embeded=True, quick_navigation=False)
+		custom_button = [discord.ui.Button(label="<<", style=discord.ButtonStyle.gray),discord.ui.Button(label="<", style=discord.ButtonStyle.gray),discord.ui.Button(label="◼", style=discord.ButtonStyle.gray),discord.ui.Button(label=">", style=discord.ButtonStyle.gray),discord.ui.Button(label=">>", style=discord.ButtonStyle.gray)]
+		await Paginator(interaction, pages, custom_button, True).start(embeded=True, quick_navigation=False)
 
