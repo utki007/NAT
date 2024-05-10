@@ -278,6 +278,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                     if days <= demote_days:
                         continue
                     embed = await get_invisible_embed(f"You have been dismissed from grinders. Thanks for your support!")
+                    view = None
                     if days > demote_days*2:
                         grinder_user['active'] = False
                         await self.bot.grinderUsers.upsert(grinder_user)
@@ -288,6 +289,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                         except:
                             pass
                         embed.title = f"Kicked from Grinders Team!"
+                        embed.description = guild_config['dismiss_embed']['description']
                     elif days > demote_days:
                         roles_to_remove = [role.id for role in user.roles if role.id in [guild_config['grinder_role'], grinder_user['profile_role']]]
                         roles_to_remove = [guild.get_role(role) for role in roles_to_remove]
@@ -296,9 +298,12 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                         except:
                             pass
                         embed.title = f"Demoted to Trial Grinder"
-
+                        embed.description = f'You have been demoted to trial grinder. You have {format_timespan((demote_days*2 - days)*86400)} to grind else you will be dismissed from grinders. Thanks for your support!'
+                        grind_channel = guild.get_channel(guild_config['payment_channel'])
+                        if grind_channel:
+                            view = discord.ui.View()
+                            view.add_item(discord.ui.Button(label="Grinder's Donation Channel", emoji="<:tgk_channel:1073908465405268029>" , style=discord.ButtonStyle.primary, url=f"{grind_channel.jump_url}"))
                     
-                    embed.description = guild_config['dismiss_embed']['description']
                     embed.timestamp = datetime.datetime.now()
                     try:
                         embed.set_footer(text = guild.name, icon_url = guild.icon.url)
@@ -309,7 +314,10 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                     except:
                         pass
                     try:
-                        await user.send(embed=embed)
+                        if view != None:
+                            await user.send(embed=embed, view=view)
+                        else:
+                            await user.send(embed=embed)
                     except:
                         pass
                     
