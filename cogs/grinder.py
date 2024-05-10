@@ -13,32 +13,7 @@ from ui.settings.grinder import GrinderSummeris
 
 utc = datetime.timezone.utc
 midnight = datetime.time(tzinfo=utc)
-times = [
-    datetime.time(tzinfo=utc),
-    datetime.time(hour=1, tzinfo=utc),
-    datetime.time(hour=2, tzinfo=utc),
-    datetime.time(hour=3, tzinfo=utc),
-    datetime.time(hour=4, tzinfo=utc),
-    datetime.time(hour=5, tzinfo=utc),
-    datetime.time(hour=6, tzinfo=utc),
-    datetime.time(hour=7, tzinfo=utc),
-    datetime.time(hour=8, tzinfo=utc),
-    datetime.time(hour=9, tzinfo=utc),
-    datetime.time(hour=10, tzinfo=utc),
-    datetime.time(hour=11, tzinfo=utc),
-    datetime.time(hour=12, tzinfo=utc),
-    datetime.time(hour=13, tzinfo=utc),
-    datetime.time(hour=14, tzinfo=utc),
-    datetime.time(hour=15, tzinfo=utc),
-    datetime.time(hour=16, tzinfo=utc),
-    datetime.time(hour=17, tzinfo=utc),
-    datetime.time(hour=18, tzinfo=utc),
-    datetime.time(hour=19, tzinfo=utc),
-    datetime.time(hour=20, tzinfo=utc),
-    datetime.time(hour=21, tzinfo=utc),
-    datetime.time(hour=22, tzinfo=utc),
-    datetime.time(hour=23, tzinfo=utc)
-]
+times = [datetime.time(hour = hour,tzinfo=utc) for hour in range(24)]
 
 @app_commands.guild_only()
 class grinder(commands.GroupCog, name="grinder", description="Manage server grinders"):
@@ -115,7 +90,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                         await user.remove_roles(trial_role)
                     except:
                         pass
-                    grinder_role = message.guild.get_role(guild_config['grinder_role'])
+                    grinder_role = message.guild.get_role(guild_config['grinder']['role'])
                     if grinder_role is not None and grinder_role not in user.roles:
                         try:
                             await user.add_roles(grinder_role)
@@ -266,7 +241,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             
             guild = self.bot.get_guild(guild_config['_id'])
             log_channel = guild.get_channel(guild_config['grinder_logs'])
-            demote_days = int(guild_config['trial']['duration']/(3600*24))
+            demote_days = int(guild_config['grinder']['demotion_in']/(3600*24))
             grinder_users = await self.bot.grinderUsers.get_all({"guild": guild.id})
             for grinder_user in grinder_users:
                 if not grinder_user['active']:
@@ -283,7 +258,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                     if days > demote_days*2:
                         grinder_user['active'] = False
                         await self.bot.grinderUsers.upsert(grinder_user)
-                        roles_to_remove = [role.id for role in user.roles if role.id in [guild_config['grinder_role'], guild_config['trial']['role'], grinder_user['profile_role']]]
+                        roles_to_remove = [role.id for role in user.roles if role.id in [guild_config['grinder']['role'], guild_config['trial']['role'], grinder_user['profile_role']]]
                         roles_to_remove = [guild.get_role(role) for role in roles_to_remove]
                         try:
                             await user.remove_roles(*roles_to_remove)
@@ -292,7 +267,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                         embed.title = f"Kicked from Grinders Team!"
                         embed.description = guild_config['dismiss_embed']['description']
                     elif days > demote_days:
-                        roles_to_remove = [role.id for role in user.roles if role.id in [guild_config['grinder_role'], grinder_user['profile_role']]]
+                        roles_to_remove = [role.id for role in user.roles if role.id in [guild_config['grinder']['role'], grinder_user['profile_role']]]
                         roles_to_remove = [guild.get_role(role) for role in roles_to_remove]
                         try:
                             await user.remove_roles(*roles_to_remove)
@@ -413,7 +388,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                 await interaction.client.grinderUsers.upsert(grinder_profile)
                 # user roles in id 
                 removable_roles = list(guild_config['grinder_profiles'].keys())
-                removable_roles.append(guild_config['grinder_role'])
+                removable_roles.append(guild_config['grinder']['role'])
                 if profile['role'] in removable_roles:
                     removable_roles.remove(profile['role'])
                 roles_to_remove = [role.id for role in user.roles if role.id in removable_roles]
@@ -485,7 +460,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         embed = await get_invisible_embed(f"{user.mention} has been appointed as {profile['name'].title()}")
 
         removable_roles = list(guild_config['grinder_profiles'].keys())
-        removable_roles.append(guild_config['grinder_role'])
+        removable_roles.append(guild_config['grinder']['role'])
         if profile['role'] in removable_roles:
             removable_roles.remove(profile['role'])
         roles_to_remove = [role.id for role in user.roles if role.id in removable_roles]
@@ -565,7 +540,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         grinder_profile['active'] = False
         await interaction.client.grinderUsers.upsert(grinder_profile)
 
-        roles_to_remove = [role.id for role in user.roles if role.id in [guild_config['grinder_role'], guild_config['trial']['role'], grinder_profile['profile_role']]]
+        roles_to_remove = [role.id for role in user.roles if role.id in [guild_config['grinder']['role'], guild_config['trial']['role'], grinder_profile['profile_role']]]
         roles_to_remove = [interaction.guild.get_role(role) for role in roles_to_remove]
         try:
             await user.remove_roles(*roles_to_remove)
@@ -771,7 +746,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                         await user.remove_roles(trial_role)
                     except:
                         pass
-                    grinder_role = interaction.guild.get_role(guild_config['grinder_role'])
+                    grinder_role = interaction.guild.get_role(guild_config['grinder']['role'])
                     if grinder_role is not None and grinder_role not in user.roles:
                         try:
                             await user.add_roles(grinder_role)
@@ -867,7 +842,6 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         view = GrinderSummeris(interaction=interaction, active_grinder=upto_Date_grinders, inactive_grinder=overdue_grinders)
         await interaction.edit_original_response(embed=embed, view=view)
         view.message = await interaction.original_response()
-
 
 async def setup(bot):
     await bot.add_cog(

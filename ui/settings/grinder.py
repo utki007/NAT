@@ -36,23 +36,29 @@ async def update_grinder_settings_embed(interaction: discord.Interaction, data: 
 	embed.add_field(name="Logs Channel:", value=f"<:nat_reply:1146498277068517386> {channel}", inline=True)
 	embed.add_field(name="\u200b", value='\u200b', inline=True)
 
-	role = interaction.guild.get_role(data['grinder_role'])
-	if role is None:
-		role = f"`None`"
+	grinder_duration = data['grinder']['demotion_in']
+	role = interaction.guild.get_role(data['grinder']['role'])
+	if grinder_duration == 0:
+		grinder_duration = f"**Demote in:** `None`"
 	else:
-		role = f"{role.mention}"
-	embed.add_field(name="Grinder Role:", value=f"<:nat_reply:1146498277068517386> {role}", inline=True)
+		grinder_duration = f"**Demote in:** {format_timespan(grinder_duration)}"
+	if role is None:
+		role = f"**Role:** `None`"
+	else:
+		role = f"**Role:** {role.mention}"
+	embed.add_field(name="Grinder Config:", value=f"<:nat_replycont:1146496789361479741> {role} \n <:nat_reply:1146498277068517386> {grinder_duration}", inline=True)
+				
 	
 	trial_duration = data['trial']['duration']
 	trial_role = interaction.guild.get_role(data['trial']['role'])
 	if trial_duration == 0:
-		trial_duration = f"**Trial Duration:** `None`"
+		trial_duration = f"**Promote in:** `None`"
 	else:
-		trial_duration = f"**Trial Duration:** {format_timespan(trial_duration)}"
+		trial_duration = f"**Promote in:** {format_timespan(trial_duration)}"
 	if trial_role is None:
-		trial_role = f"**Trial Role:** `None`"
+		trial_role = f"**Role:** `None`"
 	else:
-		trial_role = f"**Trial Role:** {trial_role.mention}"
+		trial_role = f"**Role:** {trial_role.mention}"
 	embed.add_field(name="Trial Config:", value=f"<:nat_replycont:1146496789361479741> {trial_role} \n <:nat_reply:1146498277068517386> {trial_duration}", inline=True)
 	embed.add_field(name="\u200b", value='\u200b', inline=True)
 
@@ -180,33 +186,8 @@ class GrinderConfigPanel(discord.ui.View):
 	@discord.ui.button(label="Grinder Role", style=discord.ButtonStyle.gray, emoji="<:tgk_role:1073908306713780284>", row=2)
 	async def base_role(self, interaction: discord.Interaction, button: discord.ui.Button):
 		data = await interaction.client.grinderSettings.find(interaction.guild.id)
-		view = discord.ui.View()
-		view.value = None
-		view.role_select = Role_select(placeholder="Select your base role", min_values=1, max_values=1)
-		view.add_item(view.role_select)
-		await interaction.response.send_message(view=view, ephemeral=True)
-
-		await view.wait()
-
-		if view.value is None or view.value is False:
-			return await interaction.delete_original_response()
-		
-		if data["grinder_role"] == view.role_select.values[0]:
-			embed = await get_error_embed(f"Grinder Role is already set to {view.role_select.values[0].mention}")
-			return await view.role_select.interaction.response.edit_message(embed=embed, view=None)
-		
-		role = view.role_select.values[0]
-		data["grinder_role"] = role.id
-		await interaction.client.grinderSettings.upsert(data)
-		embed = await get_success_embed(f"Grinder role is updated to {role.mention}")
-		await view.role_select.interaction.response.edit_message(embed=embed, view=None)
-		await update_grinder_settings_embed(self.interaction, data)
-
-	@discord.ui.button(label="Trial Config", style=discord.ButtonStyle.gray, emoji="<:tgk_money:1199223318662885426>", row=2)
-	async def trail(self, interaction: discord.Interaction, button: discord.ui.Button):
-		data = await interaction.client.grinderSettings.find(interaction.guild.id)
-		modal = General_Modal(title="Trial Configuration", interaction=interaction)
-		modal.duration = discord.ui.TextInput(custom_id="duration", label="Duration",placeholder="Number of days for trial grinder promotion", max_length=2, style=discord.TextStyle.short)
+		modal = General_Modal(title="Grinder Configuration", interaction=interaction)
+		modal.duration = discord.ui.TextInput(custom_id="duration", label="Number of missed days to get trial role",placeholder="Enter a value between 1 to 24", max_length=2, style=discord.TextStyle.short)
 
 		modal.add_item(modal.duration)
 		await interaction.response.send_modal(modal)
@@ -215,7 +196,59 @@ class GrinderConfigPanel(discord.ui.View):
 		if modal.value is None or modal.value is False:
 			return await interaction.delete_original_response()
 		
-		duration = int(modal.duration.value)*3600*24
+		try:
+			if int(modal.duration.value) < 1 or int(modal.duration.value) > 24:
+				raise ValueError
+			duration = int(modal.duration.value)*3600*24
+		except:
+			embed = await get_error_embed(f"Invalid duration provided")
+			return await interaction.edit_original_response(embed=embed, view=None)
+
+		role_view = discord.ui.View()
+		role_view.value = None
+		role_view.select = Role_select(placeholder="Grinder role is:", min_values=1, max_values=1)
+		role_view.add_item(role_view.select)
+
+		await modal.interaction.response.send_message(view=role_view, ephemeral=True)
+		await role_view.wait()
+
+		if role_view.value is None or role_view.value is False:
+			return await interaction.delete_original_response()
+		
+		role = role_view.select.values[0]
+		
+		if duration is None:
+			duration = 0
+		
+		data["grinder"] = {
+			"role": role.id,
+			"demotion_in": duration
+		}
+		await interaction.client.grinderSettings.upsert(data)
+		embed = await get_success_embed(f"Grinder role is updated to {role.mention}")
+		await role_view.select.interaction.response.edit_message(embed=embed, view=None)
+		await update_grinder_settings_embed(self.interaction, data)
+
+	@discord.ui.button(label="Trial Config", style=discord.ButtonStyle.gray, emoji="<:tgk_money:1199223318662885426>", row=2)
+	async def trail(self, interaction: discord.Interaction, button: discord.ui.Button):
+		data = await interaction.client.grinderSettings.find(interaction.guild.id)
+		modal = General_Modal(title="Trial Configuration", interaction=interaction)
+		modal.duration = discord.ui.TextInput(custom_id="duration", label="Number of days paid to get grinder role?",placeholder="Enter a value between 1 to 24", max_length=2, style=discord.TextStyle.short)
+
+		modal.add_item(modal.duration)
+		await interaction.response.send_modal(modal)
+		await modal.wait()
+
+		if modal.value is None or modal.value is False:
+			return await interaction.delete_original_response()
+		
+		try:
+			if int(modal.duration.value) < 1 or int(modal.duration.value) > 24:
+				raise ValueError
+			duration = int(modal.duration.value)*3600*24
+		except:
+			embed = await get_error_embed(f"Invalid duration provided")
+			return await interaction.edit_original_response(embed=embed, view=None)
 
 		role_view = discord.ui.View()
 		role_view.value = None
@@ -420,7 +453,7 @@ class GrinderProfilePanel(discord.ui.View):
 				user = interaction.guild.get_member(profile['user'])
 				if user:
 					try:
-						roles_to_remove = [profile['profile_role'],self.data['grinder_role'],self.data['trial']['role']]
+						roles_to_remove = [profile['profile_role'],self.data['grinder']['role'],self.data['trial']['role']]
 						roles_to_remove = [role for role in user.roles if role.id in roles_to_remove]
 						await user.remove_roles(*roles_to_remove)
 					except:

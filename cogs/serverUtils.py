@@ -169,7 +169,10 @@ class Serversettings_Dropdown(discord.ui.Select):
 							"duration"	: 0,
 							"role" : None
 						},
-						"grinder_role" : None,
+						"grinder" : {
+							'demotion_in' : 0,
+							'role' : None
+						},
 						"manager_roles" : [],
 						"max_profiles" : 5,
 						"grinder_profiles" : {},
@@ -208,23 +211,28 @@ class Serversettings_Dropdown(discord.ui.Select):
 				embed.add_field(name="Logs Channel:", value=f"<:nat_reply:1146498277068517386> {channel}", inline=True)
 				embed.add_field(name="\u200b", value='\u200b', inline=True)
 
-				role = interaction.guild.get_role(data['grinder_role'])
-				if role is None:
-					role = f"`None`"
+				grinder_duration = data['grinder']['demotion_in']
+				role = interaction.guild.get_role(data['grinder']['role'])
+				if grinder_duration == 0:
+					grinder_duration = f"**Demote in:** `None`"
 				else:
-					role = f"{role.mention}"
-				embed.add_field(name="Grinder Role:", value=f"<:nat_reply:1146498277068517386> {role}", inline=True)
+					grinder_duration = f"**Demote in:** {format_timespan(grinder_duration)}"
+				if role is None:
+					role = f"**Role:** `None`"
+				else:
+					role = f"**Role:** {role.mention}"
+				embed.add_field(name="Grinder Config:", value=f"<:nat_replycont:1146496789361479741> {role} \n <:nat_reply:1146498277068517386> {grinder_duration}", inline=True)
 				
 				trial_duration = data['trial']['duration']
 				trial_role = interaction.guild.get_role(data['trial']['role'])
 				if trial_duration == 0:
-					trial_duration = f"**Trial Duration:** `None`"
+					trial_duration = f"**Promote in:** `None`"
 				else:
-					trial_duration = f"**Trial Duration:** {format_timespan(trial_duration)}"
+					trial_duration = f"**Promote in:** {format_timespan(trial_duration)}"
 				if trial_role is None:
-					trial_role = f"**Trial Role:** `None`"
+					trial_role = f"**Role:** `None`"
 				else:
-					trial_role = f"**Trial Role:** {trial_role.mention}"
+					trial_role = f"**Role:** {trial_role.mention}"
 				embed.add_field(name="Trial Config:", value=f"<:nat_replycont:1146496789361479741> {trial_role} \n <:nat_reply:1146498277068517386> {trial_duration}", inline=True)
 				embed.add_field(name="\u200b", value='\u200b', inline=True)
 
