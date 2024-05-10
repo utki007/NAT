@@ -149,18 +149,6 @@ class Giveaways_Backend:
         embed.description += f"{await get_formated_field(guild, name=embed_args['Blacklisted Roles'], type='role', data=config['blacklist'])}\n"
         embed.description += f"{await get_formated_field(guild, name=embed_args['Global Bypass'], type='role', data=config['global_bypass'])}\n"
         embed.description += f"{await get_formated_field(guild, name=embed_args['Log Channel'], type='channel', data=config['log_channel'])}\n"
-        embed.description += "\n\n `Multipliers`\n"
-        if config['multipliers'] == {}:
-            embed.description += "* No Multipliers Set"
-            return embed
-
-        for key, multi in config['multipliers'].items():
-            role = guild.get_role(int(key))
-            if not isinstance(role, discord.Role):
-                del config['multipliers'][key]
-                await self.update_config(guild, config)
-                continue
-            embed.description += f"* `{multi}`x {role.mention}\n"
         return embed
 
         
