@@ -336,7 +336,7 @@ class GrinderProfilePanel(discord.ui.View):
 
         profile_modal.add_item(profile_modal.profile_name)
         profile_modal.add_item(profile_modal.profile_amount)
-        profile_modal.add_item(profile_modal.profile_time)
+        # profile_modal.add_item(profile_modal.profile_time)
 
         await interaction.response.send_modal(profile_modal)
 
@@ -383,8 +383,8 @@ class GrinderProfilePanel(discord.ui.View):
         
         profile_select = discord.ui.View()
         profile_select.value = None
-        profile_select.select = Select_General(interaction=interaction, placeholder="Select a profile to remove", max_values=len(self.data["grinder_profiles"].keys()), min_values=1,options=[
-            discord.SelectOption(label=self.data['grinder_profiles'][role_id]["name"], value=role_id)
+        profile_select.select = Select_General(interaction=interaction, placeholder="Select a profile to remove", max_values=1, min_values=1,options=[
+            discord.SelectOption(label=self.data['grinder_profiles'][role_id]["name"].title(), value=role_id)
             for role_id in self.data['grinder_profiles']
         ])
         profile_select.add_item(profile_select.select)
@@ -395,15 +395,22 @@ class GrinderProfilePanel(discord.ui.View):
         if profile_select.value is None or profile_select.value is False:
             return await interaction.delete_original_response()
 
+        profile_name = ''
+        role_id = self.data['grinder_profiles'][profile_select.select.values[0]]
         for role_id in profile_select.select.values:
+            profile_name = self.data['grinder_profiles'][role_id]['name'].title()
             del self.data['grinder_profiles'][role_id]
         
         log_channel = interaction.guild.get_channel(self.data['grinder_logs'])
         if log_channel:
             try:
-                await log_channel.send(f"Profile {self.data['grinder_profiles'][role_id]['name']} was deleted by {interaction.user.mention}".allowed_mentions(discord.AllowedMentions.none()))
+                await log_channel.send(embed = await get_warning_embed(f"Profile `{profile_name}` was deleted by {interaction.user.mention}"), allowed_mentions= discord.AllowedMentions.none())
             except:
                 pass
+
+        await interaction.client.grinderSettings.upsert(self.data)
+        await update_grinder_settings_embed(self.interaction, self.data)
+        await interaction.delete_original_response()
 
         grinder_profiles  = await interaction.client.grinderUsers.get_all({"guild": interaction.guild.id, "active": True})
         for profile in grinder_profiles:
@@ -418,22 +425,28 @@ class GrinderProfilePanel(discord.ui.View):
                         await user.remove_roles(*roles_to_remove)
                     except:
                         pass
+                
+                    embed = discord.Embed(
+                        color=discord.Color.red(),
+                        title="Grinder Profile Deleted"
+                    )
+                    embed.add_field(name=f"Profile Name:", value=f"{profile_name}", inline=True)
+                    role = interaction.guild.get_role(int(role_id))
+                    if role is not None:
+                        embed.add_field(name=f"Profile Role:", value=f"{role.name}", inline=True)
+                    else:
+                        embed.add_field(name=f"Profile Role:", value=f"Role was deleted", inline=True)
+                    embed.add_field(name=f"Reason:", value=f"Profile was deleted by {interaction.user.mention}", inline=False)
                     try:
-                        embed = discord.Embed(
-                            color=discord.Color.red(),
-                            title="Profile Deleted",
-                            description=f"Your profile {self.data['grinder_profiles'][role_id]['name']} was removed by {interaction.user.mention} in **{interaction.guild.name}**"
-                        )
-                        embed.set_footer(text="Contact support for more information")
+                        embed.set_footer(text=f"{interaction.guild.name} | {interaction.guild.id}", icon_url=interaction.guild.icon.url)
+                    except: 
+                        embed.set_footer(text=f"{interaction.guild.name} | {interaction.guild.id}")
+                    try:
                         await user.send(embed=embed)
                         await asyncio.sleep(0.1)
                     except:
                         pass
-                    
 
-        await interaction.client.grinderSettings.upsert(self.data)
-        await update_grinder_settings_embed(self.interaction, self.data)
-        await interaction.delete_original_response()
 
     async def interaction_check(self, interaction: discord.Interaction):
         if interaction.user.id != self.interaction.user.id:
