@@ -581,29 +581,6 @@ async def on_audit_log_entry_create(entry: discord.AuditLogEntry):
 
 @bot.event
 async def on_guild_join(guild: discord.Guild):
-    if guild.member_count < 50:
-        config = await bot.config.find(bot.user.id)
-        if config is None:pass
-        if guild.id in config['member_lock_bypass']:
-            pass
-        else:
-            # message for leaving server having less than 50 members
-            embed = await get_invisible_embed(f"- Need minimum 50 members to add me to your server.\n- If you want to get whitelisted, contact [` support server `](https://discord.gg/4BpUghwr9w).")
-            try:
-                await guild.owner.send(embed=embed)
-            except:
-                try:
-                    await guild.system_channel.send(embed=embed)
-                except:
-                    for channel in guild.text_channels:
-                        try:
-                            await channel.send(embed=embed)
-                            break
-                        except:
-                            pass
-                    pass
-            await guild.leave()
-
     channel = bot.get_channel(1145314908599222342)
     await channel.send(
         f"## ★｡ﾟ☆ﾟ Joined {guild.name.title()}☆ﾟ｡★\n"
