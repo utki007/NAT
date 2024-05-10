@@ -9,6 +9,7 @@ from humanfriendly import format_timespan
 from utils.dank import get_donation_from_message
 from utils.embeds import get_error_embed, get_invisible_embed, get_warning_embed
 from utils.transformers import DMCConverter
+from ui.settings.grinder import GrinderSummeris
 
 utc = datetime.timezone.utc
 midnight = datetime.time(tzinfo=utc)
@@ -838,8 +839,8 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         today = datetime.datetime(date.year, date.month, date.day)
 
         grinder_profiles = await interaction.client.grinderUsers.get_all({"guild": interaction.guild.id, "active": True})
-        upto_Date_grinders = [grinder for grinder in grinder_profiles if grinder['payment']['next_payment'] > today]
-        overdue_grinders = [grinder for grinder in grinder_profiles if grinder['payment']['next_payment'] <= today]
+        upto_Date_grinders = [grinder for grinder in grinder_profiles if grinder['payment']['next_payment'] > today] # active grinders
+        overdue_grinders = [grinder for grinder in grinder_profiles if grinder['payment']['next_payment'] <= today] # unpaid grinders
         total_grinders = len(grinder_profiles)
 
         # dono by active grinders
@@ -863,7 +864,10 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             embed.set_footer(text=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
         except:
             embed.set_footer(text=f"{interaction.guild.name}")
-        return await interaction.edit_original_response(embed=embed)
+        view = GrinderSummeris(interaction=interaction, active_grinder=upto_Date_grinders, inactive_grinder=overdue_grinders)
+        await interaction.edit_original_response(embed=embed, view=view)
+        view.message = await interaction.original_response()
+
 
 async def setup(bot):
     await bot.add_cog(
