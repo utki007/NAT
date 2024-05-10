@@ -845,7 +845,6 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
 
 async def setup(bot):
     await bot.add_cog(
-        grinder(bot),
-        guilds=[discord.Object(999551299286732871), discord.Object(785839283847954433)]
+        grinder(bot)
     )
     print(f"loaded grinder cog")
