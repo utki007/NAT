@@ -241,49 +241,6 @@ class owner(commands.Cog):
             await interaction.client.tree.sync(guild=guild)
             await interaction.edit_original_response(embed=discord.Embed(description=f"Successfully synced guild commands for `{guild.name}`", color=2829617))
 
-    @dev.command(name="member_lock_bypass", description="Bypass member lock")
-    @app_commands.default_permissions(administrator=True)
-    async def member_lock_bypass(self, interaction: discord.Interaction, guild_id: str):
-        if interaction.user.id not in self.bot.owner_ids:
-            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
-            return
-        try:
-            guild_id  = int(guild_id)
-        except: 
-            return await interaction.response.send_message(embed=discord.Embed(description="Invalid guild id", color=2829617))
-        data = await self.bot.config.find(interaction.client.user.id)
-        if not data:
-            await interaction.response.send_message("Db error", ephemeral=True)
-            return
-        if guild_id in data['member_lock_bypass']:
-            await interaction.response.send_message(embed=discord.Embed(description="This guild is already bypassed", color=2829617))
-            return
-        data['member_lock_bypass'].append(guild_id)
-        await self.bot.config.update(data)
-        await interaction.response.send_message(embed=discord.Embed(description="Successfully bypassed", color=2829617))
-    
-    @dev.command(name="member_lock_remove", description="Remove member lock bypass")
-    @app_commands.default_permissions(administrator=True)
-    async def member_lock_remove(self, interaction: discord.Interaction, guild_id: str):
-        if interaction.user.id not in self.bot.owner_ids:
-            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
-            return
-        try:
-            guild_id  = int(guild_id)
-        except:
-            return await interaction.response.send_message(embed=discord.Embed(description="Invalid guild id", color=2829617))
-        data = await self.bot.config.find(interaction.client.user.id)
-        if not data:
-            await interaction.response.send_message("Db error", ephemeral=True)
-            return
-        if guild_id not in data['member_lock_bypass']:
-            await interaction.response.send_message(embed=discord.Embed(description="This guild is not bypassed", color=2829617))
-            return
-        
-        data['member_lock_bypass'].remove(guild_id)
-        await self.bot.config.update(data)
-        await interaction.response.send_message(embed=discord.Embed(description="Successfully removed", color=2829617))
-
     @dev.command(name="maintenance", description="Toggle maintenance mode")
     @app_commands.default_permissions(administrator=True)
     async def maintenance(self, interaction: discord.Interaction):
