@@ -783,7 +783,6 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
     @app_commands.command(name="bank", description="Check your grinder details")
     @app_commands.describe(user="User to check grinder details")
     async def bank(self, interaction: Interaction, user: discord.Member = None):
-        guild_config = await interaction.client.grinderSettings.find(interaction.guild.id)
         await interaction.response.defer(ephemeral=False)
 
         if not user:
