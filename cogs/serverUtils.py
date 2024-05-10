@@ -162,7 +162,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 							'role' : None
 						},
 						"manager_roles" : [],
-						"max_profiles" : 5,
+						"max_profiles" : 2,
 						"grinder_profiles" : {},
 						"appoint_embed" : {
 							'description' : f"We're excited to inform you that you've been appointed as one of our newest trial grinders! If you have any questions or need further information, feel free to reach out to us anytime. Let's make this journey memorable and enjoyable together! ",
