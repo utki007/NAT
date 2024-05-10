@@ -359,8 +359,8 @@ class GrinderProfilePanel(discord.ui.View):
 	@discord.ui.button(label="Create", style=discord.ButtonStyle.gray, emoji="<:tgk_add:1073902485959352362>",row=1)
 	async def create_profile(self, interaction: discord.Interaction, button: discord.ui.Button):
 		if len(self.data['grinder_profiles']) >= self.data['max_profiles']:
-			embed = await get_warning_embed(f"You have reached the maximum number of profiles")
-			return await self.message.edit(embed=embed, ephemeral=True)
+			embed = await get_warning_embed(f"Maximum number of profiles reached!")
+			return await interaction.response.send_message(embed=embed, ephemeral=True)
 
 		profile_modal = General_Modal(title="Create Grinder Profile", interaction=interaction)
 		profile_modal.profile_name = discord.ui.TextInput(custom_id="profile_name", label="Profile Name",placeholder="Enter the Profile Name,Ex:Legendary Grinder (3M)", max_length=50, style=discord.TextStyle.short)
