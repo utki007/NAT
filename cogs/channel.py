@@ -364,42 +364,42 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 		await Paginator(interaction, pages, custom_button).start(embeded=True, quick_navigation=False)
 
 	# edit channel name, postion and category
-	@app_commands.command(name="edit", description="Edit channel name, position and category 📝", extras={'example': '/edit'})
-	# @app_commands.checks.has_permissions(administrator=True)
-	@App_commands_Checks.is_owner()
-	@app_commands.describe(channel = 'Enter channel which you wish to edit' ,name = "Enter new name", position = "Enter position", category = "Enter category")
-	@app_commands.checks.cooldown(2, 605, key=lambda i: (i.guild_id))
-	async def edit(self, interaction:  discord.Interaction, channel: discord.TextChannel = None, position: int = None, category: discord.CategoryChannel = None ,  name: str = None,):
+	# @app_commands.command(name="edit", description="Edit channel name, position and category 📝", extras={'example': '/edit'})
+	# # @app_commands.checks.has_permissions(administrator=True)
+	# @App_commands_Checks.is_owner()
+	# @app_commands.describe(channel = 'Enter channel which you wish to edit' ,name = "Enter new name", position = "Enter position", category = "Enter category")
+	# @app_commands.checks.cooldown(2, 605, key=lambda i: (i.guild_id))
+	# async def edit(self, interaction:  discord.Interaction, channel: discord.TextChannel = None, position: int = None, category: discord.CategoryChannel = None ,  name: str = None,):
 
-		channel = channel or interaction.channel
-		name = name or channel.name
-		category = category or channel.category
+	# 	channel = channel or interaction.channel
+	# 	name = name or channel.name
+	# 	category = category or channel.category
 
-		try:
-			if position is None:
-				position = category.channels[-1].position + 1
-			else:
-				position = category.channels[0].position + position
-		except:
-			position = position or channel.position
+	# 	try:
+	# 		if position is None:
+	# 			position = category.channels[-1].position + 1
+	# 		else:
+	# 			position = category.channels[0].position + position
+	# 	except:
+	# 		position = position or channel.position
 
-		if interaction.channel.type == discord.ChannelType.text:
-			embed = await get_invisible_embed(f'- **Channel:** {channel.mention}\n- **Name:** {name}\n- **Position:** {position}\n- **Category:** {category}')
-			embed.title = "Edit Channel"
-			embed.set_footer(text="Are you sure you want to edit this channel?")
-			confirmation_view = Confirm(interaction.user)
-			await interaction.response.send_message(embed = embed, view=confirmation_view, ephemeral=False)
-			await confirmation_view.wait()
-			if confirmation_view.value:
-				await channel.edit(name=name, position=position, category=category, reason=f"Channel edited by {interaction.user} (ID: {interaction.user.id})")
-				embed = await get_success_embed(content = f"Successfully edited **{channel.mention}**")
-				await interaction.edit_original_response(embed=embed, view=None)
-			else:
-				error = await get_error_embed(content = f"Okay I wont edit {channel.mention}")
-				await interaction.edit_original_response(embed=error, view=None)
-		else:
-			error = await get_error_embed(content = f"It cant be edited dum dum")
-			await interaction.response.send_message(embed=error, ephemeral=True)
+	# 	if interaction.channel.type == discord.ChannelType.text:
+	# 		embed = await get_invisible_embed(f'- **Channel:** {channel.mention}\n- **Name:** {name}\n- **Position:** {position}\n- **Category:** {category}')
+	# 		embed.title = "Edit Channel"
+	# 		embed.set_footer(text="Are you sure you want to edit this channel?")
+	# 		confirmation_view = Confirm(interaction.user)
+	# 		await interaction.response.send_message(embed = embed, view=confirmation_view, ephemeral=False)
+	# 		await confirmation_view.wait()
+	# 		if confirmation_view.value:
+	# 			await channel.edit(name=name, position=position, category=category, reason=f"Channel edited by {interaction.user} (ID: {interaction.user.id})")
+	# 			embed = await get_success_embed(content = f"Successfully edited **{channel.mention}**")
+	# 			await interaction.edit_original_response(embed=embed, view=None)
+	# 		else:
+	# 			error = await get_error_embed(content = f"Okay I wont edit {channel.mention}")
+	# 			await interaction.edit_original_response(embed=error, view=None)
+	# 	else:
+	# 		error = await get_error_embed(content = f"It cant be edited dum dum")
+	# 		await interaction.response.send_message(embed=error, ephemeral=True)
 
 
 async def setup(bot):
