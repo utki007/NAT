@@ -120,7 +120,7 @@ class Giveaway(View):
         embed = discord.Embed(description="You have successfully joined the giveaway.", color=discord.Color.green())
         if bypassed:
             embed.description += "\nYou have bypassed the requirements due to your bypass role."       
-        await interaction.followup.send(embed=embed)
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
         self.children[1].label = f"{len(data['entries'].keys())}"
         if self.children[1].disabled:
