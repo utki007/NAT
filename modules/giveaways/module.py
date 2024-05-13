@@ -9,11 +9,12 @@ import random
 from typing import List, Dict
 import discord.http
 
-from .db import Giveaways_Backend, GiveawayConfig, GiveawayData
+from .db import Giveaways_Backend, GiveawayConfig, GiveawayData, chunk
 from .views import Giveaway, GiveawayConfigView
 from utils.transformers import TimeConverter, MutipleRole
 from utils.convertor import DMCConverter
 from utils.embeds import get_formated_embed, get_formated_field
+from utils.views.paginator import Paginator
 
 class Giveaways(commands.GroupCog, name="g"):
 	def __init__(self, bot):
@@ -268,6 +269,7 @@ class Giveaways(commands.GroupCog, name="g"):
 			"req_level": req_level,
 			"req_weekly": req_weekly,
 			"entries": {},
+			"banned": [],
 			"start_time": datetime.datetime.utcnow(),
 			"end_time": datetime.datetime.utcnow() + datetime.timedelta(seconds=time),
 			"ended": False,
@@ -420,6 +422,102 @@ class Giveaways(commands.GroupCog, name="g"):
 		except Exception as e:
 			raise e
 		
+	@app_commands.command(name="cancel", description="Cancel a giveaway")
+	@app_commands.describe(
+		message="Message to accompany the cancel"
+	)
+	@app_commands.rename(message="message_id")
+	async def _cancel(self, interaction: discord.Interaction, message: str):
+		config = await self.backend.get_config(interaction.guild)
+		user_role = [role.id for role in interaction.user.roles]
+
+		if not (set(user_role) & set(config['manager_roles'])): return await interaction.response.send_message("You do not have permission to cancel giveaways!", ephemeral=True)
+
+		try:
+			message = await interaction.channel.fetch_message(int(message))
+		except:
+			return await interaction.response.send_message("Invalid message ID!", ephemeral=True)
+		
+		if message.author.id != self.bot.user.id or "giveaway" not in message.content.lower():
+			return await interaction.response.send_message("This message is not a giveaway!", ephemeral=True)
+		
+		embed = message.embeds[0]
+		embed.description = f"This giveaway has been cancelled by {interaction.user.mention}!"
+		embed.title = None
+		embed.set_footer(text="Cancelled")
+		view = Giveaway()
+		view.children[0].disabled = True
+		view.children[1].disabled = True
+		await message.edit(embed=embed, view=view, content="Giveaway Cancelled")
+
+		await self.backend.giveaways.delete(message.id)
+		if message.id in self.backend.giveaways_cache.keys():
+			self.backend.giveaways_cache.pop(message.id)
+		await interaction.response.send_message("Giveaway cancelled successfully!", ephemeral=True)
+
+	@app_commands.command(name="remove-entry", description="Remove an entry from a giveaway")
+	@app_commands.describe(
+		message="Message to accompany the removal",
+		user="User to remove"
+	)
+	@app_commands.rename(message="message_id")
+	async def _remove_entry(self, interaction: discord.Interaction, message: str, user: discord.Member):
+		config = await self.backend.get_config(interaction.guild)
+		user_role = [role.id for role in interaction.user.roles]
+		if not (set(user_role) & set(config['manager_roles'])): return await interaction.response.send_message("You do not have permission to remove entries!", ephemeral=True)
+
+		try:
+			message = await interaction.channel.fetch_message(int(message))
+		except:
+			return await interaction.response.send_message("Invalid message ID!", ephemeral=True)
+		
+		if message.author.id != self.bot.user.id or "giveaway" not in message.content.lower():
+			return await interaction.response.send_message("This message is not a giveaway!", ephemeral=True)
+		
+		giveaway_data = await self.backend.get_giveaway(message)
+		if not giveaway_data: 
+			return await interaction.response.send_message("This giveaway Not Found!", ephemeral=True)
+		if giveaway_data['ended']: return await interaction.response.send_message("This giveaway has already ended!", ephemeral=True)
+		if str(user.id) not in giveaway_data['entries'].keys():
+			return await interaction.response.send_message("This user is not in the giveaway!", ephemeral=True)
+		
+		if str(user.id) in giveaway_data['entries'].keys():
+			del giveaway_data['entries'][str(user.id)]
+		if giveaway_data['channel_messages'] != {} and str(user.id) in giveaway_data['channel_messages']['users'].keys():
+			del giveaway_data['channel_messages']['users'][str(user.id)]
+		giveaway_data['banned'].append(user.id)
+		await self.backend.update_giveaway(message=message, data=giveaway_data)
+		await interaction.response.send_message("Entry removed successfully!", ephemeral=True)
+		view = Giveaway()
+		if len(giveaway_data['entries'].keys()) == 0:
+			view.children[1].disabled = True
+			view.children[1].label = None
+		else:
+			view.children[1].label = len(giveaway_data['entries'].keys())
+			view.children[1].disabled = False
+		await message.edit(view=view)
+
+	@app_commands.command(name="list", description="List all the giveaways")
+	async def _list(self, interaction: discord.Interaction):
+		giveaways: List[GiveawayData] = await self.backend.giveaways.find_many_by_custom({"guild": interaction.guild.id, "ended": False})
+		if len(giveaways) == 0:
+			return await interaction.response.send_message("No giveaways found in this server!", ephemeral=True)
+		await interaction.response.defer(ephemeral=False)
+		giveaways_group = list(chunk(giveaways, 5))
+		pages = []
+		gaw_count = 1
+		for giveaways in giveaways_group:
+			desc = ''
+			for giveaway in giveaways:
+				desc += f"**` {gaw_count}. ` {giveaway['prize']}**\n"
+				desc += f"<:nat_replycont:1146496789361479741>**Ends at:** <t:{int(giveaway['end_time'].timestamp())}:R>\n"
+				desc += f"<:nat_reply:1146498277068517386>**Link:** [Click Here](https://discord.com/channels/{giveaway['guild']}/{giveaway['channel']}/{giveaway['_id']})\n\n"
+				gaw_count += 1
+			embed = discord.Embed(title="Giveaways", description=desc, color=0x2b2d31)
+			pages.append(embed)
+		
+		await Paginator(interaction=interaction, pages=pages, ephemeral=False).start(embeded=True, deffer=True, quick_navigation=False)
+
 	@commands.command(name="multiplier", description="Set the giveaway multiplier", aliases=['multi'])
 	async def _multiplier(self, ctx, user: discord.Member=None):
 		user = user if user else ctx.author

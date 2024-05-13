@@ -1,3 +1,4 @@
+from itertools import islice
 import os
 import discord
 import datetime
@@ -8,6 +9,9 @@ from amari import AmariClient, User
 from utils.db import Document
 from utils.embeds import get_formated_embed, get_formated_field
 
+def chunk(it, size):
+	it = iter(it)
+	return iter(lambda: tuple(islice(it, size)), ())
 
 class Embed(TypedDict):
     title: str
@@ -43,6 +47,7 @@ class GiveawayData(TypedDict):
     req_level: int
     req_weekly: int
     entries: dict[int, int]
+    banned: list[int]
     start_time: datetime.datetime
     end_time: datetime.datetime
     ended: bool

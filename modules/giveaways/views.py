@@ -12,7 +12,7 @@ from utils.views.selects import Role_select, Channel_select, Select_General
 from utils.views.modal import General_Modal
 from utils.views.paginator import Paginator
 from .db import GiveawayConfig as GConfig
-from .db import Giveaways_Backend
+from .db import Giveaways_Backend, GiveawayData
 
 class Giveaway(View):
     def __init__(self):
@@ -24,10 +24,14 @@ class Giveaway(View):
     @discord.ui.button(emoji="<a:tgk_tadaa:806631994770849843>", style=discord.ButtonStyle.gray, custom_id="giveaway:Join")
     async def _join(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer(thinking=True, ephemeral=True)
-        data = await interaction.client.giveaway.get_giveaway(interaction.message)
+        data: GiveawayData = await interaction.client.giveaway.get_giveaway(interaction.message)
         if data is None: await interaction.followup.send("This giveaway is not available anymore.", ephemeral=True)
         config = await interaction.client.giveaway.get_config(interaction.guild)
 
+        if interaction.user.id in data['banned']:
+            await interaction.followup.send("You have been manually blacklisted from joining this giveaway. Reach out to the server staff for more information.", ephemeral=True)
+            return
+        
         user_roles = [role.id for role in interaction.user.roles]
         if (set(user_roles) & set(config["blacklist"])): 
             embed = discord.Embed(description="Unable to join the giveawy due to blacklisted role.", color=discord.Color.red())
