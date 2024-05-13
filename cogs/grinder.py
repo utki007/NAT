@@ -240,6 +240,8 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         for guild_config in guild_configs:
             
             guild = self.bot.get_guild(guild_config['_id'])
+            if guild is None:
+                continue
             log_channel = guild.get_channel(guild_config['grinder_logs'])
             demote_days = int(guild_config['grinder']['demotion_in']/(3600*24))
             grinder_users = await self.bot.grinderUsers.get_all({"guild": guild.id})
