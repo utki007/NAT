@@ -75,7 +75,7 @@ async def update_timestamp_embed(interaction: Interaction, data: dict):
 async def update_grinder_embed(interaction: Interaction, time: int):
 
 	date = datetime.date.today()
-	timestamp = f"<t:{int(datetime.datetime(date.year, date.month, date.day, time, tzinfo = datetime.timezone.utc).timestamp())}>"
+	timestamp = f"<t:{int(datetime.datetime(date.year, date.month, date.day, time, tzinfo = datetime.timezone.utc).timestamp())}:t>"
 	embed = discord.Embed(
 		color=3092790,
 		title="Grinder Reminder",

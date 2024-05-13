@@ -715,7 +715,7 @@ class Usersettings_Dropdown(discord.ui.Select):
 
 				date = datetime.date.today()
 				time = datetime.time.fromisoformat(datas[0]['reminder_time'])
-				timestamp = f"<t:{int(datetime.datetime.combine(date, time).timestamp())}>"
+				timestamp = f"<t:{int(datetime.datetime.combine(date, time).timestamp())}:t>"
 				embed = discord.Embed(
 					color=3092790,
 					title="Grinder Reminder",
