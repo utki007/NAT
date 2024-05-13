@@ -16,6 +16,7 @@ from utils.convertor import DMCConverter
 from utils.embeds import get_formated_embed, get_formated_field
 from utils.views.paginator import Paginator
 
+@app_commands.guild_only()
 class Giveaways(commands.GroupCog, name="g"):
 	def __init__(self, bot):
 		self.bot = bot
