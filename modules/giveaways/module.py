@@ -181,7 +181,7 @@ class Giveaways(commands.GroupCog, name="g"):
 			for winner in winners:
 				winners_mention += f"{winners.index(winner)+1}. {winner.mention}\n"
 			
-			values = {'guild': guild_name, 'prize': prize, 'donor': donor_name, 'timestamp': f"<t:{int(giveaway['end_time'].timestamp())}:R> (<t:{int(giveaway['end_time'].timestamp())}:t>)"}
+			values = {'guild': guild_name, 'prize': prize, 'donor': donor_name, 'timestamp': f"<t:{int(giveaway['end_time'].timestamp())}:R> (<t:{int(giveaway['end_time'].timestamp())}:t>)", "winners": winners_mention}
 			end_emd_title = {};end_emd_description = {};host_dm_title = {};host_dm_description = {};dm_emd_title = {};dm_emd_description = {}
 			for key, value in values.items():
 				if key in end_emd.title:
