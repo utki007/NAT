@@ -180,15 +180,34 @@ class Giveaways(commands.GroupCog, name="g"):
 
 			for winner in winners:
 				winners_mention += f"{winners.index(winner)+1}. {winner.mention}\n"
+			
+			values = {'guild': guild_name, 'prize': prize, 'donor': donor_name, 'timestamp': f"<t:{int(giveaway['end_time'].timestamp())}:R> (<t:{int(giveaway['end_time'].timestamp())}:t>)"}
+			end_emd_title = {};end_emd_description = {};host_dm_title = {};host_dm_description = {};dm_emd_title = {};dm_emd_description = {}
+			for key, value in values.items():
+				if key in end_emd.title:
+					end_emd_title[key] = value
+				if key in end_emd.description:
+					end_emd_description[key] = value
+				if key in host_dm.title:
+					host_dm_title[key] = value
+				if key in host_dm.description:
+					host_dm_description[key] = value
+				if key in dm_emd.title:
+					dm_emd_title[key] = value
+				if key in dm_emd.description:
+					dm_emd_description[key] = value
 
-			end_emd.title = end_emd.title.format(prize=prize, winner=winners_mention, guild=guild_name, donor=donor_name)
-			end_emd.description = end_emd.description.format(prize=prize, winner=",".join([winner.mention for winner in winners]), guild=guild_name, donor=donor_name)
 
-			host_dm.title = host_dm.title.format(prize=prize)
-			host_dm.description = host_dm.description.format(prize=prize, winner=winners_mention, guild=guild_name, donor=donor_name)
 
-			dm_emd.title = dm_emd.title.format(prize=prize)
-			dm_emd.description = dm_emd.description.format(prize=prize, winner=winners_mention, guild=guild_name, donor=donor_name)
+
+			end_emd.title = end_emd.title.format(**end_emd_title)
+			end_emd.description = end_emd.description.format(**end_emd_description)
+
+			host_dm.title = host_dm.title.format(**host_dm_title)
+			host_dm.description = host_dm.description.format(**host_dm_description)
+
+			dm_emd.title = dm_emd.title.format(**dm_emd_title)
+			dm_emd.description = dm_emd.description.format(**dm_emd_description)
 
 			payoyt_mesg = await gaw_message.reply(embed=end_emd, view=None, content=",".join([winner.mention for winner in winners]))
 			

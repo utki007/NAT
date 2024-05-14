@@ -451,3 +451,33 @@ class Messages(View):
         self.config["messages"][self.current_message]['color'] = color.value
         await view.interaction.response.edit_message(embed=await self.refreshEmbed(interaction, self.config), view=self)
         await interaction.client.giveaway.update_config(interaction.guild, self.config)
+    
+    @discord.ui.button(label="Reset", style=discord.ButtonStyle.gray, emoji="<:tgk_delete:1113517803203461222>", custom_id="giveaway:Reset", row=1)
+    async def _reset(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.current_message is None: return await interaction.response.send_message("Please select a message first.", ephemeral=True)
+        default = {
+            "host": {
+                    "title": "Your giveaway has ended!",
+                    "description": "**Ended At**{timestamp}\nWinners:\n{winners}",
+                    "color": 2829617
+                },
+            "gaw": {
+                    "title": "{prize}",
+                    "description": "**Ends At:** {timestamp}\n**Donated By:** {donor}\n",
+                    "color": 2829617
+                },
+            "dm": {
+                    "title": "You won Giveaway!",
+                    "description": "**Congratulations!** You won {prize} in {guild}.",
+                    "color": 2829617
+                },
+            "end": {
+                    "title": "Congratulations!",
+                    "description": "<a:tgk_blackCrown:1097514279973961770> **Won:** {prize}",
+                    "color": 2829617
+            }
+        }
+        self.config['messages'][self.current_message] = default[self.current_message]
+        await interaction.response.edit_message(embed=await self.refreshEmbed(interaction, self.config), view=self)
+        await interaction.client.giveaway.update_config(interaction.guild, self.config)
+        await interaction.followup.send(content=f"Reset the {self.current_message} message to default.", ephemeral=True)
