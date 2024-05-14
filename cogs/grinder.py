@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import traceback
 from typing import Literal
 import discord
 from discord import Interaction, app_commands
@@ -200,6 +201,8 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                     continue
                 if today > grinder_user['payment']['next_payment']:
                     user = guild.get_member(grinder_user['user'])
+                    if not user:
+                        continue
                     pending_days = (today - grinder_user['payment']['next_payment']).days
                     amount = grinder_user['payment']['amount_per_grind'] * pending_days
                     embed = await get_invisible_embed(f"Hey {user.mention}, you have pending payment of ⏣ {amount:,} for {pending_days} days. Please grind soon.")
@@ -228,8 +231,9 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
 
     @grinder_reminder.error
     async def grinder_reminder_error(self, error):
-        chal = self.bot.get_channel(999555462674522202)
-        await chal.send(f"<@488614633670967307> <@301657045248114690> ,Error in grinder reminder: {error}")
+        channel = self.bot.get_channel(999555462674522202)
+        full_stack_trace = ''.join(traceback.format_exception(type(error), error, error.__traceback__))
+        await channel.send(f"<@488614633670967307> <@301657045248114690> , Error in grinder reminder: {full_stack_trace}")
 
     @tasks.loop(time=midnight)
     async def grinder_demotions(self):
@@ -318,8 +322,9 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
 
     @grinder_demotions.error
     async def grinder_demotions_error(self, error):
-        chal = self.bot.get_channel(999555462674522202)
-        await chal.send(f"<@488614633670967307> <@301657045248114690> ,Error in grinder demotions: {error}")
+        channel = self.bot.get_channel(999555462674522202)
+        full_Stack_trace = ''.join(traceback.format_exception(type(error), error, error.__traceback__))
+        await channel.send(f"<@488614633670967307> <@301657045248114690> , Error in grinder demotions: {full_Stack_trace}")
 
     @app_commands.command(name="appoint", description="Add New Grinder")
     @app_commands.autocomplete(profile=GrinderProfileAutoComplete)
