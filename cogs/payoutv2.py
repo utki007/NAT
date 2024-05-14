@@ -166,7 +166,7 @@ class PayoutDB:
             return None
         
         claim_message = await unclaim_webhook.send(username="👑 | N.A.T Payouts",embed=embed, view=view, wait=True, content=f"{winner.mention} Your prize has been queued for payout\n> Please claim it within <t:{claim_time_timestamp}:R> or it will rerolled.")
-        await claim_message.add_reaction(self.pending_emoji)
+        await message.add_reaction(self.pending_emoji)
         queue_data['_id'] = claim_message.id
         await self.unclaimed.insert(queue_data)
         return claim_message
