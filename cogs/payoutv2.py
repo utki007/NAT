@@ -166,6 +166,7 @@ class PayoutDB:
             return None
         
         claim_message = await unclaim_webhook.send(username="👑 | N.A.T Payouts",embed=embed, view=view, wait=True, content=f"{winner.mention} Your prize has been queued for payout\n> Please claim it within <t:{claim_time_timestamp}:R> or it will rerolled.")
+        await claim_message.add_reaction(self.pending_emoji)
         queue_data['_id'] = claim_message.id
         await self.unclaimed.insert(queue_data)
         return claim_message
@@ -392,7 +393,6 @@ class PayoutV2(commands.GroupCog, name="payout"):
             await asyncio.sleep(2)
 
         loading_embed.description = f"\n<:octane_yes:1019957051721535618> | Payout has been queued for total of `{len(winners)}` winners!"
-        await event_message.add_reaction(self.backend.pending_emoji)
         await interaction.edit_original_response(embed=loading_embed)
 
     @app_commands.command(name="clear", description="Search for a payout message")

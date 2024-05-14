@@ -1,5 +1,7 @@
 import asyncio
+from io import BytesIO
 import re
+import traceback
 import discord
 import datetime
 from discord import app_commands
@@ -188,7 +190,7 @@ class Giveaways(commands.GroupCog, name="g"):
 			dm_emd.title = dm_emd.title.format(prize=prize)
 			dm_emd.description = dm_emd.description.format(prize=prize, winner=winners_mention, guild=guild_name, donor=donor_name)
 
-			await gaw_message.reply(embed=end_emd, view=None, content=",".join([winner.mention for winner in winners]))
+			payoyt_mesg = await gaw_message.reply(embed=end_emd, view=None, content=",".join([winner.mention for winner in winners]))
 			
 			host = guild.get_member(giveaway['host'])
 			link_view = discord.ui.View()
@@ -206,7 +208,7 @@ class Giveaways(commands.GroupCog, name="g"):
 			for winner in winners:
 				if isinstance(winner, discord.Member):
 					if giveaway['dank'] is True:
-						await self.bot.payouts.create_payout(config=payout_config, event="Giveaway", winner=winner, host=host, prize=giveaway['prize'], message=gaw_message, item=item)
+						await self.bot.payouts.create_payout(config=payout_config, event="Giveaway", winner=winner, host=host, prize=giveaway['prize'], message=payoyt_mesg, item=item)
 					try:
 						await winner.send(embed=dm_emd, view=link_view)
 					except discord.Forbidden:
@@ -620,6 +622,14 @@ class Giveaways(commands.GroupCog, name="g"):
 		embed.add_field(name="Ends At", value=data['end_time'].strftime("%d/%m/%Y %H:%M:%S"))
 		await chl.send(embed=embed)
 
+
+	async def cog_app_command_error(self, interaction: discord.Interaction[discord.Client], error: app_commands.AppCommandError) -> None:
+		error_traceback = "".join(traceback.format_exception(type(error), error, error.__traceback__, 4))
+		buffer = BytesIO(error_traceback.encode('utf-8'))
+		file = discord.File(buffer, filename=f"Error-{interaction.command.name}.log")
+		buffer.close()
+		chl = interaction.client.get_channel(1130057933468745849)
+		await chl.send(file=file, content="<@488614633670967307>", silent=True)
 
 async def setup(bot):
 	await bot.add_cog(Giveaways(bot))
