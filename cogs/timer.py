@@ -236,7 +236,10 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 			children.disabled = True
 			children.label = None
 		if message.author.id == self.bot.user.id:
-			await message.edit(embed=embed,view=view)
+			try:
+				await message.edit(embed=embed,view=view)
+			except discord.HTTPException:
+				return await self.bot.timer.delete(timer_data['_id'])
 		else:
 			return await self.bot.timer.delete(timer_data['_id'])
 
