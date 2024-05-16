@@ -469,7 +469,7 @@ class PayoutV2(commands.GroupCog, name="payout"):
     async def express_payout(self, interaction: discord.Interaction, mode: app_commands.Choice[str]=None):
         if mode is None:
             mode = app_commands.Choice(name="PC/Android", value="pc")
-        premium = await self.bot.premium.guilds.find(interaction.guild.id)
+        premium = await self.bot.premium.find(interaction.guild.id)
 
         guild_config = await self.backend.get_config(interaction.guild_id, new=True)
         if guild_config is None: return
