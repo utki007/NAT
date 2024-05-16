@@ -232,6 +232,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
     @grinder_reminder.error
     async def grinder_reminder_error(self, error):
         channel = self.bot.get_channel(999555462674522202)
+        await channel.send(f"<@488614633670967307> <@301657045248114690> , Error in grinder reminders: {error}")
         full_stack_trace = ''.join(traceback.format_exception(type(error), error, error.__traceback__))
         await channel.send(f"<@488614633670967307> <@301657045248114690> , Error in grinder reminder: {full_stack_trace}")
 
@@ -323,6 +324,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
     @grinder_demotions.error
     async def grinder_demotions_error(self, error):
         channel = self.bot.get_channel(999555462674522202)
+        await channel.send(f"<@488614633670967307> <@301657045248114690> , Error in grinder demotions: {error}")
         full_Stack_trace = ''.join(traceback.format_exception(type(error), error, error.__traceback__))
         await channel.send(f"<@488614633670967307> <@301657045248114690> , Error in grinder demotions: {full_Stack_trace}")
 
@@ -352,6 +354,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         date = datetime.date.today()
         today = datetime.datetime(date.year, date.month, date.day)
         reminder_dm = False
+        active_grinder = False
         if not grinder_profile:
 
             record = await interaction.client.grinderUsers.find({"reminder_time": {"$exists":"true"}, "user": interaction.user.id})
@@ -384,9 +387,11 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             reminder_embed.set_thumbnail(url='https://cdn.discordapp.com/emojis/841624339169935390.gif?size=128&quality=lossless')
             await interaction.client.grinderUsers.insert(grinder_profile)
 
+        
         elif grinder_profile['profile'] == profile['name'] and grinder_profile['profile_role'] == profile['role'] and grinder_profile['payment']['amount_per_grind'] == profile['payment']:
             if grinder_profile['active']:
-                return await interaction.edit_original_response(embed= await get_error_embed(f"{user.mention} is already appointed as {profile['name'].title()}"))
+                active_grinder = True
+                await interaction.edit_original_response(embed= await get_error_embed(f"{user.mention} is already appointed as {profile['name'].title()}"))
             else:
                 grinder_profile['active'] = True
                 grinder_profile['payment']['first_payment'] = datetime.datetime(date.year, date.month, date.day)
@@ -457,12 +462,13 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                         pass
                 return
         
-        grinder_profile['profile'] = profile['name']
-        grinder_profile['profile_role'] = profile['role']
-        grinder_profile['active'] = True
-        grinder_profile['payment']['first_payment'] = datetime.datetime(date.year, date.month, date.day)
-        grinder_profile['payment']['next_payment'] = datetime.datetime(date.year, date.month, date.day)
-        await interaction.client.grinderUsers.upsert(grinder_profile)
+        if active_grinder == False:
+            grinder_profile['profile'] = profile['name']
+            grinder_profile['profile_role'] = profile['role']
+            grinder_profile['active'] = True
+            grinder_profile['payment']['first_payment'] = datetime.datetime(date.year, date.month, date.day)
+            grinder_profile['payment']['next_payment'] = datetime.datetime(date.year, date.month, date.day)
+            await interaction.client.grinderUsers.upsert(grinder_profile)
 
         embed = await get_invisible_embed(f"{user.mention} has been appointed as {profile['name'].title()}")
 
