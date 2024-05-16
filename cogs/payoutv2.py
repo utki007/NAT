@@ -463,13 +463,13 @@ class PayoutV2(commands.GroupCog, name="payout"):
     @app_commands.command(name="express", description="start doing payouts for the oldest payouts with the help of me")
     @app_commands.describe(mode="accessibility mode of the command")
     @app_commands.choices(mode=[
-        app_commands.Choice(name="PC/Android", value="pc"),
-        app_commands.Choice(name="iOS", value="ios"),
+        app_commands.Choice(name="PC", value="pc"),
+        app_commands.Choice(name="Android/iOS", value="ios"),
     ]) 
     async def express_payout(self, interaction: discord.Interaction, mode: app_commands.Choice[str]=None):
         if mode is None:
             mode = app_commands.Choice(name="PC/Android", value="pc")
-        premium = await self.bot.premium.find(interaction.guild.id)
+        premium = await self.bot.prem.guilds.find(interaction.guild.id)
 
         guild_config = await self.backend.get_config(interaction.guild_id, new=True)
         if guild_config is None: return
@@ -618,10 +618,12 @@ class PayoutV2(commands.GroupCog, name="payout"):
                                 await asyncio.sleep(0.5)
                                 break
                         case "exit":
-                            await interaction.followup.send("Exiting the express payout", ephemeral=True)
+                            await interaction.followup.send("Stopped the payout queue", ephemeral=True)
+                            guild_config['express'] = False
+                            await self.backend.update_config(guild_config)
                             await payout_message.delete()
                             await asyncio.sleep(0.5)
-                            break                            
+                            return         
 
                 view = discord.ui.View()
                 view.add_item(discord.ui.Button(label=f"Paid at", style=discord.ButtonStyle.url, url=payout_message.jump_url, emoji="<:tgk_link:1105189183523401828>"))
