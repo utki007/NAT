@@ -341,6 +341,8 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             return await interaction.response.send_message(embed= await get_error_embed("No profile found"), ephemeral=True)
         
         guild_config = await interaction.client.grinderSettings.find(interaction.guild.id)
+        if not guild_config:
+            return await interaction.response.send_message(embed= await get_error_embed("Grinder system is not setup in this server"), ephemeral=True)
         await interaction.response.defer(ephemeral=False)
 
         try:
@@ -466,6 +468,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             grinder_profile['profile'] = profile['name']
             grinder_profile['profile_role'] = profile['role']
             grinder_profile['active'] = True
+            grinder_profile['payment']['amount_per_grind'] = profile['payment']
             grinder_profile['payment']['first_payment'] = datetime.datetime(date.year, date.month, date.day)
             grinder_profile['payment']['next_payment'] = datetime.datetime(date.year, date.month, date.day)
             await interaction.client.grinderUsers.upsert(grinder_profile)
