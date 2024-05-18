@@ -263,7 +263,7 @@ class Giveaways(commands.GroupCog, name="g"):
 					 message: app_commands.Range[str, 1, 250]=None,
 	):
 		if time < 60:
-			await interaction.response.send_message("Duration of the giveaway should be atleast 60 seconds!", ephemeral=True)
+			return await interaction.response.send_message("Duration of the giveaway should be atleast 60 seconds!", ephemeral=True)
 
 		await interaction.response.defer(thinking=True)
 		config = await self.backend.get_config(interaction.guild)
