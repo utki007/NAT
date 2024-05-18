@@ -139,7 +139,7 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 
 	@app_commands.command(name="unlock", description="Unlock channel 🗣️", extras={'example': '/unlock'})
 	@app_commands.describe(role = "Provide role", user = "Input user 👤", state = "False for deafult perm, True for override perms")
-	async def unlock(self, interaction:  discord.Interaction, state: bool = True, role: discord.Role = None, user: discord.User = None):
+	async def unlock(self, interaction:  discord.Interaction, state: bool = False, role: discord.Role = None, user: discord.User = None):
 		
 		if interaction.user.id == 685705841264820247:
 			await interaction.response.defer(ephemeral = True)
@@ -248,7 +248,7 @@ class channel(commands.GroupCog, name="channel", description="Helps you manage c
 	@app_commands.command(name="unviewlock", description="Unviewlock channel 🗣️", extras={'example': '/unviewlock'})
 	@app_commands.checks.has_permissions(ban_members=True)
 	@app_commands.describe(role = "Provide role", state = "Input state.")
-	async def unviewlock(self, interaction:  discord.Interaction, state: bool = True, role: discord.Role = None):
+	async def unviewlock(self, interaction:  discord.Interaction, state: bool = False, role: discord.Role = None):
 		
 		channel = interaction.channel        
 		if role == None:
