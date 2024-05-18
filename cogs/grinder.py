@@ -627,7 +627,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         await interaction.response.defer(ephemeral=False)
         if amount < 0:
             if amount_paid + grinder_profile['payment']['total'] < 0:
-                return await interaction.edit_original_response(embed= await get_error_embed(f"Can't deduct more than ⏣ {grinder_profile['payment']['total']}"), ephemeral=True)
+                return await interaction.edit_original_response(embed= await get_error_embed(f"Can't deduct more than ⏣ {grinder_profile['payment']['total']}"))
             else:
                 if extra_amount < 0:
                     grinder_profile['payment']['total'] += amount_paid - grinder_profile['payment']['amount_per_grind']
