@@ -134,6 +134,13 @@ class Giveaways(commands.GroupCog, name="g"):
 			await self.backend.giveaways.delete(giveaway)
 			if giveaway['_id'] in self.giveaway_in_prosses:
 				self.giveaway_in_prosses.remove(giveaway['_id'])
+				
+			host = guild.get_member(giveaway['host'])
+			view = discord.ui.View()
+			view.add_item(discord.ui.Button(label="Jump", style=discord.ButtonStyle.link, url=gaw_message.jump_url, emoji="<:tgk_link:1105189183523401828>"))
+			if host:
+				embed = discord.Embed(title="Giveaway Ended", description="Could not determine a winner!", color=discord.Color.red())
+				await host.send(embed=embed, view=view)
 			return
 		else:
 			entries: List[int] = []
@@ -213,7 +220,7 @@ class Giveaways(commands.GroupCog, name="g"):
 			
 			host = guild.get_member(giveaway['host'])
 			link_view = discord.ui.View()
-			link_view.add_item(discord.ui.Button(label="Jump", style=discord.ButtonStyle.link, url=gaw_message.jump_url, emoji="<:tgk_link:1105189183523401828>"))
+			link_view.add_item(discord.ui.Button(label="Jump", style=discord.ButtonStyle.link, url=payoyt_mesg.jump_url, emoji="<:tgk_link:1105189183523401828>"))
 			if host:
 				try:
 					await host.send(embed=host_dm, view=link_view)
