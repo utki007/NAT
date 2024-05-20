@@ -171,7 +171,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         guild: discord.Guild = interaction.guild
         config = await interaction.client.grinderSettings.find(guild.id)
         choices = [
-            discord.app_commands.Choice(name=value['name'], value=key)
+            discord.app_commands.Choice(name=f"{value['name']} - ⏣ {value['payment']:,}", value=key)
             for key, value in config['grinder_profiles'].items() if current.lower() in value['name'].lower()
         ]
         return choices[:24] if len(choices) > 0 else [app_commands.Choice(name="No profile found", value="None")]
