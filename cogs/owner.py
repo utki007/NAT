@@ -291,7 +291,7 @@ class owner(commands.Cog):
             users = [int(user['_id']) for user in data]
 
         
-        await interaction.edit_original_response(content="Will be sending messages to {len(users)} users.")
+        await interaction.edit_original_response(content=f"Will be sending messages to {len(users)} users.")
         sent_to = 0
         failured = 0
         for user in users:
