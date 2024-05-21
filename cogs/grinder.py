@@ -843,7 +843,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         embed.title = f"{interaction.guild.name}'s Grinder Summary"
         embed.add_field(name="Total:", value=f"{total_grinders} grinders", inline=True)
         embed.add_field(name="Active:", value=f"{len(upto_Date_grinders)} grinders", inline=True)
-        embed.add_field(name="Overdue:", value=f"{len(overdue_grinders)} grinders", inline=True)
+        embed.add_field(name="Inactive:", value=f"{len(overdue_grinders)} grinders", inline=True)
         embed.add_field(
             name = 'Weekly Stats:',
             value = f">>> **Expected Amount:** ⏣ {7*expected_amount:,}\n**Actual Amount:** ⏣ {7*total_amount:,}",

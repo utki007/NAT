@@ -723,7 +723,7 @@ class GrinderSummeris(discord.ui.View):
 	@discord.ui.button(label="Active Grinders", style=discord.ButtonStyle.gray, emoji="<:toggle_on:1123932825956134912>",row=1)
 	async def active_grinder(self, interaction: discord.Interaction, button: discord.ui.Button):
 		member_list = [
-			interaction.guild.get_member(int(member['user'])) for member in self.active_grinder
+			interaction.guild.get_member(int(member['user'])) for member in self.active_grinder if interaction.guild.get_member(int(member['user'])) is not None
 		]
 
 		if len(member_list) == 0:
@@ -750,7 +750,7 @@ class GrinderSummeris(discord.ui.View):
 	@discord.ui.button(label="Inactive Grinders", style=discord.ButtonStyle.gray, emoji="<:toggle_off:1123932890993020928>",row=1)
 	async def inactive_grinder(self, interaction: discord.Interaction, button: discord.ui.Button):
 		member_list = [
-			interaction.guild.get_member(int(member['user'])) for member in self.inactive_grinder
+			interaction.guild.get_member(int(member['user'])) for member in self.inactive_grinder if interaction.guild.get_member(int(member['user'])) is not None
 		]
 
 		if len(member_list) == 0:
