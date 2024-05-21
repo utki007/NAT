@@ -304,17 +304,14 @@ class GiveawayConfigView(View):
     async def _multipliers(self, interaction: discord.Interaction, button: discord.ui.Button):
         multi_view = View()
         multi_view.value = None
-        multi_view.select = Select_General(interaction, options=[SelectOption(label="Remove", value="0"),SelectOption(label="List", value="list"),SelectOption(label="1x", value="1"), SelectOption(label="2x", value="2"), SelectOption(label="3x", value="3"), SelectOption(label="4x", value="4"), SelectOption(label="5x", value="5"), SelectOption(label="6x", value="6"), SelectOption(label="7x", value="7"), SelectOption(label="8x", value="8"), SelectOption(label="9x", value="9"), SelectOption(label="10x", value="10")], placeholder="Select the multiplier you want to set",min_values=1, max_values=1)
+        multi_view.select = Select_General(interaction, options=[SelectOption(label="Remove", value="0"),SelectOption(label="1x", value="1"), SelectOption(label="2x", value="2"), SelectOption(label="3x", value="3"), SelectOption(label="4x", value="4"), SelectOption(label="5x", value="5"), SelectOption(label="6x", value="6"), SelectOption(label="7x", value="7"), SelectOption(label="8x", value="8"), SelectOption(label="9x", value="9"), SelectOption(label="10x", value="10")], placeholder="Select the multiplier you want to set",min_values=1, max_values=1)
         multi_view.add_item(multi_view.select)
-        await interaction.response.send_message(view=multi_view, ephemeral=True)
+        embed = discord.Embed(title="List of Multipliers", description=">>> ", color=0x2b2d31)
+        for key, value in self.data['multipliers'].items():
+            embed.description += f"1. <@&{key}> - {value}x\n"
+        await interaction.response.send_message(embed=embed, view=multi_view, ephemeral=True)
         await multi_view.wait()
         if not multi_view.value: return await interaction.delete_original_message()
-        
-        if multi_view.select.values[0] == "list":
-            embed = discord.Embed(title="Multipliers", description="", color=0x2b2d31)
-            for key, value in self.data['multipliers'].items():
-                embed.description += f"<@&{key}> - {value}x\n"
-            return await multi_view.select.interaction.response.edit_message(embed=embed, view=None)
         
         multiplier = int(multi_view.select.values[0])
 
@@ -332,7 +329,7 @@ class GiveawayConfigView(View):
                         del self.data['multipliers'][str(role.id)]
                     except KeyError:
                         pass
-            await roles_view.select.interaction.response.edit_message(content=f"Removed multiplier for {', '.join([f'<@&{role.id}>' for role in roles])}", view=None)
+            await roles_view.select.interaction.response.edit_message(content=f"Removed multiplier for {', '.join([f'<@&{role.id}>' for role in roles])}", embed=None,view=None)
         else:
             for role in roles:
                 self.data['multipliers'][str(role.id)] = multiplier

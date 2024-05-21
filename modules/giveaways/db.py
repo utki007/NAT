@@ -148,12 +148,32 @@ class Giveaways_Backend:
 
     async def get_config_embed(self, config: GiveawayConfig, guild: discord.Guild):
         embed = discord.Embed(color=0x2b2d31, description="")
-        embed_args = await get_formated_embed(["Manager Roles", "Log Channel", "Blacklisted Roles", "Global Bypass", "Multipliers"])
-        embed.description += f"<a:tgk_firstprize:1215646428085620756> `{guild.name} Giveaway Settings`\n\n"
-        embed.description += f"{await get_formated_field(guild, name=embed_args['Manager Roles'], type='role', data=config['manager_roles'])}\n"
-        embed.description += f"{await get_formated_field(guild, name=embed_args['Blacklisted Roles'], type='role', data=config['blacklist'])}\n"
-        embed.description += f"{await get_formated_field(guild, name=embed_args['Global Bypass'], type='role', data=config['global_bypass'])}\n"
-        embed.description += f"{await get_formated_field(guild, name=embed_args['Log Channel'], type='channel', data=config['log_channel'])}\n"
+        embed.title = "Giveaway Settings"
+        
+        manager_roles = [guild.get_role(role) for role in config['manager_roles'] if guild.get_role(role) is not None]
+        if len(manager_roles) == 0:
+            embed.add_field(name="Manager Roles", value="` - ` **Add managers when?**", inline=True)
+        else:
+            embed.add_field(name="Manager Roles", value=f">>> 1. " + f"\n1. ".join([role.mention for role in manager_roles]), inline=True)
+
+        blacklisted_roles = [guild.get_role(role) for role in config['blacklist'] if guild.get_role(role) is not None]
+        if len(blacklisted_roles) == 0:
+            embed.add_field(name="Blacklisted Roles", value="` - ` **Add blacklisted roles when?**", inline=True)
+        else:
+            embed.add_field(name="Blacklisted Roles", value=f">>> 1. " + f"\n1. ".join([role.mention for role in blacklisted_roles]), inline=True)
+
+        bypass_roles = [guild.get_role(role) for role in config['global_bypass'] if guild.get_role(role) is not None]
+        if len(bypass_roles) == 0:
+            embed.add_field(name="Global Bypass", value="` - ` **Add bypass roles when?**", inline=False)
+        else:
+            embed.add_field(name="Global Bypass", value=f">>> 1. " + f"\n1. ".join([role.mention for role in bypass_roles]), inline=False)
+
+        log_channel = guild.get_channel(config['log_channel'])
+        if log_channel is None:
+            embed.add_field(name="Log Channel", value="` - ` **Add log channel when?**", inline=False)
+        else:
+            embed.add_field(name="Log Channel", value=f"<:nat_reply:1146498277068517386> {log_channel.mention}", inline=False)
+        
         return embed
 
         
