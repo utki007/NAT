@@ -221,12 +221,6 @@ class PayoutV2(commands.GroupCog, name="payout"):
             ]
         else:
             return choices[:24]
-    
-    async def interaction_check(self, interaction: Interaction):
-        if len(interaction.guild.members) < 50:
-            await interaction.response.send_message("This command is not available for servers with less than 50 members", ephemeral=True)
-            return False
-        return True
 
     @commands.Cog.listener()
     async def on_ready(self):        
