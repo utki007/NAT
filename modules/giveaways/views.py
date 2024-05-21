@@ -1,3 +1,5 @@
+import traceback
+
 import discord
 from discord.ext import commands
 from discord import Interaction, SelectOption
@@ -11,6 +13,7 @@ from amari import User
 from utils.views.selects import Role_select, Channel_select, Select_General
 from utils.views.modal import General_Modal
 from utils.views.paginator import Paginator
+from utils.embeds import get_error_embed
 from .db import GiveawayConfig as GConfig
 from .db import Giveaways_Backend, GiveawayData
 
@@ -302,40 +305,15 @@ class GiveawayConfigView(View):
     
     @discord.ui.button(label="Multipliers", style=discord.ButtonStyle.gray, emoji="<:tgk_role:1073908306713780284>", custom_id="giveaway:Multipliers", row=2)
     async def _multipliers(self, interaction: discord.Interaction, button: discord.ui.Button):
-        multi_view = View()
-        multi_view.value = None
-        multi_view.select = Select_General(interaction, options=[SelectOption(label="Remove", value="0"),SelectOption(label="1x", value="1"), SelectOption(label="2x", value="2"), SelectOption(label="3x", value="3"), SelectOption(label="4x", value="4"), SelectOption(label="5x", value="5"), SelectOption(label="6x", value="6"), SelectOption(label="7x", value="7"), SelectOption(label="8x", value="8"), SelectOption(label="9x", value="9"), SelectOption(label="10x", value="10")], placeholder="Select the multiplier you want to set",min_values=1, max_values=1)
-        multi_view.add_item(multi_view.select)
-        embed = discord.Embed(title="List of Multipliers", description=">>> ", color=0x2b2d31)
-        for key, value in self.data['multipliers'].items():
-            embed.description += f"1. <@&{key}> - {value}x\n"
-        await interaction.response.send_message(embed=embed, view=multi_view, ephemeral=True)
-        await multi_view.wait()
-        if not multi_view.value: return await interaction.delete_original_message()
-        
-        multiplier = int(multi_view.select.values[0])
-
-        roles_view = View()
-        roles_view.value = None
-        roles_view.select = Role_select(placeholder="Select the role you want to set multiplier for", min_values=1, max_values=15)
-        roles_view.add_item(roles_view.select)
-        await multi_view.select.interaction.response.edit_message(view=roles_view)
-        await roles_view.wait()
-        if not roles_view.value: return await interaction.delete_original_message()
-        roles = roles_view.select.values
-        if multiplier == 0:
-            for role in roles:
-                    try:
-                        del self.data['multipliers'][str(role.id)]
-                    except KeyError:
-                        pass
-            await roles_view.select.interaction.response.edit_message(content=f"Removed multiplier for {', '.join([f'<@&{role.id}>' for role in roles])}", embed=None,view=None)
-        else:
-            for role in roles:
-                self.data['multipliers'][str(role.id)] = multiplier
-            await roles_view.select.interaction.response.edit_message(content=f"Set multiplier for {', '.join([f'<@&{role.id}>' for role in roles])} to {multiplier}x", view=None, delete_after=5)
-            await interaction.message.edit(embed=await self.update_embed(interaction, self.data))
-        await interaction.client.giveaway.update_config(interaction.guild, self.data)
+        embed = discord.Embed(title="List of Multipliers", description="", color=0x2b2d31)
+        mutils = sorted(self.data['multipliers'].items(), key=lambda x: x[1], reverse=True)
+        i = 1
+        for key, value in mutils:
+            embed.description += f"{i}. <@&{key}> - {value}x\n"
+            i += 1
+        view = GiveawayMultiplierView(config=self.data, user=interaction.user, og_inter=interaction)
+        await interaction.response.send_message(embed=embed, ephemeral=True, view=view)
+        view.message = await interaction.original_response()
 
     @discord.ui.button(label="Embeds", style=discord.ButtonStyle.gray, emoji="<:tgk_edit:1073902428224757850>", custom_id="giveaway:DmMessage", row=2)
     async def _dm_message(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -478,3 +456,102 @@ class Messages(View):
         await interaction.response.edit_message(embed=await self.refreshEmbed(interaction, self.config), view=self)
         await interaction.client.giveaway.update_config(interaction.guild, self.config)
         await interaction.followup.send(content=f"Reset the {self.current_message} message to default.", ephemeral=True)
+
+class GiveawayMultiplierView(View):
+    def __init__(self, config:GConfig, user: discord.Member, og_inter: Interaction, message: discord.Message=None):
+        self.config: GConfig = config
+        self.user = user
+        self.message = message
+        self.og_inter = og_inter
+        super().__init__(timeout=120)
+
+    async def interaction_check(self, interaction: discord.Interaction):
+        if interaction.user.id == self.user.id:
+            return True
+        else:
+            await interaction.response.send_message("You are not allowed to interact with this view.", ephemeral=True)
+            return False
+        
+    async def update_embed(self) -> discord.Embed:
+        embed = discord.Embed(title="", description="", color=0x2b2d31)
+        embed.title = "List of Multipliers"
+        embed.description = ""
+        mutils = sorted(self.config['multipliers'].items(), key=lambda x: x[1], reverse=True)
+        i = 1
+        for key, value in mutils:
+            embed.description += f"{i}. <@&{key}> - {value}x\n"
+            i += 1
+        return embed
+
+    async def on_error(self, interaction: Interaction, error: Exception, item: Item):
+        embed = await get_error_embed(traceback.format_exception(type(error), error, error.__traceback__))
+        try:
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+        except:
+            await interaction.followup.send(embed=embed, ephemeral=True)
+
+    @discord.ui.button(label="Add Multiplier", style=discord.ButtonStyle.gray, emoji="<:tgk_add:1073902485959352362>", custom_id="giveaway:AddMultiplier", row=1)
+    async def _add(self, interaction: Interaction, button: Button):
+        view = View()
+        view.value = None
+        view.select = Select_General(interaction=interaction, options=[SelectOption(label="1x", value="1"), SelectOption(label="2x", value="2"), SelectOption(label="3x", value="3"), SelectOption(label="4x", value="4"), SelectOption(label="5x", value="5"), SelectOption(label="6x", value="6"), SelectOption(label="7x", value="7"), SelectOption(label="8x", value="8"), SelectOption(label="9x", value="9"), SelectOption(label="10x", value="10")], placeholder="Select the multiplier you want to set",min_values=1, max_values=1)
+        view.add_item(view.select)
+
+        await interaction.response.send_message(view=view, ephemeral=True)
+        await view.wait()
+
+        if view.value is None or not view.select.values:
+            return await interaction.delete_original_response()
+        
+        role_view = View()
+        role_view.value = None
+        role_view.select = Role_select(placeholder="Select the role you want to set multiplier for", min_values=1, max_values=10)
+        role_view.add_item(role_view.select)
+
+        await view.select.interaction.response.edit_message(view=role_view)
+        await role_view.wait()
+
+        if role_view.value is None or role_view.select.values is False:
+            return await interaction.delete_original_response()
+
+        multiplier = int(view.select.values[0])
+        roles = role_view.select.values
+
+        added = ""
+        for role in roles:
+                self.config['multipliers'][str(role.id)] = multiplier
+                added.append(role.mention)
+        embed = discord.Embed(description="", color=0x2b2d31)
+
+        if added != []:
+            embed.description += f"Succesfully added multiplier for {','.join(added)}\n"        
+        await role_view.select.interaction.response.edit_message(embed=embed, view=None)
+        await interaction.client.giveaway.update_config(interaction.guild, self.config)
+        await self.og_inter.edit_original_response(embed=await self.update_embed())
+
+    @discord.ui.button(label="Remove Multiplier", style=discord.ButtonStyle.gray, emoji="<:tgk_delete:1113517803203461222>", custom_id="giveaway:RemoveMultiplier", row=1)
+    async def _remove(self, interaction: Interaction, button: Button):
+        view = View()
+        view.value = None
+        options = []
+        for key, value in self.config['multipliers'].items():
+            role = interaction.guild.get_role(int(key))
+            options.append(SelectOption(label=f"{role.name}", value=str(role.id), description=f"Mutiplier: {value}x"))
+        view.select = Select_General(interaction=interaction, options=options, placeholder="Select the role you want to remove multiplier for",min_values=1, max_values=10)
+        view.add_item(view.select)
+        await interaction.response.send_message(view=view, ephemeral=True)
+
+        await view.wait()
+        if view.value is None or not view.select.values:
+            return await interaction.delete_original_response()
+        
+        for role in view.select.values:
+            try:
+                del self.config['multipliers'][str(role)]
+            except KeyError:
+                pass
+
+        embed = discord.Embed(description=f"Succesfully removed multiplier for {','.join([f'<@&{role}>' for role in view.select.values])}", color=0x2b2d31)
+        await view.select.interaction.response.edit_message(embed=embed, view=None)
+        await interaction.client.giveaway.update_config(interaction.guild, self.config)
+        await self.og_inter.edit_original_response(embed=await self.update_embed())
