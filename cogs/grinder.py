@@ -98,6 +98,12 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                             role_changed = True
                         except:
                             pass
+                    profile_role = message.guild.get_role(grinder_profile['profile_role'])
+                    if profile_role is not None and profile_role not in user.roles:
+                        try:
+                            await user.add_roles(profile_role)
+                        except:
+                            pass
 
         embed = await get_invisible_embed(f"⏣ {amount:,} has been added to {donor.mention}")
         embed.title = f"{donor.display_name}'s Grinder Payment"
