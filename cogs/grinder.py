@@ -256,25 +256,34 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             log_channel = guild.get_channel(guild_config['grinder_logs'])
             demote_days = int(guild_config['grinder']['demotion_in']/(3600*24))
             grinder_users = await self.bot.grinderUsers.get_all({"guild": guild.id})
+            trial_role = guild.get_role(guild_config['trial']['role'])
+            grinder_role = guild.get_role(guild_config['grinder']['role'])
+
             for grinder_user in grinder_users:
+                profile_role = guild.get_role(grinder_user['profile_role'])
+                user = guild.get_member(grinder_user['user'])
+                if not user:
+                    continue
                 if not grinder_user['active']:
+                    roles_to_remove = [trial_role, profile_role, grinder_role]
+                    roles_to_remove = [role for role in user.roles if role in roles_to_remove]
+                    try:
+                        await user.remove_roles(*roles_to_remove)
+                    except:
+                        pass
                     continue
                 if today > grinder_user['payment']['next_payment']:
-                    user = guild.get_member(grinder_user['user'])
-                    if not user:
-                        continue
                     days = (today - grinder_user['payment']['next_payment']).days
                     if days <= demote_days:
                         continue
                     embed = await get_invisible_embed(f"You have been dismissed from grinders. Thanks for your support!")
                     view = None
-                    trial_role = guild.get_role(guild_config['trial']['role'])
-                    grinder_role = guild.get_role(guild_config['grinder']['role'])
-                    profile_role = guild.get_role(grinder_user['profile_role'])
+
                     if days > demote_days*2:
                         grinder_user['active'] = False
                         await self.bot.grinderUsers.upsert(grinder_user)
                         roles_to_remove = [trial_role, profile_role, grinder_role]
+                        roles_to_remove = [role for role in user.roles if role in roles_to_remove]
                         try:
                             await user.remove_roles(*roles_to_remove)
                         except:
@@ -283,11 +292,13 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                         embed.description = guild_config['dismiss_embed']['description']
                     elif days > demote_days:
                         roles_to_remove = [grinder_role]
+                        roles_to_remove = [role for role in user.roles if role in roles_to_remove]
                         try:
                             await user.remove_roles(*roles_to_remove)
                         except:
                             pass
                         roles_to_add = [trial_role]
+                        roles_to_add = [role for role in roles_to_add if role not in user.roles]
                         try:
                             await user.add_roles(*roles_to_add)
                         except:
