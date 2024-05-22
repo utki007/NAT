@@ -262,11 +262,13 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                         continue
                     embed = await get_invisible_embed(f"You have been dismissed from grinders. Thanks for your support!")
                     view = None
+                    trial_role = guild.get_role(guild_config['trial']['role'])
+                    grinder_role = guild.get_role(guild_config['grinder']['role'])
+                    profile_role = guild.get_role(grinder_user['profile_role'])
                     if days > demote_days*2:
                         grinder_user['active'] = False
                         await self.bot.grinderUsers.upsert(grinder_user)
-                        roles_to_remove = [role.id for role in user.roles if role.id in [guild_config['grinder']['role'], guild_config['trial']['role'], grinder_user['profile_role']]]
-                        roles_to_remove = [guild.get_role(role) for role in roles_to_remove]
+                        roles_to_remove = [trial_role, profile_role, grinder_role]
                         try:
                             await user.remove_roles(*roles_to_remove)
                         except:
@@ -274,10 +276,14 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                         embed.title = f"Kicked from Grinders Team!"
                         embed.description = guild_config['dismiss_embed']['description']
                     elif days > demote_days:
-                        roles_to_remove = [role.id for role in user.roles if role.id in [guild_config['grinder']['role'], grinder_user['profile_role']]]
-                        roles_to_remove = [guild.get_role(role) for role in roles_to_remove]
+                        roles_to_remove = [grinder_role]
                         try:
                             await user.remove_roles(*roles_to_remove)
+                        except:
+                            pass
+                        roles_to_add = [trial_role]
+                        try:
+                            await user.add_roles(*roles_to_add)
                         except:
                             pass
                         embed.title = f"Demoted to Trial Grinder"
