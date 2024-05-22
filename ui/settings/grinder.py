@@ -293,13 +293,14 @@ class GrinderConfigPanel(discord.ui.View):
 		remove_roles = ""
 
 		for role in view.role_select.values:
-			if role not in data["manager_roles"]:
-				data["manager_roles"].append(role.id)
-				add_roles += f"{role.mention} "
-			else:
+			if role.id in data["manager_roles"]:
 				data["manager_roles"].remove(role.id)
 				remove_roles += f"{role.mention} "
-		await interaction.client.grinderSettings.upsert(data)
+			else:
+				data["manager_roles"].append(role.id)
+				add_roles += f"{role.mention} "
+
+		await interaction.client.grinderSettings.update(data)
 		await view.role_select.interaction.response.edit_message(content=f"Added Roles: {add_roles}\nRemoved Roles: {remove_roles}", view=None)
 		await view.role_select.interaction.delete_original_response()
 
