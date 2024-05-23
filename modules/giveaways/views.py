@@ -517,7 +517,7 @@ class GiveawayMultiplierView(View):
         multiplier = int(view.select.values[0])
         roles = role_view.select.values
 
-        added = ""
+        added = []
         for role in roles:
                 self.config['multipliers'][str(role.id)] = multiplier
                 added.append(role.mention)
@@ -536,6 +536,9 @@ class GiveawayMultiplierView(View):
         options = []
         for key, value in self.config['multipliers'].items():
             role = interaction.guild.get_role(int(key))
+            if not role: 
+                del self.config['multipliers'][key]
+                continue
             options.append(SelectOption(label=f"{role.name}", value=str(role.id), description=f"Mutiplier: {value}x"))
         view.select = Select_General(interaction=interaction, options=options, placeholder="Select the role you want to remove multiplier for",min_values=1, max_values=10)
         view.add_item(view.select)
