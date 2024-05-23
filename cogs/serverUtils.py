@@ -46,7 +46,7 @@ class serverUtils(commands.Cog):
 			content=f"Pong! **`{round(self.bot.latency * 1000)}ms`**"			
 		)
 
-	@commands.hybrid_command(name="calculate", description="Do math! 🧮", extras={'example': '/calculate query: 2m+40k'})
+	@commands.hybrid_command(name="calculate", description="Do math! 🧮", extras={'example': '/calculate query: 2m+40k'}, aliases = ['calc'])
 	@app_commands.guild_only()
 	@app_commands.checks.cooldown(1, 2, key=lambda i: (i.guild_id, i.user.id))
 	@app_commands.describe(query = "5 Mil -> 5e6 or 5m")
@@ -432,18 +432,6 @@ class Serversettings_Dropdown(discord.ui.Select):
 
 			case "Giveaways":
 
-				if interaction.guild.id not in [785839283847954433, 999551299286732871]:
-					self.view.stop()
-					nat_changelog_view = discord.ui.View()
-					nat_changelog_view.add_item(Serversettings_Dropdown(0))
-					embed = await get_invisible_embed(f"<:tgk_activeDevelopment:1088434070666612806> **|** This module is under development...")
-					await interaction.response.edit_message( 
-						embed=embed, 
-						view=nat_changelog_view
-					)
-					nat_changelog_view.message = await interaction.original_response()
-					return
-				
 				self.view.stop()
 				data = await interaction.client.giveaway.get_config(interaction.guild)
 				embed = await interaction.client.giveaway.get_config_embed(config=data, guild=interaction.guild)
