@@ -6,6 +6,7 @@ from discord import app_commands, Interaction
 from discord.ext import commands
 import humanfriendly
 import pytz
+from ui.settings.afkView import AFKView
 from ui.settings.grinder import GrinderConfigPanel
 from ui.settings.mafia import Mafia_Panel
 from ui.settings.payouts import Payouts_Panel
@@ -135,6 +136,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 			discord.SelectOption(label='Giveaways', description='Configure Giveaways', emoji='<:tgk_tada:1237994553932251199>'),
 			discord.SelectOption(label='Mafia Logs Setup', description='Log entire game', emoji='<:tgk_amongUs:1103542462628253726>'),
 			discord.SelectOption(label='Server Lockdown', description='Configure Lockdown Profiles', emoji='<:tgk_lock:1072851190213259375>'),
+			discord.SelectOption(label='AFK', description='Configure AFK', emoji='<:tgk_rocket:1238009442193375304>'),
 			discord.SelectOption(label="Private Voice", description='Create a private voice channel', emoji='<:tgk_voice:1156454028109168650>')
 		]
 		if default != -1:
@@ -513,6 +515,61 @@ class Serversettings_Dropdown(discord.ui.Select):
 				await interaction.message.edit(embed=embed, view=grinder_config_view)
 				grinder_config_view.message = await interaction.original_response()
 
+			case "AFK":
+				if interaction.guild.id not in [999551299286732871, 785839283847954433]:
+					self.view.stop()
+					nat_changelog_view = discord.ui.View()
+					nat_changelog_view.add_item(Serversettings_Dropdown(0))
+					embed = await get_invisible_embed(f"<:tgk_activeDevelopment:1088434070666612806> **|** This module is under development...")
+					await interaction.response.edit_message( 
+						embed=embed, 
+						view=nat_changelog_view
+					)
+					nat_changelog_view.message = await interaction.original_response()
+				else:
+
+					data = await interaction.client.afk_config.find(interaction.guild.id)
+					if not data:
+						data = {
+							'_id': interaction.guild.id,
+							'roles': [],
+							'enabled': False,
+						}
+						await interaction.client.afk_config.insert(data)
+					embed = discord.Embed(
+						color=3092790,
+						title="Configure AFK"
+					)
+					roles = data['roles']
+					roles = [interaction.guild.get_role(role) for role in roles if interaction.guild.get_role(role) is not None]
+					if len([role.id for role in roles]) != len(data['roles']):
+						data['roles'] = [role.id for role in roles]
+						await interaction.client.afk_config.upsert(data)
+					if len(roles) == 0:
+						roles = f"` - ` **Add roles when?**\n"
+						embed.add_field(name="Roles with AFK access:", value=f"> {roles}", inline=False)
+					else:
+						roles = [f'1. {role.mention}' for role in roles]
+						roles = "\n".join(roles)
+						embed.add_field(name="Roles with AFK access:", value=f">>> {roles}", inline=False)
+
+					self.view.stop()
+					afk_view = AFKView(interaction.user)
+					# Initialize the button
+					if data['enabled']:
+						afk_view.children[0].style = discord.ButtonStyle.green
+						afk_view.children[0].label = 'Module Enabled'
+						afk_view.children[0].emoji = "<:toggle_on:1123932825956134912>"
+					else:
+						afk_view.children[0].style = discord.ButtonStyle.red
+						afk_view.children[0].label = 'Module Disabled'
+						afk_view.children[0].emoji = "<:toggle_off:1123932890993020928>"
+
+					afk_view.add_item(Serversettings_Dropdown(6))
+
+					await interaction.response.edit_message(embed=embed, view=afk_view)
+					afk_view.message = await interaction.original_response()
+				
 			case "Private Voice":
 				data = await interaction.client.vc_config.find(interaction.guild.id)
 				if not data:
@@ -534,7 +591,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 				embed.add_field(name="Join to create:", value=f"{channel}", inline=False)
 				self.view.stop()
 				voice_view = Voice_config(interaction.user , data)
-				voice_view.add_item(Serversettings_Dropdown(6))
+				voice_view.add_item(Serversettings_Dropdown(7))
 
 				await interaction.response.edit_message(embed=embed, view=voice_view)
 				voice_view.message = await interaction.original_response()
