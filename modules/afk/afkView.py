@@ -29,10 +29,19 @@ async def update_embed(interaction: Interaction, data: dict):
     return embed
 
 class AFKView(discord.ui.View):
-    def __init__(self, interaction: discord.Interaction):
+    def __init__(self, data: dict, member: discord.Member, message: discord.Message):
         super().__init__()
-        self.interaction = interaction
-        self.message = None 
+        self.member = member
+        self.message = message 
+        if data['enabled']:
+            self.children[0].style = discord.ButtonStyle.green
+            self.children[0].label = 'Module Enabled'
+            self.children[0].emoji = "<:toggle_on:1123932825956134912>"
+        else:
+            self.children[0].style = discord.ButtonStyle.red
+            self.children[0].label = 'Module Disabled'
+            self.children[0].emoji = "<:toggle_off:1123932890993020928>"
+
     
     @discord.ui.button(label='toggle_button_label' ,row=1)
     async def toggle(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -49,7 +58,7 @@ class AFKView(discord.ui.View):
             data['enabled'] = True
             await interaction.client.mafiaConfig.upsert(data)
             await update_embed(interaction, data)
-            button.style = discord.ButtonStyle.gray
+            button.style = discord.ButtonStyle.green
             button.label = 'Module Enabled'
             button.emoji = "<:toggle_on:1123932825956134912>"
             await interaction.response.edit_message(view=self)
@@ -84,14 +93,14 @@ class AFKView(discord.ui.View):
         await view.role_select.interaction.delete_original_response()
 
         embed = await update_embed(self.interaction, data)
-        await self.interaction.response.edit_message(embed=embed, view=self)
+        await self.message.edit(embed=embed, view=self)
 
     
-    # async def interaction_check(self, interaction: discord.Interaction):
-    #     if interaction.user.id != self.interaction.user.id:
-    #         warning = await get_invisible_embed(f"This is not for you")
-    #         return await interaction.response.send_message(embed=warning, ephemeral=True)	
-    #     return True
+    async def interaction_check(self, interaction: discord.Interaction):
+        if interaction.user.id != self.member.id:
+            warning = await get_invisible_embed(f"This is not for you")
+            return await interaction.response.send_message(embed=warning, ephemeral=True)	
+        return True
 
     async def on_timeout(self):
         for button in self.children:

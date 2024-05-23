@@ -6,7 +6,7 @@ from discord import app_commands, Interaction
 from discord.ext import commands
 import humanfriendly
 import pytz
-from ui.settings.afkView import AFKView
+from modules.afk.afkView import AFKView
 from ui.settings.grinder import GrinderConfigPanel
 from ui.settings.mafia import Mafia_Panel
 from ui.settings.payouts import Payouts_Panel
@@ -554,16 +554,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 						embed.add_field(name="Roles with AFK access:", value=f">>> {roles}", inline=False)
 
 					self.view.stop()
-					afk_view = AFKView(interaction.user)
-					# Initialize the button
-					if data['enabled']:
-						afk_view.children[0].style = discord.ButtonStyle.green
-						afk_view.children[0].label = 'Module Enabled'
-						afk_view.children[0].emoji = "<:toggle_on:1123932825956134912>"
-					else:
-						afk_view.children[0].style = discord.ButtonStyle.red
-						afk_view.children[0].label = 'Module Disabled'
-						afk_view.children[0].emoji = "<:toggle_off:1123932890993020928>"
+					afk_view = AFKView(data=data, user=interaction.user)
 
 					afk_view.add_item(Serversettings_Dropdown(6))
 
