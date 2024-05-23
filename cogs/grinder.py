@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+from itertools import islice
 import traceback
 from typing import Literal
 import discord
@@ -13,10 +14,15 @@ from utils.dank import get_donation_from_message
 from utils.embeds import get_error_embed, get_invisible_embed, get_warning_embed
 from utils.transformers import DMCConverter
 from ui.settings.grinder import GrinderSummeris
+from utils.views.paginator import Paginator
 
 utc = datetime.timezone.utc
 midnight = datetime.time(tzinfo=utc)
 times = [datetime.time(hour = hour,tzinfo=utc) for hour in range(24)]
+
+def chunk(it, size):
+	it = iter(it)
+	return iter(lambda: tuple(islice(it, size)), ())
 
 @app_commands.guild_only()
 class grinder(commands.GroupCog, name="grinder", description="Manage server grinders"):
@@ -564,7 +570,54 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                 await log_channel.send(embed=log_embed)
             except:
                 pass
+
+    @app_commands.command(name="bank", description="Check your grinder details")
+    @app_commands.describe(user="User to check grinder details")
+    async def bank(self, interaction: Interaction, user: discord.Member = None):
+        await interaction.response.defer(ephemeral=False)
+
+        if not user:
+            user = interaction.user
+
+        date = datetime.date.today()
+        today = datetime.datetime(date.year, date.month, date.day)
+
+        grinder_profile = await interaction.client.grinderUsers.find({"guild": interaction.guild.id, "user": user.id})
+        if not grinder_profile:
+            return await interaction.edit_original_response(embed= await get_error_embed(f"{user.mention} is not appointed as grinder"))
+        if not grinder_profile['active']:
+            return await interaction.edit_original_response(embed= await get_error_embed(f"{user.mention} is either demoted or on a break."))
+        embed = await get_invisible_embed(f"Fetching {user.display_name}'s Grinder Stats ...")
+        embed.description = None
+        embed.title = f"{user.display_name}'s Grinder Stats"
+        embed.add_field(name="Profile:", value=f"{grinder_profile['profile']}", inline=True)
+        embed.add_field(name="Next Payment:", value=f'<t:{int(grinder_profile["payment"]["next_payment"].timestamp())}:D>', inline=True)
+        embed.add_field(name="Grinder Since:", value=f'<t:{int(grinder_profile["payment"]["grinder_since"].timestamp())}:R>', inline=True)
         
+        if grinder_profile['payment']['extra'] > 0:
+            embed.add_field(name="Grinder Wallet:", value=f"⏣ {grinder_profile['payment']['extra']:,}", inline=True)
+        else:
+            embed.add_field(name="Amount per grind", value=f"⏣ {grinder_profile['payment']['amount_per_grind']:,}", inline=True)
+        # amount to clear dues
+        if grinder_profile['payment']['next_payment'] < today:
+            pending_days = (today - grinder_profile['payment']['next_payment']).days
+            amount = grinder_profile['payment']['amount_per_grind'] * pending_days - grinder_profile['payment']['extra']
+            embed.add_field(name="Pending Amount:", value=f"⏣ {amount:,}", inline=True)
+        embed.add_field(name="Grinder Bank:", value=f"⏣ {int(grinder_profile['payment']['total']):,}", inline=True)
+
+        try:
+            embed.set_thumbnail(url=user.avatar.url)
+        except:
+            embed.set_thumbnail(url=user.default_avatar.url)
+        
+        try:
+            embed.set_footer(text=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
+        except:
+            embed.set_footer(text=f"{interaction.guild.name}")
+        embed.timestamp = datetime.datetime.now()
+
+        return await interaction.edit_original_response(embed=embed)
+     
     @app_commands.command(name="dismiss", description="Remove Grinder")
     @app_commands.describe(user="User to dismiss")
     @app_commands.check(GrinderCheck)
@@ -632,6 +685,56 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                 await log_channel.send(embed=log_embed)
             except:
                 pass
+
+    # list all grinders stats based on active / inactive grinder
+    @app_commands.command(name="list", description="List all grinders")
+    @app_commands.check(GrinderCheck)
+    async def list(self, interaction: Interaction):
+               
+        # await interaction.response.defer(ephemeral=False)
+        guild_config = await interaction.client.grinderSettings.find(interaction.guild.id)
+        if not guild_config:
+            return await interaction.edit_original_response(embed= await get_error_embed("Grinder system is not setup in this server"))
+        
+        grinders = await interaction.client.grinderUsers.get_all({"guild": interaction.guild.id, "active": True})
+
+        grinders = sorted(grinders, key=lambda d: d['payment']['next_payment'])
+        grinders = [grinder for grinder in grinders if interaction.guild.get_member(grinder['user']) is not None]
+
+        title = f"Grinders List"
+
+        date = datetime.date.today()
+        today = datetime.datetime(date.year, date.month, date.day)
+
+        pages = []
+        ping_group = list(chunk(grinders,3))
+        member_count = 0
+        for grinders in ping_group:
+            embed = await get_invisible_embed(title)
+            embed.description = None
+            embed.title = title
+            for grinder in grinders:
+                member_count += 1
+                user = interaction.guild.get_member(grinder['user'])
+                embed.add_field(name=f"{member_count}. {user.display_name}", 
+                                value= f"<:nat_replycont:1146496789361479741>**User**: {user.mention}\n"
+                                        f"<:nat_replycont:1146496789361479741>**Profile:** {grinder['profile']}\n"
+                                        f"<:nat_replycont:1146496789361479741>**Grinder Since:** {(today-grinder['payment']['grinder_since']).days} days\n"
+                                        f"<:nat_replycont:1146496789361479741>**Next Payment:** <t:{int(grinder['payment']['next_payment'].timestamp())}:R>\n"
+                                        f"<:nat_reply:1146498277068517386>**Grinder Bank:** ⏣ {int(grinder['payment']['total']):,}", inline=False)
+            try:
+                embed.set_footer(text=f"Page {len(pages)+1}/{len(ping_group)}")
+            except:
+                pass
+            try:
+                embed.set_thumbnail(url=interaction.guild.icon.url)
+            except:
+                pass
+            pages.append(embed)
+
+        custom_button = [discord.ui.Button(label="<<", style=discord.ButtonStyle.gray),discord.ui.Button(label="<", style=discord.ButtonStyle.gray), discord.ui.Button(label="◼", style=discord.ButtonStyle.gray),discord.ui.Button(label=">", style=discord.ButtonStyle.gray),discord.ui.Button(label=">>", style=discord.ButtonStyle.gray)]
+
+        await Paginator(interaction, pages, custom_button).start(embeded=True, quick_navigation=False)
 
     @app_commands.command(name="log-donation", description="Log Grinder Payment")
     @app_commands.describe(user="Whose donation to log?", amount="Amount to log, negative for deduction")
@@ -797,93 +900,6 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         if role_changed:
             await interaction.followup.send(embed= await get_invisible_embed(f"{user.mention} has been promoted to {grinder_role.mention}"), ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
 
-    @app_commands.command(name="bank", description="Check your grinder details")
-    @app_commands.describe(user="User to check grinder details")
-    async def bank(self, interaction: Interaction, user: discord.Member = None):
-        await interaction.response.defer(ephemeral=False)
-
-        if not user:
-            user = interaction.user
-
-        date = datetime.date.today()
-        today = datetime.datetime(date.year, date.month, date.day)
-
-        grinder_profile = await interaction.client.grinderUsers.find({"guild": interaction.guild.id, "user": user.id})
-        if not grinder_profile:
-            return await interaction.edit_original_response(embed= await get_error_embed(f"{user.mention} is not appointed as grinder"))
-        if not grinder_profile['active']:
-            return await interaction.edit_original_response(embed= await get_error_embed(f"{user.mention} is either demoted or on a break."))
-        embed = await get_invisible_embed(f"Fetching {user.display_name}'s Grinder Stats ...")
-        embed.description = None
-        embed.title = f"{user.display_name}'s Grinder Stats"
-        embed.add_field(name="Profile:", value=f"{grinder_profile['profile']}", inline=True)
-        embed.add_field(name="Next Payment:", value=f'<t:{int(grinder_profile["payment"]["next_payment"].timestamp())}:D>', inline=True)
-        embed.add_field(name="Grinder Since:", value=f'<t:{int(grinder_profile["payment"]["grinder_since"].timestamp())}:R>', inline=True)
-        
-        if grinder_profile['payment']['extra'] > 0:
-            embed.add_field(name="Grinder Wallet:", value=f"⏣ {grinder_profile['payment']['extra']:,}", inline=True)
-        else:
-            embed.add_field(name="Amount per grind", value=f"⏣ {grinder_profile['payment']['amount_per_grind']:,}", inline=True)
-        # amount to clear dues
-        if grinder_profile['payment']['next_payment'] < today:
-            pending_days = (today - grinder_profile['payment']['next_payment']).days
-            amount = grinder_profile['payment']['amount_per_grind'] * pending_days - grinder_profile['payment']['extra']
-            embed.add_field(name="Pending Amount:", value=f"⏣ {amount:,}", inline=True)
-        embed.add_field(name="Grinder Bank:", value=f"⏣ {int(grinder_profile['payment']['total']):,}", inline=True)
-
-        try:
-            embed.set_thumbnail(url=user.avatar.url)
-        except:
-            embed.set_thumbnail(url=user.default_avatar.url)
-        
-        try:
-            embed.set_footer(text=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
-        except:
-            embed.set_footer(text=f"{interaction.guild.name}")
-        embed.timestamp = datetime.datetime.now()
-
-        return await interaction.edit_original_response(embed=embed)
-
-    # summary for grinders
-    @app_commands.command(name="summary", description="Check server based summary")
-    @app_commands.check(GrinderCheck)
-    async def summary(self, interaction: Interaction):
-        guild_config = await interaction.client.grinderSettings.find(interaction.guild.id)
-        await interaction.response.defer(ephemeral=False)
-
-        date = datetime.date.today()
-        today = datetime.datetime(date.year, date.month, date.day)
-
-        grinder_profiles = await interaction.client.grinderUsers.get_all({"guild": interaction.guild.id, "active": True})
-        upto_Date_grinders = [grinder for grinder in grinder_profiles if grinder['payment']['next_payment'] > today] # active grinders
-        overdue_grinders = [grinder for grinder in grinder_profiles if grinder['payment']['next_payment'] <= today] # unpaid grinders
-        total_grinders = len(grinder_profiles)
-
-        # dono by active grinders
-        expected_amount = sum([grinder['payment']['amount_per_grind'] for grinder in grinder_profiles])
-        total_amount = sum([grinder['payment']['amount_per_grind'] for grinder in upto_Date_grinders])
-
-        embed = await get_invisible_embed(f"Fetching {interaction.guild.name}'s Grinder Stats ...")
-        embed.description = None
-        embed.title = f"{interaction.guild.name}'s Grinder Summary"
-        embed.add_field(name="Total:", value=f"{total_grinders} grinders", inline=True)
-        embed.add_field(name="Active:", value=f"{len(upto_Date_grinders)} grinders", inline=True)
-        embed.add_field(name="Inactive:", value=f"{len(overdue_grinders)} grinders", inline=True)
-        embed.add_field(
-            name = 'Weekly Stats:',
-            value = f">>> **Expected Amount:** ⏣ {7*expected_amount:,}\n**Actual Amount:** ⏣ {7*total_amount:,}",
-            inline = False
-        )
-
-        embed.timestamp = datetime.datetime.now()
-        try:
-            embed.set_footer(text=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
-        except:
-            embed.set_footer(text=f"{interaction.guild.name}")
-        view = GrinderSummeris(interaction=interaction, active_grinder=upto_Date_grinders, inactive_grinder=overdue_grinders)
-        await interaction.edit_original_response(embed=embed, view=view)
-        view.message = await interaction.original_response()
-
     @app_commands.command(name="set", description="Edit Grinder Details")
     @app_commands.describe(user="User to edit grinder details", grinder_bank="Amount to set in grinder bank", grinder_since="Date when user started grinding. Date format: 5 May 2024", next_payment="Next payment date. Date format: 5 May 2024")
     @app_commands.check(GrinderCheck)
@@ -961,6 +977,45 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         except:
             embed.set_thumbnail(url=user.default_avatar.url)
         await interaction.edit_original_response(embed= embed)
+
+    @app_commands.command(name="summary", description="Check server based summary")
+    @app_commands.check(GrinderCheck)
+    async def summary(self, interaction: Interaction):
+        guild_config = await interaction.client.grinderSettings.find(interaction.guild.id)
+        await interaction.response.defer(ephemeral=False)
+
+        date = datetime.date.today()
+        today = datetime.datetime(date.year, date.month, date.day)
+
+        grinder_profiles = await interaction.client.grinderUsers.get_all({"guild": interaction.guild.id, "active": True})
+        upto_Date_grinders = [grinder for grinder in grinder_profiles if grinder['payment']['next_payment'] > today] # active grinders
+        overdue_grinders = [grinder for grinder in grinder_profiles if grinder['payment']['next_payment'] <= today] # unpaid grinders
+        total_grinders = len(grinder_profiles)
+
+        # dono by active grinders
+        expected_amount = sum([grinder['payment']['amount_per_grind'] for grinder in grinder_profiles])
+        total_amount = sum([grinder['payment']['amount_per_grind'] for grinder in upto_Date_grinders])
+
+        embed = await get_invisible_embed(f"Fetching {interaction.guild.name}'s Grinder Stats ...")
+        embed.description = None
+        embed.title = f"{interaction.guild.name}'s Grinder Summary"
+        embed.add_field(name="Total:", value=f"{total_grinders} grinders", inline=True)
+        embed.add_field(name="Active:", value=f"{len(upto_Date_grinders)} grinders", inline=True)
+        embed.add_field(name="Inactive:", value=f"{len(overdue_grinders)} grinders", inline=True)
+        embed.add_field(
+            name = 'Weekly Stats:',
+            value = f">>> **Expected Amount:** ⏣ {7*expected_amount:,}\n**Actual Amount:** ⏣ {7*total_amount:,}",
+            inline = False
+        )
+
+        embed.timestamp = datetime.datetime.now()
+        try:
+            embed.set_footer(text=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
+        except:
+            embed.set_footer(text=f"{interaction.guild.name}")
+        view = GrinderSummeris(interaction=interaction, active_grinder=upto_Date_grinders, inactive_grinder=overdue_grinders)
+        await interaction.edit_original_response(embed=embed, view=view)
+        view.message = await interaction.original_response()
 
 async def setup(bot):
     await bot.add_cog(
