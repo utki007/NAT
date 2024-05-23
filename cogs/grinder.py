@@ -6,6 +6,8 @@ import discord
 from discord import Interaction, app_commands
 from discord.ext import commands, tasks
 from humanfriendly import format_timespan
+import dateparser
+import pytz
 
 from utils.dank import get_donation_from_message
 from utils.embeds import get_error_embed, get_invisible_embed, get_warning_embed
@@ -827,7 +829,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             pending_days = (today - grinder_profile['payment']['next_payment']).days
             amount = grinder_profile['payment']['amount_per_grind'] * pending_days - grinder_profile['payment']['extra']
             embed.add_field(name="Pending Amount:", value=f"⏣ {amount:,}", inline=True)
-        embed.add_field(name="Grinder Bank:", value=f"⏣ {grinder_profile['payment']['total']:,}", inline=True)
+        embed.add_field(name="Grinder Bank:", value=f"⏣ {int(grinder_profile['payment']['total']):,}", inline=True)
 
         try:
             embed.set_thumbnail(url=user.avatar.url)
@@ -881,6 +883,114 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         view = GrinderSummeris(interaction=interaction, active_grinder=upto_Date_grinders, inactive_grinder=overdue_grinders)
         await interaction.edit_original_response(embed=embed, view=view)
         view.message = await interaction.original_response()
+
+
+    edit_grinder = app_commands.Group(name="set", description="Edit Grinder Details")
+
+    @edit_grinder.command(name="bank", description="Set Grinder Bank")
+    @app_commands.describe(user="User to set grinder bank", amount="Amount to edit")
+    @app_commands.check(GrinderCheck)
+    async def edit_bank(self, interaction: Interaction, user: discord.Member, amount: app_commands.Transform[int, DMCConverter]):
+        guild_config = await interaction.client.grinderSettings.find(interaction.guild.id)
+        grinder_profile = await interaction.client.grinderUsers.find({"guild": interaction.guild.id, "user": user.id})
+        if not grinder_profile:
+            return await interaction.response.send_message(embed= await get_error_embed(f"{user.mention} is not appointed as grinder"), ephemeral=True)
+        if not grinder_profile['active']:
+            return await interaction.response.send_message(embed= await get_error_embed(f"{user.mention} is either demoted or on a break!"), ephemeral=True)
+        
+        await interaction.response.defer(ephemeral=False)
+        
+        if amount < 0:
+            return await interaction.edit_original_response(embed= await get_error_embed("Grinder bank can't be negative."))
+        else:
+            old_amount = grinder_profile['payment']['total']
+            try:
+                grinder_profile['payment']['total'] = int(amount)
+                await interaction.client.grinderUsers.upsert(grinder_profile)
+                embed = await get_invisible_embed(f"{user.mention}'s bank has been updated from ⏣ {int(old_amount):,} to ⏣ {amount:,} by {interaction.user.mention}")
+                embed.title = f"Grinder Bank Updated!"
+                embed.timestamp = datetime.datetime.now()
+                embed.description = None
+                embed.add_field(name="Old Amount:", value=f"⏣ {int(old_amount):,}", inline=True)
+                embed.add_field(name="New Amount:", value=f"⏣ {amount:,}", inline=True)
+                embed.add_field(name="Updated By:", value=f"{interaction.user.mention}", inline=True)
+                try:
+                    embed.set_footer(text=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
+                except:
+                    embed.set_footer(text=f"{interaction.guild.name}")
+                try:
+                    log_channel = interaction.guild.get_channel(guild_config['grinder_logs'])
+                    if log_channel:
+                        await log_channel.send(embed=embed)
+                except:
+                    pass
+                try:
+                    await user.send(embed=embed)
+                except:
+                    pass
+                embed.remove_field(-1)
+                embed.add_field(name="Updated For:", value=f"{user.mention}", inline=True)
+                try:
+                    embed.set_thumbnail(url=user.avatar.url)
+                except:
+                    embed.set_thumbnail(url=user.default_avatar.url)
+                await interaction.edit_original_response(embed= embed)
+            except:
+                return await interaction.edit_original_response(embed= await get_error_embed("Unable to update grinder bank with ⏣ {amount:,}"))
+
+    @edit_grinder.command(name="grinder-since", description="Set Grinder Since")
+    @app_commands.describe(user="User to set grinder since", date="Date Format: 1 Jan 2021")
+    @app_commands.check(GrinderCheck)
+    async def edit_grinder_since(self, interaction: Interaction, user: discord.Member, date: str):
+
+        if not (t := dateparser.parse(date, settings={"PREFER_DATES_FROM": "past"})):
+            return await interaction.response.send_message(embed= await get_error_embed("Invalid date format"), ephemeral=True)
+        if not t.tzinfo:
+            t.replace(tzinfo=pytz.UTC)
+        await interaction.response.defer(ephemeral=False)
+        guild_config = await interaction.client.grinderSettings.find(interaction.guild.id)
+        grinder_profile = await interaction.client.grinderUsers.find({"guild": interaction.guild.id, "user": user.id})
+        date = datetime.date.today()
+        today = datetime.datetime(date.year, date.month, date.day)
+
+        if t > today:
+            return await interaction.edit_original_response(embed= await get_error_embed("Grinder since can't be in future!"))
+
+        if not grinder_profile:
+            return await interaction.edit_original_response(embed= await get_error_embed(f"{user.mention} is not appointed as grinder"))
+        if not grinder_profile['active']:
+            return await interaction.edit_original_response(embed= await get_error_embed(f"{user.mention} is either demoted or on a break!"))
+        Old_date = grinder_profile['payment']['grinder_since']
+        grinder_profile['payment']['grinder_since'] = t
+        await interaction.client.grinderUsers.upsert(grinder_profile)
+        embed = await get_invisible_embed(f"{user.mention}'s grinder since has been updated to {t.strftime('%d %B, %Y')} by {interaction.user.mention}")
+        embed.title = f"Grinder Since Updated!"
+        embed.timestamp = datetime.datetime.now()
+        embed.description = None
+        embed.add_field(name="Old Date:", value=f"{Old_date.strftime('%d %B, %Y')}", inline=True)
+        embed.add_field(name="New Date:", value=f"{t.strftime('%d %B, %Y')}", inline=True)
+        embed.add_field(name="Updated By:", value=f"{interaction.user.mention}", inline=True)
+        try:
+            embed.set_footer(text=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
+        except:
+            embed.set_footer(text=f"{interaction.guild.name}")
+        try:
+            log_channel = interaction.guild.get_channel(guild_config['grinder_logs'])
+            if log_channel:
+                await log_channel.send(embed=embed)
+        except:
+            pass
+        try:
+            await user.send(embed=embed)
+        except:
+            pass
+        embed.remove_field(-1)
+        embed.add_field(name="Updated For:", value=f"{user.mention}", inline=True)
+        try:
+            embed.set_thumbnail(url=user.avatar.url)
+        except:
+            embed.set_thumbnail(url=user.default_avatar.url)
+        await interaction.edit_original_response(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(
