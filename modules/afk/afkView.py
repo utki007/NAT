@@ -29,10 +29,10 @@ async def update_embed(interaction: Interaction, data: dict):
     return embed
 
 class AFKView(discord.ui.View):
-    def __init__(self, data: dict, member: discord.Member, message: discord.Message):
+    def __init__(self, data: dict, member: discord.Member):
         super().__init__()
         self.member = member
-        self.message = message 
+        self.message = None 
         if data['enabled']:
             self.children[0].style = discord.ButtonStyle.green
             self.children[0].label = 'Module Enabled'
@@ -62,6 +62,8 @@ class AFKView(discord.ui.View):
             button.label = 'Module Enabled'
             button.emoji = "<:toggle_on:1123932825956134912>"
             await interaction.response.edit_message(view=self)
+        
+        await interaction.client.afk_config.upsert(data)
     
     @discord.ui.button(label="Allowed Roles", style=discord.ButtonStyle.gray, emoji="<:tgk_role:1073908306713780284>",row=1)
     async def manager_roles(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -92,7 +94,7 @@ class AFKView(discord.ui.View):
         await view.role_select.interaction.response.edit_message(content=f"Added Roles: {add_roles}\nRemoved Roles: {remove_roles}", view=None)
         await view.role_select.interaction.delete_original_response()
 
-        embed = await update_embed(self.interaction, data)
+        embed = await update_embed(interaction, data)
         await self.message.edit(embed=embed, view=self)
 
     

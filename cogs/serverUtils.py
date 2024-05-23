@@ -554,7 +554,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 						embed.add_field(name="Roles with AFK access:", value=f">>> {roles}", inline=False)
 
 					self.view.stop()
-					afk_view = AFKView(data=data, user=interaction.user)
+					afk_view = AFKView(data=data, member=interaction.user)
 
 					afk_view.add_item(Serversettings_Dropdown(6))
 
