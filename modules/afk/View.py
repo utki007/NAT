@@ -48,7 +48,7 @@ class AFKView(discord.ui.View):
         data = await interaction.client.afk_config.find(interaction.guild.id)
         if data['enabled']:
             data['enabled'] = False
-            await interaction.client.mafiaConfig.upsert(data)
+            await interaction.client.afk_config.upsert(data)
             await update_embed(interaction, data)
             button.style = discord.ButtonStyle.red
             button.label = 'Module Disabled'
@@ -56,7 +56,7 @@ class AFKView(discord.ui.View):
             await interaction.response.edit_message(view=self)
         else:
             data['enabled'] = True
-            await interaction.client.mafiaConfig.upsert(data)
+            await interaction.client.afk_config.upsert(data)
             await update_embed(interaction, data)
             button.style = discord.ButtonStyle.green
             button.label = 'Module Enabled'
@@ -112,4 +112,51 @@ class AFKView(discord.ui.View):
             await self.message.edit(view=self)
         except:
             pass
+
+class AFKViewUser(discord.ui.View):
+    def __init__(self, member: discord.Member, data: dict, message: discord.Message=None):
+        self.member = member
+        self.data = data
+        self.message = message
+        super().__init__(timeout=120)
+        if self.data['summary']:
+            self.children[0].style = discord.ButtonStyle.green
+            self.children[0].label = 'Summary Enabled'
+            self.children[0].emoji = "<:toggle_on:1123932825956134912>"
+        else:
+            self.children[0].style = discord.ButtonStyle.red
+            self.children[0].label = 'Summary Disabled'
+            self.children[0].emoji = "<:toggle_off:1123932890993020928>"
+
+
+    async def interaction_check(self, interaction: discord.Interaction):
+        if interaction.user.id != self.member.id:
+            warning = await get_invisible_embed(f"This is not for you")
+            return await interaction.response.send_message(embed=warning, ephemeral=True)	
+        return True
+
+    async def update_embed(self, interaction: discord.Interaction):
+        embed = discord.Embed(
+					color=3092790,
+					title="AFK Settings",
+					description= 	f"- Summary for `{interaction.guild.name}` is currently {'Enabled' if self.data['summary'] else 'Disabled'}"
+        )
+        return embed
+
+    
+    @discord.ui.button(label="Enable Summary", style=discord.ButtonStyle.green, emoji="<:toggle_on:1123932825956134912>", row=1)
+    async def enable_summary(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.data['summary'] = True if not self.data['summary'] else False
+        await interaction.client.afk_users.update(self.data)
+        if self.data['summary']:
+            button.style = discord.ButtonStyle.green
+            button.label = 'Summary Enabled'
+            button.emoji = "<:toggle_on:1123932825956134912>"
+        else:
+            button.style = discord.ButtonStyle.red
+            button.label = 'Summary Disabled'
+            button.emoji = "<:toggle_off:1123932890993020928>"
+            
+        embed = await self.update_embed(interaction=interaction)
+        await interaction.response.edit_message(view=self, embed=embed)
 
