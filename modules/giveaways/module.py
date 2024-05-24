@@ -251,11 +251,12 @@ class Giveaways(commands.GroupCog, name="g"):
 		self.bot.add_view(Giveaway())
 
 	@app_commands.command(name="start", description="Start a giveaway")
-	@app_commands.describe(winners="Number of winners", prize="Prize of the giveaway", item="Item to giveaway", time="Duration of the giveaway",
+	@app_commands.describe(winners="Number of winners", prize="Prize/Quantity of the giveaway", time="Duration of the giveaway", item="Item to giveaway",
 		req_roles="Roles required to enter the giveaway", bypass_role="Roles that can bypass the giveaway", req_level="Level required to enter the giveaway",
 		req_weekly="Weekly XP required to enter the giveaway", donor="Donor of the giveaway", message="Message to accompany the giveaway", dank="Dank Memer Giveaway? (Set it to True for Auto Payout Queue)",
 		channel_message="Number of Messages required in specific channel to enter the giveaway")
 	@app_commands.autocomplete(item=item_autocomplete)
+	@app_commands.rename(channel_message="message_requriment", prize="quantity")
 	async def _start(self, interaction: discord.Interaction, prize: str,
 					 time: app_commands.Transform[int, TimeConverter],
 					 winners: app_commands.Range[int, 1, 20] = 1,
