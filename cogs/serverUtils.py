@@ -6,7 +6,7 @@ from discord import app_commands, Interaction
 from discord.ext import commands
 import humanfriendly
 import pytz
-from modules.afk.afkView import AFKView
+from modules.afk.View import AFKView, AFKViewUser
 from ui.settings.grinder import GrinderConfigPanel
 from ui.settings.mafia import Mafia_Panel
 from ui.settings.payouts import Payouts_Panel
@@ -608,6 +608,7 @@ class Usersettings_Dropdown(discord.ui.Select):
 			discord.SelectOption(label='Nat Changelogs', description='Get DMs for patch notes', emoji='<:tgk_entries:1124995375548338176>'),
 			discord.SelectOption(label='Timezone', description='Set your timezone', emoji='<:tgk_clock:1198684272446414928>'),
 			discord.SelectOption(label='Grinder Reminder', description='What time will you love to be reminded?', emoji='<:tgk_cc:1150394902585290854>'),
+			discord.SelectOption(label='AFK', description='Configure AFK', emoji='<:tgk_rocket:1238009442193375304>'),
 		]
 		if default != -1:
 			options[default].default = True
@@ -768,6 +769,32 @@ class Usersettings_Dropdown(discord.ui.Select):
 
 				await interaction.response.edit_message(embed=embed, view=grinder_reminder_view)
 				grinder_reminder_view.message = await interaction.original_response()
+
+			case "AFK":
+				data = await interaction.client.afk_users.find({'user_id': interaction.user.id, 'guild_id': interaction.guild.id})
+				if not data:
+					data = {
+						'user_id': interaction.user.id,
+						'guild_id': interaction.guild.id,
+						'reason': None,
+						'last_nick': None,
+						'pings': [],
+						'afk_at': None,
+						'ignored_channels': [],
+						'afk': False,
+						'summary': False
+					}
+					await interaction.client.afk_users.insert(data)
+				embed = discord.Embed(
+					color=3092790,
+					title="AFK Settings",
+					description= 	f"- Summary for `{interaction.guild.name}` is currently {'Enabled' if data['summary'] else 'Disabled'}"
+				)
+				self.view.stop()
+				afk_view = AFKViewUser(data=data, member=interaction.user)
+				afk_view.add_item(Usersettings_Dropdown(4))
+				await interaction.response.edit_message(embed=embed, view=afk_view)
+				afk_view.message = await interaction.original_response()
 
 			case _:
 				self.view.stop()
