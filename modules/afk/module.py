@@ -49,6 +49,9 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 	async def interaction_check(self, interaction: Interaction) -> bool:
 		if interaction.guild is None: return False
 		config = await self.config.find({"_id": interaction.guild.id})
+		if not config or not config['enabled']: 
+			await interaction.response.send_message("AFK commands are disabled/Not configured for this server", ephemeral=True)
+			return False
 		if config['enabled'] == False: return False
 		if interaction.user == interaction.guild.owner: return True
 		if interaction.user.id in self.bot.owner_ids: return True
