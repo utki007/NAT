@@ -70,6 +70,8 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         amount = donation_info.quantity
         donor = donation_info.donor
         donor = message.guild.get_member(int(donor.id))
+        if not donor:
+            return
 
         grinder_profile = await self.bot.grinderUsers.find({"guild": message.guild.id, "user": donor.id})
         if not grinder_profile:
