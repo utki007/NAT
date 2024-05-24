@@ -31,8 +31,11 @@ class AFKData(TypedDict):
 
 class AFKConfig(TypedDict):
 	_id: int
+	enabled: bool
 	allowed_roles: List[int]
 
+
+@app_commands.guild_only()
 class AFK(commands.GroupCog, name="afk", description="Away from Keyboard commands"):
 	def __init__(self, bot: commands.Bot):
 		self.bot = bot
@@ -40,11 +43,15 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 		self.config = Document(self.db, "config", AFKConfig)
 		self.afk = Document(self.db, "afk", AFKData)
 		self.bot.afk_config = self.config
+		self.bot.afk_users  = self.afk
 		self.afk_cache = {}
 
 	async def interaction_check(self, interaction: Interaction) -> bool:
 		if interaction.guild is None: return False
-		if interaction.user.guild_permissions.ban_members: return True
+		config = await self.config.find({"_id": interaction.guild.id})
+		if config['enabled'] == False: return False
+		if interaction.user == interaction.guild.owner: return True
+		if interaction.user.id in self.bot.owner_ids: return True
 		config = await self.config.find({"_id": interaction.guild.id})
 		user_roles = [role.id for role in interaction.user.roles]
 		if (set(user_roles) & set(config['allowed_roles'])): return True
@@ -90,7 +97,7 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 				"id": message.author.id,
 				"message": message.content,
 				"jump_url": message.jump_url,
-				"pinged_at": datetime.datetime.utcnow(),
+				"pinged_at": f"<t:{int(datetime.datetime.now().timestamp())}:R>",
 				"channel_id": message.channel.id,
 				"guild_id": message.guild.id
 			})
@@ -99,8 +106,6 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 				user_data['pings'].pop(0)
 		await self.afk.update(user_data)
 		try:
-			content = ""
-
 			await message.reply(content=f"`{user_data['last_nickname']}` is AFK {':'+ user_data['reason'] if user_data['reason'] else ''}", delete_after=10, allowed_mentions=discord.AllowedMentions.none(), mention_author=True)
 		except discord.HTTPException:
 			await message.channel.send(content=f"`{user_data['last_nickname']}` is AFK {':'+ user_data['reason'] if user_data['reason'] else ''}", delete_after=10, allowed_mentions=discord.AllowedMentions.none())
@@ -123,18 +128,17 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 		if len(user_data['pings']) != 0 and user_data['summary'] != False:
 			embeds = []
 			for index, msg in enumerate(user_data['pings']):
-				user = guild.get_member(user_data['id'])
-				if not user: user = await self.bot.fetch_user(msg['user_id'])
+				user = guild.get_member(msg['id'])
+				if not user: user = await self.bot.fetch_user(msg['id'])
 				content = msg['message']
 				jump_url = msg['jump_url']
-				pinged_at = msg['pinged_at'].strftime("%Y-%m-%d %H:%M:%S")
 				channel = guild.get_channel(msg['channel_id'])
 				channel_name = channel.name if channel else "Unknown Channel"
 				embed = discord.Embed(color=0x2b2d31)
 				embed.set_author(name = f'{user.display_name if user.display_name != None else user.display_name}', icon_url = user.avatar.url if user.avatar else user.default_avatar)
-				embed.description = f"<a:tgk_redSparkle:1072168821797965926> [`You were pinged in #{channel_name}.`]({jump_url}) {pinged_at}\n"
+				embed.description = f"<a:tgk_redSparkle:1072168821797965926> [`You were pinged in #{channel_name}.`]({jump_url}) {msg['pinged_at']}\n"
 				embed.description += f"<a:tgk_redSparkle:1072168821797965926> **Message:** {content}"
-				embed.set_footer(text = f"Pings you received while you were AFK • Pinged at")
+				embed.set_footer(text = f"Pings you received while you were AFK at {message.guild.name} • Pinged at", icon_url=guild.icon.url if guild.icon else None)
 				embeds.append(embed)
 
 			try:
@@ -191,7 +195,7 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 		self.afk_cache[interaction.guild.id][interaction.user.id] = user_data
 
 	@app_commands.command(name="unset", description="Unset your AFK status")
-	@app_commands.checks.has_permissions(manage_messages=True)
+	@app_commands.checks.has_permissions(administrator=True)
 	@app_commands.describe(user="User to unset AFK status")
 	async def unset_afk(self, interaction: Interaction, user: discord.Member):
 		user_data = await self.afk.find({"user_id": user.id, "guild_id": interaction.guild.id})
@@ -242,7 +246,7 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 		user_data['summary'] = True if not user_data['summary'] else False
 		await self.afk.update(user_data)
 
-		await interaction.response.send_message(f"Summary of pings received while you were AFK will now be {'enabled' if user_data['summary'] else 'disabled'}, it will take affect next time you go AFK", ephemeral=True)
+		await interaction.response.send_message(f"Summary are now {'enabled' if user_data['summary'] else 'disabled'}, this change will take effect next time you go AFK", ephemeral=True)
 
 	async def cog_app_command_error(self, interaction: discord.Interaction[discord.Client], error: app_commands.AppCommandError) -> None:
 		error_traceback = "".join(format_exception(type(error), error, error.__traceback__, 4))
