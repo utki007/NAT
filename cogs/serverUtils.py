@@ -788,8 +788,8 @@ class Usersettings_Dropdown(discord.ui.Select):
 				embed = discord.Embed(
 					color=3092790,
 					title="AFK Settings",
-					description= 	f"- Summary for `{interaction.guild.name}` is currently {'Enabled' if data['summary'] else 'Disabled'}"
 				)
+				embed.add_field(name="Get dm'ed for pings received while afk?", value=f"You will be dm'ed for pings in **{interaction.guild.name}**.")
 				self.view.stop()
 				afk_view = AFKViewUser(data=data, member=interaction.user)
 				afk_view.add_item(Usersettings_Dropdown(4))

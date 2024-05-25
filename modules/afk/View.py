@@ -121,12 +121,10 @@ class AFKViewUser(discord.ui.View):
         super().__init__(timeout=120)
         if self.data['summary']:
             self.children[0].style = discord.ButtonStyle.green
-            self.children[0].label = 'Summary Enabled'
-            self.children[0].emoji = "<:toggle_on:1123932825956134912>"
+            self.children[0].label = 'DM Enabled'
         else:
             self.children[0].style = discord.ButtonStyle.red
-            self.children[0].label = 'Summary Disabled'
-            self.children[0].emoji = "<:toggle_off:1123932890993020928>"
+            self.children[0].label = 'DM Disabled'
 
 
     async def interaction_check(self, interaction: discord.Interaction):
@@ -139,23 +137,24 @@ class AFKViewUser(discord.ui.View):
         embed = discord.Embed(
 					color=3092790,
 					title="AFK Settings",
-					description= 	f"- Summary for `{interaction.guild.name}` is currently {'Enabled' if self.data['summary'] else 'Disabled'}"
-        )
+				)
+        if self.data['summary']:
+            embed.add_field(name="Get dm'ed for pings received while afk?", value=f"You will be dm'ed for pings in **{interaction.guild.name}**.")
+        else:
+            embed.add_field(name="Get dm'ed for pings received while afk?", value=f"You will not be dm'ed for pings in **{interaction.guild.name}**.")
         return embed
 
     
-    @discord.ui.button(label="Enable Summary", style=discord.ButtonStyle.green, emoji="<:toggle_on:1123932825956134912>", row=1)
+    @discord.ui.button(label="DM Enable", style=discord.ButtonStyle.green, emoji="<:tgk_description:1215649279360897125>", row=1)
     async def enable_summary(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.data['summary'] = True if not self.data['summary'] else False
         await interaction.client.afk_users.update(self.data)
         if self.data['summary']:
             button.style = discord.ButtonStyle.green
-            button.label = 'Summary Enabled'
-            button.emoji = "<:toggle_on:1123932825956134912>"
+            button.label = 'DM Enable'
         else:
             button.style = discord.ButtonStyle.red
-            button.label = 'Summary Disabled'
-            button.emoji = "<:toggle_off:1123932890993020928>"
+            button.label = 'DM Disabled'
             
         embed = await self.update_embed(interaction=interaction)
         await interaction.response.edit_message(view=self, embed=embed)
