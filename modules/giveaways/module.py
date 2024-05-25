@@ -19,7 +19,7 @@ from utils.embeds import get_formated_embed, get_formated_field, get_error_embed
 from utils.views.paginator import Paginator
 
 @app_commands.guild_only()
-class Giveaways(commands.GroupCog, name="g"):
+class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaways"):
 	def __init__(self, bot):
 		self.bot = bot
 		self.backend = Giveaways_Backend(bot)
@@ -254,20 +254,21 @@ class Giveaways(commands.GroupCog, name="g"):
 	@app_commands.describe(winners="Number of winners", prize="Prize/Quantity of the giveaway", time="Duration of the giveaway", item="Item to giveaway",
 		req_roles="Roles required to enter the giveaway", bypass_role="Roles that can bypass the giveaway", req_level="Level required to enter the giveaway",
 		req_weekly="Weekly XP required to enter the giveaway", donor="Donor of the giveaway", message="Message to accompany the giveaway", dank="Dank Memer Giveaway? (Set it to True for Auto Payout Queue)",
-		channel_message="Number of Messages required in specific channel to enter the giveaway")
+		channel_message="Number of Messages required in specific channel (Format: [Channel] [number of messages])")
 	@app_commands.autocomplete(item=item_autocomplete)
-	@app_commands.rename(channel_message="message_requriment", prize="quantity")
-	async def _start(self, interaction: discord.Interaction, prize: str,
+	@app_commands.rename(channel_message="message_requirement", prize="quantity", req_roles="role(s)_requirement",req_level="level_requirement", req_weekly="weekly_xp_requirement", bypass_role="bypass_role(s)", message = "donor_message")
+	async def _start(self, interaction: discord.Interaction, 
+					 winners: app_commands.Range[int, 1, 20],
 					 time: app_commands.Transform[int, TimeConverter],
-					 winners: app_commands.Range[int, 1, 20] = 1,
-					 dank: bool=True,
+					 prize: str,
 					 item:str=None,
+					 dank: bool=True,
+					 donor: discord.Member=None,
 					 req_roles: app_commands.Transform[discord.Role, MutipleRole]=None, 
 					 bypass_role: app_commands.Transform[discord.Role, MutipleRole]=None, 
 					 req_level: app_commands.Range[int, 1, 100]=None,
 					 req_weekly: app_commands.Range[int, 1, 100]=None,
 					 channel_message: str=None,
-					 donor: discord.Member=None,
 					 message: app_commands.Range[str, 1, 250]=None,
 	):
 		if time < 60:
