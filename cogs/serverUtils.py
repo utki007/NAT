@@ -201,17 +201,19 @@ class Serversettings_Dropdown(discord.ui.Select):
 				embed.add_field(name="Logs Channel:", value=f"<:nat_reply:1146498277068517386> {channel}", inline=True)
 				embed.add_field(name="\u200b", value='\u200b', inline=True)
 
-				grinder_duration = data['grinder']['demotion_in']
+				duration = data['grinder']['demotion_in']
 				role = interaction.guild.get_role(data['grinder']['role'])
-				if grinder_duration == 0:
+				if duration == 0:
 					grinder_duration = f"**Demote in:** `None`"
+					kick = f"**Kicked in:** `None`"
 				else:
-					grinder_duration = f"**Demote in:** {format_timespan(grinder_duration)}"
+					grinder_duration = f"**Demote in:** {format_timespan(duration)}"
+					kick = f"**Kicked in:** {format_timespan(duration*2)}"
 				if role is None:
 					role = f"**Role:** `None`"
 				else:
 					role = f"**Role:** {role.mention}"
-				embed.add_field(name="Grinder Config:", value=f"<:nat_replycont:1146496789361479741> {role} \n <:nat_reply:1146498277068517386> {grinder_duration}", inline=True)
+				embed.add_field(name="Grinder Config:", value=f"<:nat_replycont:1146496789361479741> {role} \n <:nat_replycont:1146496789361479741> {grinder_duration} \n<:nat_reply:1146498277068517386> {kick} ", inline=True)
 				
 				trial_duration = data['trial']['duration']
 				trial_role = interaction.guild.get_role(data['trial']['role'])
