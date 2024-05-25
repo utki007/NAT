@@ -98,20 +98,21 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             if grinder_profile['payment']['next_payment'] > today and (grinder_profile['payment']['next_payment'] - grinder_profile['payment']['first_payment']).days >= int(guild_config['trial']['duration'])/(3600*24):
                 if trial_role in user.roles:
                     try:
-                        await user.remove_roles(trial_role)
+                        await user.remove_roles(trial_role, reason=f"Promoted to {grinder_profile['profile']}")
                     except:
                         pass
                     grinder_role = message.guild.get_role(guild_config['grinder']['role'])
+                    profile_role = message.guild.get_role(grinder_profile['profile_role'])
                     if grinder_role is not None and grinder_role not in user.roles:
                         try:
-                            await user.add_roles(grinder_role)
+                            await user.add_roles(grinder_role, reason=f"Promoted to {grinder_profile['profile']}")
                             role_changed = True
                         except:
                             pass
-                    profile_role = message.guild.get_role(grinder_profile['profile_role'])
                     if profile_role is not None and profile_role not in user.roles:
                         try:
-                            await user.add_roles(profile_role)
+                            await user.add_roles(profile_role, reason=f"Promoted to {grinder_profile['profile']}")
+                            role_changed = True
                         except:
                             pass
 
@@ -278,7 +279,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                     roles_to_remove = [trial_role, profile_role, grinder_role]
                     roles_to_remove = [role for role in user.roles if role in roles_to_remove]
                     try:
-                        await user.remove_roles(*roles_to_remove)
+                        await user.remove_roles(*roles_to_remove, reason="No longer active grinder")
                     except:
                         pass
                     continue
@@ -295,22 +296,22 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                         roles_to_remove = [trial_role, profile_role, grinder_role]
                         roles_to_remove = [role for role in user.roles if role in roles_to_remove]
                         try:
-                            await user.remove_roles(*roles_to_remove)
+                            await user.remove_roles(*roles_to_remove, reason="No longer active grinder")
                         except:
                             pass
                         embed.title = f"Kicked from Grinders Team!"
                         embed.description = guild_config['dismiss_embed']['description']
                     elif days > demote_days:
-                        roles_to_remove = [grinder_role]
+                        roles_to_remove = [grinder_role, profile_role]
                         roles_to_remove = [role for role in user.roles if role in roles_to_remove]
                         try:
-                            await user.remove_roles(*roles_to_remove)
+                            await user.remove_roles(*roles_to_remove, reason="Demoted to Trial Grinder")
                         except:
                             pass
                         roles_to_add = [trial_role]
                         roles_to_add = [role for role in roles_to_add if role not in user.roles]
                         try:
-                            await user.add_roles(*roles_to_add)
+                            await user.add_roles(*roles_to_add, reason="Demoted to Trial Grinder")
                         except:
                             pass
                         embed.title = f"Demoted to Trial Grinder"
@@ -439,16 +440,16 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                 if profile['role'] in removable_roles:
                     removable_roles.remove(profile['role'])
                 roles_to_remove = [role.id for role in user.roles if role.id in removable_roles]
-                roles_to_remove = [interaction.guild.get_role(role) for role in roles_to_remove]
+                roles_to_remove = [interaction.guild.get_role(role) for role in roles_to_remove if interaction.guild.get_role(role) is not None]
                 try:
                     await user.remove_roles(*roles_to_remove)
                 except:
                     embed = await get_error_embed(f"Unable to remove roles from {user.mention}.")
                     return await interaction.edit_original_response(embed=embed)
 
-                roles_to_add = [profile['role'] , guild_config['trial']['role']]
+                roles_to_add = [guild_config['trial']['role']]
                 roles_to_add = [role for role in roles_to_add if role not in [role.id for role in user.roles]]
-                roles_to_add = [interaction.guild.get_role(role) for role in roles_to_add]
+                roles_to_add = [interaction.guild.get_role(role) for role in roles_to_add if interaction.guild.get_role(role) is not None]
                 try:
                     await user.add_roles(*roles_to_add)
                 except:
@@ -513,17 +514,17 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         if profile['role'] in removable_roles:
             removable_roles.remove(profile['role'])
         roles_to_remove = [role.id for role in user.roles if role.id in removable_roles]
-        roles_to_remove = [interaction.guild.get_role(role) for role in roles_to_remove]
+        roles_to_remove = [interaction.guild.get_role(role) for role in roles_to_remove if interaction.guild.get_role(role) is not None]
         try:
             await user.remove_roles(*roles_to_remove)
         except:
             embed = await get_error_embed(f"Unable to remove roles from {user.mention}.")
             return await interaction.edit_original_response(embed=embed)
-        roles_to_add = [profile['role'] , guild_config['trial']['role']]
+        roles_to_add = [guild_config['trial']['role']]
         roles_to_add = [role for role in roles_to_add if role not in [role.id for role in user.roles]]
-        roles_to_add = [interaction.guild.get_role(role) for role in roles_to_add]
+        roles_to_add = [interaction.guild.get_role(role) for role in roles_to_add if interaction.guild.get_role(role) is not None]
         try:
-            await user.add_roles(*roles_to_add)
+            await user.add_roles(*roles_to_add, reason=f"Appointed as {profile['name']}")
         except:
             embed = await get_error_embed(f"Unable to assign roles to {user.mention}.")
             return await interaction.edit_original_response(embed=embed)
