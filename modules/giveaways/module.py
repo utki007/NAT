@@ -15,7 +15,7 @@ from .db import Giveaways_Backend, GiveawayConfig, GiveawayData, chunk
 from .views import Giveaway, GiveawayConfigView
 from utils.transformers import TimeConverter, MutipleRole
 from utils.convertor import DMCConverter
-from utils.embeds import get_formated_embed, get_formated_field
+from utils.embeds import get_formated_embed, get_formated_field, get_error_embed
 from utils.views.paginator import Paginator
 
 @app_commands.guild_only()
@@ -282,7 +282,8 @@ class Giveaways(commands.GroupCog, name="g"):
 		if dank == True:
 			prize = await DMCConverter().convert(interaction, prize)
 			if not isinstance(prize, int):
-				return await interaction.followup.send("Invalid Prize!")
+				embed = await get_error_embed("Failed to convert prize try again using the correct format\nDank Giveaway Format:\n* (without item) quantity: 1e3\n* (with item) item: select_from_autocomplete quantity: 1")
+				return await interaction.followup.send(embed=embed)
 		if item is not None:
 			if item not in self.bot.dank_items_cache.keys():
 				return await interaction.followup.send("Item you entered is not a valid item!")
