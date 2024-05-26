@@ -95,7 +95,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         if trial_role is not None and trial_role in user.roles:
             date = datetime.date.today()
             today = datetime.datetime(date.year, date.month, date.day)
-            if grinder_profile['payment']['next_payment'] > today and (grinder_profile['payment']['next_payment'] - grinder_profile['payment']['first_payment']).days >= int(guild_config['trial']['duration'])/(3600*24):
+            if grinder_profile['payment']['next_payment'] >= today and (grinder_profile['payment']['next_payment'] - grinder_profile['payment']['first_payment']).days >= int(guild_config['trial']['duration'])/(3600*24):
                 if trial_role in user.roles:
                     try:
                         await user.remove_roles(trial_role, reason=f"Promoted to {grinder_profile['profile']}")
@@ -290,7 +290,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                     embed = await get_invisible_embed(f"You have been dismissed from grinders. Thanks for your support!")
                     view = None
 
-                    if days > demote_days*2:
+                    if days >= demote_days*2:
                         grinder_user['active'] = False
                         await self.bot.grinderUsers.upsert(grinder_user)
                         roles_to_remove = [trial_role, profile_role, grinder_role]
@@ -301,7 +301,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                             pass
                         embed.title = f"Kicked from Grinders Team!"
                         embed.description = guild_config['dismiss_embed']['description']
-                    elif days > demote_days:
+                    elif days >= demote_days:
                         roles_to_remove = [grinder_role, profile_role]
                         roles_to_remove = [role for role in user.roles if role in roles_to_remove]
                         try:
