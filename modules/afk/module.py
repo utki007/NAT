@@ -34,7 +34,7 @@ class AFKData(TypedDict):
 class AFKConfig(TypedDict):
 	_id: int
 	enabled: bool
-	allowed_roles: List[int]
+	roles: List[int]
 
 
 @app_commands.guild_only()
@@ -64,9 +64,9 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 			await interaction.response.send_message(embed=embed, ephemeral=True)
 			return False
 		if interaction.user == interaction.guild.owner: return True
-		if interaction.user.id in self.bot.owner_ids: return True
+		# if interaction.user.id in self.bot.owner_ids: return True
 		user_roles = [role.id for role in interaction.user.roles]
-		if (set(user_roles) & set(config['allowed_roles'])): 
+		if (set(user_roles) & set(config['roles'])): 
 			return True
 		else: 
 			embed = await get_warning_embed("You don't have permission to use this command")
