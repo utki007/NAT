@@ -518,49 +518,38 @@ class Serversettings_Dropdown(discord.ui.Select):
 				grinder_config_view.message = await interaction.original_response()
 
 			case "AFK":
-				if interaction.guild.id not in [999551299286732871, 785839283847954433]:
-					self.view.stop()
-					nat_changelog_view = discord.ui.View()
-					nat_changelog_view.add_item(Serversettings_Dropdown(0))
-					embed = await get_invisible_embed(f"<:tgk_activeDevelopment:1088434070666612806> **|** This module is under development...")
-					await interaction.response.edit_message( 
-						embed=embed, 
-						view=nat_changelog_view
-					)
-					nat_changelog_view.message = await interaction.original_response()
+				data = await interaction.client.afk_config.find(interaction.guild.id)
+				if not data:
+					data = {
+						'_id': interaction.guild.id,
+						'roles': [],
+						'enabled': False,
+					}
+					await interaction.client.afk_config.insert(data)
+				embed = discord.Embed(
+					color=3092790,
+					title="Configure AFK"
+				)
+				roles = data['roles']
+				roles = [interaction.guild.get_role(role) for role in roles if interaction.guild.get_role(role) is not None]
+				if len([role.id for role in roles]) != len(data['roles']):
+					data['roles'] = [role.id for role in roles]
+					await interaction.client.afk_config.upsert(data)
+				if len(roles) == 0:
+					roles = f"` - ` **Add roles when?**\n"
+					embed.add_field(name="Roles with AFK access:", value=f"> {roles}", inline=False)
 				else:
-					data = await interaction.client.afk_config.find(interaction.guild.id)
-					if not data:
-						data = {
-							'_id': interaction.guild.id,
-							'roles': [],
-							'enabled': False,
-						}
-						await interaction.client.afk_config.insert(data)
-					embed = discord.Embed(
-						color=3092790,
-						title="Configure AFK"
-					)
-					roles = data['roles']
-					roles = [interaction.guild.get_role(role) for role in roles if interaction.guild.get_role(role) is not None]
-					if len([role.id for role in roles]) != len(data['roles']):
-						data['roles'] = [role.id for role in roles]
-						await interaction.client.afk_config.upsert(data)
-					if len(roles) == 0:
-						roles = f"` - ` **Add roles when?**\n"
-						embed.add_field(name="Roles with AFK access:", value=f"> {roles}", inline=False)
-					else:
-						roles = [f'1. {role.mention}' for role in roles]
-						roles = "\n".join(roles)
-						embed.add_field(name="Roles with AFK access:", value=f">>> {roles}", inline=False)
+					roles = [f'1. {role.mention}' for role in roles]
+					roles = "\n".join(roles)
+					embed.add_field(name="Roles with AFK access:", value=f">>> {roles}", inline=False)
 
-					self.view.stop()
-					afk_view = AFKView(data=data, member=interaction.user)
+				self.view.stop()
+				afk_view = AFKView(data=data, member=interaction.user)
 
-					afk_view.add_item(Serversettings_Dropdown(6))
+				afk_view.add_item(Serversettings_Dropdown(6))
 
-					await interaction.response.edit_message(embed=embed, view=afk_view)
-					afk_view.message = await interaction.original_response()
+				await interaction.response.edit_message(embed=embed, view=afk_view)
+				afk_view.message = await interaction.original_response()
 				
 			case "Private Voice":
 				data = await interaction.client.vc_config.find(interaction.guild.id)

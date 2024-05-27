@@ -9,6 +9,8 @@ from typing import TypedDict, List
 from traceback import format_exception
 from io import BytesIO
 
+from utils.embeds import get_error_embed, get_invisible_embed, get_warning_embed
+
 class PingData(TypedDict):
 	id: int
 	message: str
@@ -49,16 +51,27 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 	async def interaction_check(self, interaction: Interaction) -> bool:
 		if interaction.guild is None: return False
 		config = await self.config.find({"_id": interaction.guild.id})
-		if not config or not config['enabled']: 
-			await interaction.response.send_message("AFK commands are disabled/Not configured for this server", ephemeral=True)
+		if not config:
+			embed = await get_error_embed("AFK commands are not configured for this server")
+			embed.title = "AFK Setup Issue"
+			embed.description = "AFK commands are not configured for this server, please ask an admin+ to configure it"
+			return await interaction.response.send_message(embed=embed, ephemeral=True)
+			
+		if config['enabled'] == False: 
+			embed = await get_warning_embed("AFK commands are disabled for this server")
+			embed.title = "AFK Disabled"
+			embed.description = "AFK commands are disabled for this server, please ask an admin+ to enable it"
+			await interaction.response.send_message(embed=embed, ephemeral=True)
 			return False
-		if config['enabled'] == False: return False
 		if interaction.user == interaction.guild.owner: return True
 		if interaction.user.id in self.bot.owner_ids: return True
-		config = await self.config.find({"_id": interaction.guild.id})
 		user_roles = [role.id for role in interaction.user.roles]
-		if (set(user_roles) & set(config['allowed_roles'])): return True
-		else: await interaction.response.send_message("You don't have permission to use this command", ephemeral=True); return False
+		if (set(user_roles) & set(config['allowed_roles'])): 
+			return True
+		else: 
+			embed = await get_warning_embed("You don't have permission to use this command")
+			await interaction.response.send_message(embed=embed, ephemeral=True)
+			return False
 
 	@commands.Cog.listener()
 	async def on_ready(self):
@@ -139,15 +152,17 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 				channel_name = channel.name if channel else "Unknown Channel"
 				embed = discord.Embed(color=0x2b2d31)
 				embed.set_author(name = f'{user.display_name if user.display_name != None else user.display_name}', icon_url = user.avatar.url if user.avatar else user.default_avatar)
-				embed.description = f"<a:tgk_redSparkle:1072168821797965926> [`You were pinged in #{channel_name}.`]({jump_url}) {msg['pinged_at']}\n"
+				embed.description = f"<a:tgk_redSparkle:1072168821797965926> [`You were pinged in #{channel_name}.`]({jump_url})\n"
+				embed.description += f"<a:tgk_redSparkle:1072168821797965926> **Pinged at:** <t:{int(msg['pinged_at'].timestamp())}> (<t:{int(msg['pinged_at'].timestamp())}:R>) \n"
 				embed.description += f"<a:tgk_redSparkle:1072168821797965926> **Message:** {content}"
-				embed.set_footer(text = f"Pings you received while you were AFK at {message.guild.name} • Pinged at", icon_url=guild.icon.url if guild.icon else None)
+				embed.set_footer(text = f"Pings you received while you were AFK at {message.guild.name}", icon_url=guild.icon.url if guild.icon else None)
 				embeds.append(embed)
 
 			try:
 				await message.author.send(embeds=embeds)
 			except discord.Forbidden:
-				await message.reply("I couldn't send you the pings you received while you were AFK, your DMs are closed", delete_after=10)
+				embed = await get_error_embed("Unable to send DMs to you, your DMs are closed")
+				await message.reply(embed=embed)
 
 		try:
 			user_data['afk'] = False
@@ -158,16 +173,23 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 			await self.afk.update(user_data)
 			await message.author.edit(nick=user_data['last_nickname'])
 		except: pass
-
-		await message.reply(f"Welcome back {message.author.mention}! Your AFK status has been removed", delete_after=10)
+		
+		embed = await get_invisible_embed(f"Welcome back! Your AFK status has been removed!")
+		embed.title = "AFK Status Removed"
+		embed.description = "Welcome back! Your AFK status has been removed!"
+		await message.reply(embed = embed, delete_after=10)
 
 	@app_commands.command(name="set", description="Set your AFK status")
 	async def set_afk(self, interaction: Interaction, msg: str = None):
 		if msg:
 			if len(msg.split(" ")) > 30:
-				await interaction.response.send_message("AFK message is too long! (max 30 words)", ephemeral=True)
-				return
+				embed = await get_error_embed("AFK message is too long! (max 30 words)")
+				return await interaction.response.send_message(embed=embed, ephemeral=True)
+			if len(msg) > 2000:
+				embed = await get_error_embed("AFK message is too long! (max 2000 characters)")
+				return await interaction.response.send_message(embed=embed, ephemeral=True)
 		user_data = await self.afk.find({"user_id": interaction.user.id, "guild_id": interaction.guild.id})
+		first_time = False
 		if not user_data:
 			user_data = {
 				"user_id": interaction.user.id,
@@ -181,6 +203,7 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 				"summary": False
 			}
 			await self.afk.insert(user_data)
+			first_time = True
 		
 		if user_data['afk']:
 			await interaction.response.send_message("You are already AFK!", ephemeral=True)
@@ -196,6 +219,14 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 		if interaction.guild.id not in self.afk_cache:
 			self.afk_cache[interaction.guild.id] = {}
 		self.afk_cache[interaction.guild.id][interaction.user.id] = user_data
+		if first_time:
+			embed = await get_invisible_embed(f"Get notified when someone pings you while you are AFK, use `/settings` to get a summary of pings")
+			embed.title = "DM Notifications"
+			embed.description = "Get notified when someone pings you while you are AFK, use </settings:1196688324207853590> to get a summary of last 10 pings"
+			try:
+				await interaction.user.send(embed=embed)
+			except discord.Forbidden:
+				await interaction.followup.send(embed=embed, ephemeral=True)
 
 	@app_commands.command(name="unset", description="Unset your AFK status")
 	@app_commands.checks.has_permissions(administrator=True)
@@ -220,6 +251,7 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 	@app_commands.describe(channel="Channel to ignore/unignore")
 	async def ignore_channel(self, interaction: Interaction, channel: discord.TextChannel):
 		user_data = await self.afk.find({"user_id": interaction.user.id, "guild_id": interaction.guild.id})
+		first_time = False
 		if not user_data:
 			user_data = {
 				"user_id": interaction.user.id,
@@ -232,6 +264,7 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 				"afk": False,
 				"summary": False
 			}
+			first_time = True
 		
 		if channel.id in user_data['ignored_channels']:
 			user_data.remove(channel.id)
@@ -239,17 +272,16 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 		else:
 			user_data.append(channel.id)
 			await interaction.response.send_message(embed=discord.Embed(description=f"<:tgk_active:1082676793342951475> | Ignored {channel.mention}", color=discord.Color.green()), ephemeral=True)
+		if first_time:
+			embed = await get_invisible_embed(f"Get notified when someone pings you while you are AFK, use `/settings` to get a summary of pings")
+			embed.title = "DM Notifications"
+			embed.description = "Get notified when someone pings you while you are AFK, use </settings:1196688324207853590> to get a summary of last 10 pings"
+			try:
+				await interaction.user.send(embed=embed)
+			except discord.Forbidden:
+				await interaction.followup.send(embed=embed, ephemeral=True)
 		if user_data['afk']:
 			await interaction.followup.send(content="You are currently AFK, this change will take effect next time you go AFK", ephemeral=True)
-
-
-	@app_commands.command(name="summary", description="Get a summary of pings received while you were AFK")
-	async def summary(self, interaction: Interaction):
-		user_data = await self.afk.find({"user_id": interaction.user.id, "guild_id": interaction.guild.id})
-		user_data['summary'] = True if not user_data['summary'] else False
-		await self.afk.update(user_data)
-
-		await interaction.response.send_message(f"Summary are now {'enabled' if user_data['summary'] else 'disabled'}, this change will take effect next time you go AFK", ephemeral=True)
 
 	async def cog_app_command_error(self, interaction: discord.Interaction[discord.Client], error: app_commands.AppCommandError) -> None:
 		error_traceback = "".join(format_exception(type(error), error, error.__traceback__, 4))
