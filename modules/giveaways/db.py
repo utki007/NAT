@@ -44,7 +44,6 @@ class GiveawayData(TypedDict):
     duration: int
     req_roles: list[int]
     bypass_role: list[int]
-    bl_roles: list[int]
     req_level: int
     req_weekly: int
     entries: dict[int, int]

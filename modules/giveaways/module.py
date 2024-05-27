@@ -143,22 +143,16 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 				await host.send(embed=embed, view=view)
 			return
 		else:
-
 			entries: List[int] = []
-			for key, value in giveaway['entries'].keys():
-				entry = 1
-				user = guild.get_member(int(key))
-				user_roles = [role.id for role in user.roles]
-				if not user: continue
-				for key, value in config['multipliers'].items():
-					if key in user_roles:
-						entry += value
-				entries.extend([int(key)] * entry)
-
+			for key, value in giveaway['entries'].items():
+				if int(key) in entries: continue
+				entries.extend([int(key)] * value)
+			
 			winners = []
 
 			while len(winners) != giveaway['winners']:
 				winner = random.choice(entries)
+				winner = guild.get_member(winner)
 				if winner is None: continue
 				if winner not in winners:
 					winners.append(winner)
@@ -210,6 +204,9 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 				if key in dm_emd.description:
 					dm_emd_description[key] = value
 
+
+
+
 			end_emd.title = end_emd.title.format(**end_emd_title)
 			end_emd.description = end_emd.description.format(**end_emd_description)
 
@@ -256,8 +253,7 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 	@app_commands.command(name="start", description="Start a giveaway")
 	@app_commands.describe(winners="Number of winners", prize="Prize/Quantity of the giveaway", time="Duration of the giveaway", item="Item to giveaway",
 		req_roles="Roles required to enter the giveaway", bypass_role="Roles that can bypass the giveaway", req_level="Level required to enter the giveaway",
-		bl_roles="Roles that are banned from entering the giveaway",req_weekly="Weekly XP required to enter the giveaway", donor="Donor of the giveaway", 
-		message="Message to accompany the giveaway", dank="Dank Memer Giveaway? (Set it to True for Auto Payout Queue)",
+		req_weekly="Weekly XP required to enter the giveaway", donor="Donor of the giveaway", message="Message to accompany the giveaway", dank="Dank Memer Giveaway? (Set it to True for Auto Payout Queue)",
 		channel_message="Number of Messages required in specific channel (Format: [Channel] [number of messages])")
 	@app_commands.autocomplete(item=item_autocomplete)
 	@app_commands.rename(channel_message="message_requirement", prize="quantity", req_roles="role_requirement",req_level="level_requirement", req_weekly="weekly_xp_requirement", message = "donor_message")
@@ -270,7 +266,6 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 					 donor: discord.Member=None,
 					 req_roles: app_commands.Transform[discord.Role, MutipleRole]=None, 
 					 bypass_role: app_commands.Transform[discord.Role, MutipleRole]=None, 
-					 bl_roles: app_commands.Transform[discord.Role, MutipleRole]=None,	
 					 req_level: app_commands.Range[int, 1, 100]=None,
 					 req_weekly: app_commands.Range[int, 1, 100]=None,
 					 channel_message: str=None,
@@ -303,7 +298,6 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 			"duration": time,
 			"req_roles": [role.id for role in req_roles] if req_roles else [],
 			"bypass_role": [role.id for role in bypass_role] if bypass_role else [],
-			"bl_roles": [role.id for role in bl_roles] if bl_roles else [],
 			"req_level": req_level,
 			"req_weekly": req_weekly,
 			"entries": {},
@@ -353,12 +347,12 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 		embed.title = embed.title.format(**title_kewrd)
 		embed.description = embed.description.format(**description_kewrd)
 
-		if any([req_roles, bypass_role, req_level, req_weekly, channel_message, bl_roles]):
+		if any([req_roles, bypass_role, req_level, req_weekly, channel_message]):
 			value = ""
-			if req_roles and bypass_role and bl_roles:
+			if req_roles and bypass_role:
 				value += f"**<a:tgk_blut_arrow:1236738254024474776> Roles:**\n<:nat_reply:1011501024625827911>  Required: {', '.join([role.mention for role in req_roles])}\n<:nat_reply_cont:1011501118163013634> Bypass: {', '.join([role.mention for role in bypass_role])}\n"
 			elif req_roles and not bypass_role:
-				value += f"**<a:tgk_blut_arrow:1236738254024474776> Roles:**\n<:nat_reply_cont:1011501118163013634> Required: {', '.join([role.mention for role in req_roles])}\n"				
+				value += f"**<a:tgk_blut_arrow:1236738254024474776> Roles:**\n<:nat_reply_cont:1011501118163013634> Required: {', '.join([role.mention for role in req_roles])}\n"
 			elif bypass_role and not req_roles:
 				value += f"**<a:tgk_blut_arrow:1236738254024474776> Roles:**\n<:nat_reply_cont:1011501118163013634> Bypass: {', '.join([role.mention for role in bypass_role])}\n"
 
