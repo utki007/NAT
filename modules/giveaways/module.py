@@ -174,7 +174,10 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 				else:
 					prize = f"⏣ {giveaway['prize']:,}"
 			else:
-				prize = giveaway['prize']
+				if giveaway['item']:
+					prize = f"{giveaway['prize']} {giveaway['item']}"
+				else:
+					prize = giveaway['prize']
 
 			guild_name = guild.name
 			if giveaway['donor']:

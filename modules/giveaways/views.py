@@ -13,7 +13,7 @@ from amari import User
 from utils.views.selects import Role_select, Channel_select, Select_General
 from utils.views.modal import General_Modal
 from utils.views.paginator import Paginator
-from utils.embeds import get_error_embed
+from utils.embeds import get_error_embed, get_invisible_embed, get_success_embed, get_warning_embed
 from .db import GiveawayConfig as GConfig
 from .db import Giveaways_Backend, GiveawayData
 
@@ -32,18 +32,25 @@ class Giveaway(View):
         config = await interaction.client.giveaway.get_config(interaction.guild)
 
         if interaction.user.id in data['banned']:
-            await interaction.followup.send("You have been manually blacklisted from joining this giveaway. Reach out to the server staff for more information.", ephemeral=True)
+            embed = await get_error_embed("You are banned from joining this giveaway.")
+            embed.title = "Entry Blacklisted"
+            embed.description = "You are banned from joining this giveaway. Please contact support for more information."
+            await interaction.followup.send(embed=embed, ephemeral=True)
             return
         
         user_roles = [role.id for role in interaction.user.roles]
         if "bl_roles" not in data.keys(): data['bl_roles'] = []
-        if (set(user_roles) & set(config["blacklist"])) or (set(user_roles) & set(data["bl_roles"])): 
-            embed = discord.Embed(description="Unable to join the giveawy due to blacklisted role.", color=discord.Color.red())
+        if (set(user_roles) & set(config["blacklist"])) or (set(user_roles) & set(data["bl_roles"])):
+            embed = await get_error_embed("You are blacklisted from joining this giveaway.")
+            embed.title = "Entry Blacklisted"
+            embed.description= "You have a blacklsited role which prevents you from joining this giveaway."
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
         if str(interaction.user.id) in data['entries'].keys():
             view = GiveawayLeave(data, interaction.user, interaction)
-            embed = discord.Embed(description="You already joined this giveaway.",color=0x2b2d31)
+            embed = await get_error_embed("You have already joined this giveaway. Do you want to leave?")
+            embed.title = "Already Entered"
+            embed.description = "You already entered this giveaway. Leave and rejoin to update your multipliers."
             await interaction.followup.send(embed=embed, view=view)
             await view.wait()
             if view.value is True:
@@ -56,7 +63,11 @@ class Giveaway(View):
         
         result = {}
         backend: Giveaways_Backend = interaction.client.giveaway
-        if data['ended']: return await interaction.followup.send("This giveaway has ended.", ephemeral=True)
+        if data['ended']: 
+            embed = await get_warning_embed("This giveaway has ended.")
+            embed.title = "Giveaway Ended"
+            embed.description = "You can no longer join this giveaway!"
+            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         if data['req_level'] or data['req_weekly']:
             amari = interaction.guild.get_member(339254240012664832)
@@ -125,9 +136,10 @@ class Giveaway(View):
         
         data['entries'][str(interaction.user.id)] = entries
         await interaction.client.giveaway.update_giveaway(interaction.message, data)
-        embed = discord.Embed(description="You have successfully joined the giveaway.", color=discord.Color.green())
-        if bypassed:
-            embed.description += "\nYou have bypassed the requirements due to your bypass role."       
+        embed = await get_success_embed("You have successfully joined the giveaway.")
+        embed.title = "Entry Added"
+        embed.description = "You have successfully joined this giveaway. Good luck!"
+
         await interaction.followup.send(embed=embed, ephemeral=True)
 
         self.children[1].label = f"{len(data['entries'].keys())}"
@@ -186,7 +198,10 @@ class GiveawayLeave(View):
             await interaction.client.giveaway.update_giveaway(interaction.message, self.data)
         except:
             pass
-        await interaction.response.edit_message(content="You have successfully left the giveaway.", view=None, delete_after=10, embed=None)
+        embed = await get_invisible_embed("You have successfully left the giveaway.")
+        embed.title = "Entry Removed"
+        embed.description = "Your entry has been removed from this giveaway. You can rejoin anytime."
+        await interaction.response.edit_message(embed=embed, view=None, delete_after=10)
         self.value = True
         self.stop()
 
@@ -434,7 +449,7 @@ class Messages(View):
         default = {
             "host": {
                     "title": "Your giveaway has ended!",
-                    "description": "**Ended At**{timestamp}\nWinners:\n{winners}",
+                    "description": "**Ended:**{timestamp}\n**Winners:**\n{winners}",
                     "color": 2829617
                 },
             "gaw": {

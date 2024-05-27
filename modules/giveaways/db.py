@@ -92,7 +92,7 @@ class Giveaways_Backend:
             "messages":{
                 "host": {
                     "title": "Your giveaway has ended!",
-                    "description": "**Ended At**{timestamp}\nWinners:\n{winners}",
+                    "description": "**Ended:**{timestamp}\n**Winners:**\n{winners}",
                     "color": 2829617
                 },
                 "gaw": {
