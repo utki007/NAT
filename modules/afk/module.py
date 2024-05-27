@@ -222,7 +222,7 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 		if first_time:
 			embed = await get_invisible_embed(f"Get notified when someone pings you while you are AFK, use `/settings` to get a summary of pings")
 			embed.title = "DM Notifications"
-			embed.description = "Get notified when someone pings you while you are AFK, use </settings:1196688324207853590> to get a summary of last 10 pings"
+			embed.description = "Toggle DM notifications by using </settings:1196688324207853590> to get a summary of last 10 pings received while being afk."
 			try:
 				await interaction.user.send(embed=embed)
 			except discord.Forbidden:
@@ -275,7 +275,7 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 		if first_time:
 			embed = await get_invisible_embed(f"Get notified when someone pings you while you are AFK, use `/settings` to get a summary of pings")
 			embed.title = "DM Notifications"
-			embed.description = "Get notified when someone pings you while you are AFK, use </settings:1196688324207853590> to get a summary of last 10 pings"
+			embed.description = "Toggle DM notifications by using </settings:1196688324207853590> to get a summary of last 10 pings received while being afk."
 			try:
 				await interaction.user.send(embed=embed)
 			except discord.Forbidden:
