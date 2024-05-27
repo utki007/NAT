@@ -137,7 +137,7 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 		guild = message.guild
 		if user_data is None: 
 			if "[AFK]" in message.author.display_name:
-				try: await message.author.edit(nick=message.author.display_name.replace("[AFK]", ""))
+				try: await message.author.edit(nick=message.author.display_name.replace("[AFK]", "").strip())
 				except: pass
 			return
 		
@@ -214,6 +214,11 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 		user_data['last_nickname'] = interaction.user.nick if interaction.user.nick else interaction.user.display_name
 
 		await self.afk.update(user_data)
+
+		try:
+			await interaction.user.edit(nick=f"[AFK] {interaction.user.nick if interaction.user.nick else interaction.user.display_name}")
+		except discord.Forbidden:
+			pass
 
 		await interaction.response.send_message(f"Set your AFK status to: {msg}", ephemeral=True)
 		if interaction.guild.id not in self.afk_cache:
