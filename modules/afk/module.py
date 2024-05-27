@@ -106,8 +106,6 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 	async def on_afk_ping(self, message: discord.Message, user: discord.User):
 		try:user_data = self.afk_cache[message.guild.id][user.id]
 		except KeyError: return
-		if message.channel.id in user_data['ignored_channels']:
-			return
 		if user_data['summary']:
 			user_data['pings'].append({
 				"id": message.author.id,
@@ -133,6 +131,9 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 			user_data = self.afk_cache[message.guild.id][message.author.id]
 			del self.afk_cache[message.guild.id][message.author.id]
 		except KeyError: return
+		
+		if message.channel.id in user_data['ignored_channels']:
+			return
 		
 		guild = message.guild
 		if user_data is None: 
