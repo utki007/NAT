@@ -200,7 +200,7 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 				"afk_at": datetime.datetime.utcnow(),
 				"ignored_channels": [],
 				"afk": False,
-				"summary": False
+				"summary": True
 			}
 			await self.afk.insert(user_data)
 			first_time = True
@@ -262,7 +262,7 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 				"afk_at": None,
 				"ignored_channels": [],
 				"afk": False,
-				"summary": False
+				"summary": True
 			}
 			first_time = True
 		
