@@ -165,13 +165,13 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 				await message.reply(embed=embed)
 
 		try:
+			await message.author.edit(nick=user_data['last_nickname'])
 			user_data['afk'] = False
 			user_data['reason'] = None
 			user_data['afk_at'] = None
 			user_data['last_nickname'] = None
 			user_data['pings'] = []			
 			await self.afk.update(user_data)
-			await message.author.edit(nick=user_data['last_nickname'])
 		except: pass
 		
 		embed = await get_invisible_embed(f"Welcome back! Your AFK status has been removed!")
@@ -214,7 +214,7 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 		user_data['afk'] = True
 		user_data['reason'] = msg
 		user_data['afk_at'] = datetime.datetime.utcnow()
-		user_data['last_nickname'] = interaction.user.display_name if interaction.user.display_name else interaction.user.name
+		user_data['last_nickname'] = interaction.user.display_name
 
 		await self.afk.update(user_data)
 
@@ -250,13 +250,13 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 			return
 		
 		try:
+			await user.edit(nick=user_data['last_nickname'])
 			user_data['afk'] = False
 			user_data['reason'] = None
 			user_data['afk_at'] = None
 			user_data['last_nickname'] = None
 			user_data['pings'] = []			
 			await self.afk.update(user_data)
-			await user.edit(nick=user_data['last_nickname'])
 		except: 
 			pass
 
@@ -280,7 +280,7 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 				"user_id": interaction.user.id,
 				"guild_id": interaction.guild.id,
 				"reason": None,
-				"last_nickname": interaction.user.nick,
+				"last_nickname": interaction.user.display_name,
 				"pings": [],
 				"afk_at": None,
 				"ignored_channels": [],
