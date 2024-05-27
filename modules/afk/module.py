@@ -129,11 +129,12 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 	async def on_afk_return(self, message: discord.Message):
 		try:
 			user_data = self.afk_cache[message.guild.id][message.author.id]
+			if message.channel.id in user_data['ignored_channels']:
+				return
 			del self.afk_cache[message.guild.id][message.author.id]
 		except KeyError: return
 		
-		if message.channel.id in user_data['ignored_channels']:
-			return
+
 		
 		guild = message.guild
 		if user_data is None: 
