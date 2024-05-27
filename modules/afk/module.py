@@ -137,7 +137,7 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 		guild = message.guild
 		if user_data is None: 
 			if "[AFK]" in message.author.display_name:
-				try: await message.author.edit(nick=message.author.display_name.replace("[AFK]", "").strip())
+				try: await message.author.edit(nick=user_data['last_nickname'])
 				except: pass
 			return
 		
@@ -245,7 +245,22 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 			await interaction.response.send_message("User is not AFK!", ephemeral=True)
 			return
 		
-		await self.afk.update({"user_id": user.id, "guild_id": interaction.guild.id}, {"$set": {"afk": False, "reason": None, "afk_at": None, "last_nickname": None, "pings": []}})
+		if user_data['afk'] == False:
+			await interaction.response.send_message(f"{user.mention} is not AFK!", ephemeral=True)
+			return
+		
+		try:
+			user_data['afk'] = False
+			user_data['reason'] = None
+			user_data['afk_at'] = None
+			user_data['last_nickname'] = None
+			user_data['pings'] = []			
+			await self.afk.update(user_data)
+			await user.edit(nick=user_data['last_nickname'])
+		except: 
+			pass
+
+		
 		if interaction.guild.id not in self.afk_cache:
 			self.afk_cache[interaction.guild.id] = {}
 		try:
