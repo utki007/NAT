@@ -181,12 +181,10 @@ async def on_message(message):
                                 pass
                             
                             securityLog = bot.get_channel(1089973828215644241)
-                            if 'logs_channel' in data.keys() and 'enable_logging' in data.keys():
+                            if 'logs_channel' in data.keys():
                                 loggingChannel = bot.get_channel(data['logs_channel'])
-                                isLogEnabled = data['enable_logging']
                             else:
                                 loggingChannel = None
-                                isLogEnabled = False
                             if securityLog is not None:
                                 webhooks = await securityLog.webhooks()
                                 webhook = discord.utils.get(webhooks, name=bot.user.name)
@@ -228,7 +226,7 @@ async def on_message(message):
                                 await message.guild.owner.send(embed = embed, view=view)
                                 if owner.id != message.guild.owner.id:
                                     await owner.send(embed = embed, view=view)
-                                if loggingChannel is not None and isLogEnabled is True:
+                                if loggingChannel is not None:
                                     embed = discord.Embed(
                                         title = f"Security Breach!",
                                         description=
@@ -526,12 +524,10 @@ async def on_audit_log_entry_create(entry: discord.AuditLogEntry):
                             pass
                         
                         securityLog = bot.get_channel(1089973828215644241)
-                        if 'logs_channel' in data.keys() and 'enable_logging' in data.keys():
+                        if 'logs_channel' in data.keys():
                             loggingChannel = bot.get_channel(data['logs_channel'])
-                            isLogEnabled = data['enable_logging']
                         else:
                             loggingChannel = None
-                            isLogEnabled = False
                         if securityLog is not None:
                             webhooks = await securityLog.webhooks()
                             webhook = discord.utils.get(webhooks, name=bot.user.name)
@@ -568,7 +564,7 @@ async def on_audit_log_entry_create(entry: discord.AuditLogEntry):
                                 await owner.send(embed = embed)
                         except:
                             pass
-                        if loggingChannel is not None and isLogEnabled:
+                        if loggingChannel is not None:
                             embed = discord.Embed(
                                 title = f"Security Breach!",
                                 description=

@@ -6,7 +6,6 @@ async def init_dankSecurity(interaction):
         "event_manager": None,
         "whitelist": [],
         "quarantine": None,
-        "enable_logging": False,
         "logs_channel": None,
         "enabled": False
     }
