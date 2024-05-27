@@ -113,7 +113,7 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 				"id": message.author.id,
 				"message": message.content,
 				"jump_url": message.jump_url,
-				"pinged_at": f"<t:{int(datetime.datetime.now().timestamp())}:R>",
+				"pinged_at": datetime.datetime.now(),
 				"channel_id": message.channel.id,
 				"guild_id": message.guild.id
 			})
@@ -175,7 +175,7 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 		except: pass
 		
 		embed = await get_invisible_embed(f"Welcome back! Your AFK status has been removed!")
-		embed.title = "AFK Status Removed"
+		# embed.title = "AFK Status Removed"
 		embed.description = "Welcome back! Your AFK status has been removed!"
 		await message.reply(embed = embed, delete_after=10)
 
