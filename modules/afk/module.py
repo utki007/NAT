@@ -195,7 +195,7 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 				"user_id": interaction.user.id,
 				"guild_id": interaction.guild.id,
 				"reason": msg,
-				"last_nickname": interaction.user.nick,
+				"last_nickname": interaction.user.display_name,
 				"pings": [],
 				"afk_at": datetime.datetime.utcnow(),
 				"ignored_channels": [],
@@ -206,17 +206,20 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 			first_time = True
 		
 		if user_data['afk']:
+			if interaction.guild.id not in self.afk_cache:
+				self.afk_cache[interaction.guild.id] = {}
+			self.afk_cache[interaction.guild.id][interaction.user.id] = user_data
 			await interaction.response.send_message("You are already AFK!", ephemeral=True)
 			return
 		user_data['afk'] = True
 		user_data['reason'] = msg
 		user_data['afk_at'] = datetime.datetime.utcnow()
-		user_data['last_nickname'] = interaction.user.nick if interaction.user.nick else interaction.user.display_name
+		user_data['last_nickname'] = interaction.user.display_name if interaction.user.display_name else interaction.user.name
 
 		await self.afk.update(user_data)
 
 		try:
-			await interaction.user.edit(nick=f"[AFK] {interaction.user.nick if interaction.user.nick else interaction.user.display_name}")
+			await interaction.user.edit(nick=f"[AFK] {interaction.user.display_name}")
 		except discord.Forbidden:
 			pass
 
@@ -254,7 +257,7 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 		
 	@app_commands.command(name="ignore", description="Ignore a channel")
 	@app_commands.describe(channel="Channel to ignore/unignore")
-	async def ignore_channel(self, interaction: Interaction, channel: discord.TextChannel):
+	async def ignore_channel(self, interaction: Interaction, channel: discord.TextChannel = None):
 		user_data = await self.afk.find({"user_id": interaction.user.id, "guild_id": interaction.guild.id})
 		first_time = False
 		if not user_data:
@@ -269,13 +272,28 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 				"afk": False,
 				"summary": True
 			}
+			await self.afk.insert(user_data)
+			user_data = await self.afk.find({"user_id": interaction.user.id, "guild_id": interaction.guild.id})
 			first_time = True
 		
+		if channel is None:
+			embed = await get_invisible_embed("Please provide a channel to ignore/unignore")
+			embed.title = "Ignored Channels"
+			ignored_channels = user_data['ignored_channels']
+			ignored_channels = [interaction.guild.get_channel(ch) for ch in ignored_channels if interaction.guild.get_channel(ch)]
+			if len(ignored_channels) == 0:
+				embed.description = "` - ` Add channels when? Use `/ignore <channel>`"
+			else:
+				embed.description = f">>> " + "\n".join([f"1. {channel.mention}" for channel in ignored_channels])
+			await interaction.response.send_message(embed=embed, ephemeral=True)
+			return
 		if channel.id in user_data['ignored_channels']:
 			user_data['ignored_channels'].remove(channel.id)
+			await self.afk.upsert(user_data)
 			await interaction.response.send_message(embed=discord.Embed(description=f"<:tgk_active:1082676793342951475> | Unignored {channel.mention}", color=discord.Color.green()), ephemeral=True)
 		else:
 			user_data['ignored_channels'].append(channel.id)
+			await self.afk.upsert(user_data)
 			await interaction.response.send_message(embed=discord.Embed(description=f"<:tgk_active:1082676793342951475> | Ignored {channel.mention}", color=discord.Color.green()), ephemeral=True)
 		if first_time:
 			embed = await get_invisible_embed(f"Get notified when someone pings you while you are AFK, use `/settings` to get a summary of pings")
