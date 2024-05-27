@@ -252,7 +252,7 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 
 	@app_commands.command(name="start", description="Start a giveaway")
 	@app_commands.describe(winners="Number of winners", prize="Prize/Quantity of the giveaway", time="Duration of the giveaway", item="Item to giveaway",
-		req_roles="Roles required to enter the giveaway", bypass_role="Roles that can bypass the giveaway", req_level="Level required to enter the giveaway",
+		req_roles="Roles required to enter the giveaway", bypass_role="Roles that can bypass the giveaway", blacklist_role="Roles that are blacklisted from this giveaway", req_level="Level required to enter the giveaway",
 		req_weekly="Weekly XP required to enter the giveaway", donor="Donor of the giveaway", message="Message to accompany the giveaway", dank="Dank Memer Giveaway? (Set it to True for Auto Payout Queue)",
 		channel_message="Number of Messages required in specific channel (Format: [Channel] [number of messages])")
 	@app_commands.autocomplete(item=item_autocomplete)
@@ -265,7 +265,8 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 					 dank: bool=True,
 					 donor: discord.Member=None,
 					 req_roles: app_commands.Transform[discord.Role, MutipleRole]=None, 
-					 bypass_role: app_commands.Transform[discord.Role, MutipleRole]=None, 
+					 bypass_role: app_commands.Transform[discord.Role, MutipleRole]=None,
+					 blacklist_role: app_commands.Transform[discord.Role, MutipleRole]=None,
 					 req_level: app_commands.Range[int, 1, 100]=None,
 					 req_weekly: app_commands.Range[int, 1, 100]=None,
 					 channel_message: str=None,
@@ -298,6 +299,7 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 			"duration": time,
 			"req_roles": [role.id for role in req_roles] if req_roles else [],
 			"bypass_role": [role.id for role in bypass_role] if bypass_role else [],
+			"bl_roles": [role.id for role in blacklist_role] if blacklist_role else [],
 			"req_level": req_level,
 			"req_weekly": req_weekly,
 			"entries": {},
@@ -347,14 +349,19 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 		embed.title = embed.title.format(**title_kewrd)
 		embed.description = embed.description.format(**description_kewrd)
 
-		if any([req_roles, bypass_role, req_level, req_weekly, channel_message]):
+		if any([req_roles, bypass_role, blacklist_role, req_level, req_weekly, channel_message]):
 			value = ""
-			if req_roles and bypass_role:
-				value += f"**<a:tgk_blut_arrow:1236738254024474776> Roles:**\n<:nat_reply:1011501024625827911>  Required: {', '.join([role.mention for role in req_roles])}\n<:nat_reply_cont:1011501118163013634> Bypass: {', '.join([role.mention for role in bypass_role])}\n"
-			elif req_roles and not bypass_role:
-				value += f"**<a:tgk_blut_arrow:1236738254024474776> Roles:**\n<:nat_reply_cont:1011501118163013634> Required: {', '.join([role.mention for role in req_roles])}\n"
-			elif bypass_role and not req_roles:
-				value += f"**<a:tgk_blut_arrow:1236738254024474776> Roles:**\n<:nat_reply_cont:1011501118163013634> Bypass: {', '.join([role.mention for role in bypass_role])}\n"
+			req_role = f"Required: {', '.join([role.mention for role in req_roles])}\n" if req_roles else None
+			bypass_roles = f"Bypass: {', '.join([role.mention for role in bypass_role])}\n" if bypass_role else None
+			blacklist_roles = f"Blacklist: {', '.join([role.mention for role in blacklist_role])}\n" if blacklist_role else None
+			roles = [req_role, bypass_roles, blacklist_roles]
+			roles = [role for role in roles if role]
+			if len(roles) == 1:
+				value += f"**<a:tgk_blut_arrow:1236738254024474776> Roles:**\n<:nat_reply_cont:1011501118163013634> {roles[0]}"
+			elif len(roles) == 2:
+				value += f"**<a:tgk_blut_arrow:1236738254024474776> Roles:**\n<:nat_reply:1011501024625827911> {roles[0]}<:nat_reply_cont:1011501118163013634> {roles[1]}"
+			elif len(roles) == 3:
+				value += f"**<a:tgk_blut_arrow:1236738254024474776> Roles:**\n<:nat_reply:1011501024625827911> {roles[0]}<:nat_reply:1011501024625827911> {roles[1]}<:nat_reply_cont:1011501118163013634> {roles[2]}"
 
 			if req_level and req_weekly:
 				value += f"**<a:tgk_blut_arrow:1236738254024474776> Amari Required:**\n<:nat_reply:1011501024625827911>  Level: {req_level}\n<:nat_reply_cont:1011501118163013634> Weekly XP: {req_weekly}\n"
@@ -364,7 +371,7 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 				value += f"**<a:tgk_blut_arrow:1236738254024474776> Amari Required:**\n<:nat_reply_cont:1011501118163013634> Weekly XP: {req_weekly}\n"
 
 			if channel_message:
-				value += f"<a:tgk_blut_arrow:1236738254024474776> Required Message Count: {data['channel_messages']['count']}\n<:nat_reply:1011501024625827911>  Channel: <#{data['channel_messages']['channel']}>\n<:nat_reply_cont:1011501118163013634> Cooldown: 8 seconds\n"                
+				value += f"<a:tgk_blut_arrow:1236738254024474776> **Required Message Count:** {data['channel_messages']['count']}\n<:nat_reply:1011501024625827911>  Channel: <#{data['channel_messages']['channel']}>\n<:nat_reply_cont:1011501118163013634> Cooldown: 8 seconds\n"                
 			embed.add_field(name="Requirements", value=value, inline=False)
 		embed.timestamp = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=time)
 		embed.set_footer(text=f"{winners}w | Ends at")

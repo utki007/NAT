@@ -36,7 +36,8 @@ class Giveaway(View):
             return
         
         user_roles = [role.id for role in interaction.user.roles]
-        if (set(user_roles) & set(config["blacklist"])): 
+        if "bl_roles" not in data.keys(): data['bl_roles'] = []
+        if (set(user_roles) & set(config["blacklist"])) or (set(user_roles) & set(data["bl_roles"])): 
             embed = discord.Embed(description="Unable to join the giveawy due to blacklisted role.", color=discord.Color.red())
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
