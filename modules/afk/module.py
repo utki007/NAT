@@ -222,7 +222,7 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 
 		try:
 			await interaction.user.edit(nick=f"[AFK] {interaction.user.display_name}")
-		except discord.Forbidden:
+		except: 
 			pass
 
 		await interaction.response.send_message(f"Set your AFK status to: {msg}", ephemeral=True)
