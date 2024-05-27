@@ -89,7 +89,7 @@ class MyBot(commands.Bot):
                 await bot.load_extension(f'cogs.{file[:-3]}')
 
         for folder in os.listdir("./modules"):
-            if folder in ["giveaways", "afk"]:                
+            if folder in ["giveaways"]:                
                 for file in os.listdir(f"./modules/{folder}"):
                     if file == "module.py":
                         await bot.load_extension(f"modules.{folder}.{file[:-3]}")

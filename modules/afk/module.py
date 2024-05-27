@@ -272,10 +272,10 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 			first_time = True
 		
 		if channel.id in user_data['ignored_channels']:
-			user_data.remove(channel.id)
+			user_data['ignored_channels'].remove(channel.id)
 			await interaction.response.send_message(embed=discord.Embed(description=f"<:tgk_active:1082676793342951475> | Unignored {channel.mention}", color=discord.Color.green()), ephemeral=True)
 		else:
-			user_data.append(channel.id)
+			user_data['ignored_channels'].append(channel.id)
 			await interaction.response.send_message(embed=discord.Embed(description=f"<:tgk_active:1082676793342951475> | Ignored {channel.mention}", color=discord.Color.green()), ephemeral=True)
 		if first_time:
 			embed = await get_invisible_embed(f"Get notified when someone pings you while you are AFK, use `/settings` to get a summary of pings")
