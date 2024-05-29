@@ -998,8 +998,8 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
 
         grinder_profiles = await interaction.client.grinderUsers.get_all({"guild": interaction.guild.id, "active": True})
-        upto_Date_grinders = [grinder for grinder in grinder_profiles if grinder['payment']['next_payment'] > today] # active grinders
-        overdue_grinders = [grinder for grinder in grinder_profiles if grinder['payment']['next_payment'] <= today] # unpaid grinders
+        upto_Date_grinders = [grinder for grinder in grinder_profiles if grinder['payment']['next_payment'].replace(tzinfo=utc) > today] # active grinders
+        overdue_grinders = [grinder for grinder in grinder_profiles if grinder['payment']['next_payment'].replace(tzinfo=utc) <= today] # unpaid grinders
         total_grinders = len(grinder_profiles)
 
         # dono by active grinders
