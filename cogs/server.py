@@ -67,9 +67,12 @@ class server(commands.GroupCog, name="server", description="Run server based com
 		if interaction.guild.icon:
 			lockdown_embed.set_footer(text=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
 		else:
-			lockdown_embed.set_thumbnail(text=f"{interaction.guild.name}")
+			lockdown_embed.set_footer(text=f"{interaction.guild.name}")
 		if embed['thumbnail']:
-			lockdown_embed.set_thumbnail(url=embed['thumbnail'])
+			try:
+				lockdown_embed.set_thumbnail(url=embed['thumbnail'])
+			except:
+				pass
 			
 		for channel_id in channel_and_role:
 			channel = interaction.guild.get_channel(int(channel_id))
@@ -128,9 +131,12 @@ class server(commands.GroupCog, name="server", description="Run server based com
 		if interaction.guild.icon:
 			lockdown_embed.set_footer(text=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
 		else:
-			lockdown_embed.set_thumbnail(text=f"{interaction.guild.name}")
+			lockdown_embed.set_footer(text=f"{interaction.guild.name}")
 		if embed['thumbnail']:
-			lockdown_embed.set_thumbnail(url=embed['thumbnail'])
+			try:
+				lockdown_embed.set_thumbnail(url=embed['thumbnail'])
+			except:
+				pass
 			
 		for channel_id in channel_and_role:
 			channel = interaction.guild.get_channel(int(channel_id))
