@@ -24,7 +24,7 @@ def chunk(it, size):
 	it = iter(it)
 	return iter(lambda: tuple(islice(it, size)), ())
 
-def set_utc_tz(dt):
+async def set_utc_tz(dt):
     return dt.replace(tzinfo=utc)
 
 @app_commands.guild_only()
