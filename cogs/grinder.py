@@ -94,7 +94,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         trial_role = message.guild.get_role(guild_config['trial']['role'])
         if trial_role is not None and trial_role in user.roles:
             date = datetime.date.today()
-            today = datetime.datetime(date.year, date.month, date.day)
+            today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
             if grinder_profile['payment']['next_payment'] >= today and (grinder_profile['payment']['next_payment'] - grinder_profile['payment']['first_payment']).days >= int(guild_config['trial']['duration'])/(3600*24):
                 if trial_role in user.roles:
                     try:
@@ -199,7 +199,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         guild_configs = await self.bot.grinderSettings.get_all()
 
         date = datetime.date.today()
-        today = datetime.datetime(date.year, date.month, date.day)
+        today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
         time = datetime.datetime.now(utc)
         time = datetime.time(hour=time.hour, tzinfo=utc)
 
@@ -258,7 +258,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         
         guild_configs = await self.bot.grinderSettings.get_all()
         date = datetime.date.today()
-        today = datetime.datetime(date.year, date.month, date.day)
+        today = datetime.datetime(date.year, date.month, date.day+1, tzinfo=utc)
         for guild_config in guild_configs:
             
             guild = self.bot.get_guild(guild_config['_id'])
@@ -388,7 +388,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         grinder_profile = await interaction.client.grinderUsers.find({"guild": interaction.guild.id, "user": user.id})
 
         date = datetime.date.today()
-        today = datetime.datetime(date.year, date.month, date.day)
+        today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
         reminder_dm = False
         active_grinder = False
         if not grinder_profile:
@@ -583,7 +583,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             user = interaction.user
 
         date = datetime.date.today()
-        today = datetime.datetime(date.year, date.month, date.day)
+        today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
 
         grinder_profile = await interaction.client.grinderUsers.find({"guild": interaction.guild.id, "user": user.id})
         if not grinder_profile:
@@ -707,7 +707,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         title = f"Grinders List"
 
         date = datetime.date.today()
-        today = datetime.datetime(date.year, date.month, date.day)
+        today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
 
         pages = []
         ping_group = list(chunk(grinders,3))
@@ -886,7 +886,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         trial_role = interaction.guild.get_role(guild_config['trial']['role'])
         if trial_role is not None and trial_role in user.roles:
             date = datetime.date.today()
-            today = datetime.datetime(date.year, date.month, date.day)
+            today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
             if grinder_profile['payment']['next_payment'] > today and (grinder_profile['payment']['next_payment'] - grinder_profile['payment']['first_payment']).days >= int(guild_config['trial']['duration'])/(3600*24):
                 if trial_role in user.roles:
                     try:
@@ -988,7 +988,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         await interaction.response.defer(ephemeral=False)
 
         date = datetime.date.today()
-        today = datetime.datetime(date.year, date.month, date.day)
+        today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
 
         grinder_profiles = await interaction.client.grinderUsers.get_all({"guild": interaction.guild.id, "active": True})
         upto_Date_grinders = [grinder for grinder in grinder_profiles if grinder['payment']['next_payment'] > today] # active grinders
