@@ -24,6 +24,9 @@ def chunk(it, size):
 	it = iter(it)
 	return iter(lambda: tuple(islice(it, size)), ())
 
+def set_utc_tz(dt):
+    return dt.replace(tzinfo=utc)
+
 @app_commands.guild_only()
 class grinder(commands.GroupCog, name="grinder", description="Manage server grinders"):
 
@@ -74,6 +77,8 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             return
 
         grinder_profile = await self.bot.grinderUsers.find({"guild": message.guild.id, "user": donor.id})
+        grinder_profile['payment']['first_payment'] = await set_utc_tz(grinder_profile['payment']['first_payment'])
+        grinder_profile['payment']['next_payment'] = await set_utc_tz(grinder_profile['payment']['next_payment'])
         if not grinder_profile:
             return await message.channel.send(embed = await get_error_embed(f"{donor.mention} is not appointed as grinder"))
         if not grinder_profile['active']:
@@ -214,6 +219,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                 continue
             grinder_users = await self.bot.grinderUsers.get_all({"guild": guild.id, "reminder_time": str(time) })
             for grinder_user in grinder_users:
+                grinder_user['payment']['next_payment'] = await set_utc_tz(grinder_user['payment']['next_payment'])
                 if not grinder_user['active']:
                     continue
                 if today > grinder_user['payment']['next_payment']:
@@ -271,6 +277,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             grinder_role = guild.get_role(guild_config['grinder']['role'])
 
             for grinder_user in grinder_users:
+                grinder_user['payment']['next_payment'] = await set_utc_tz(grinder_user['payment']['next_payment'])
                 profile_role = guild.get_role(grinder_user['profile_role'])
                 user = guild.get_member(grinder_user['user'])
                 if not user:
@@ -594,16 +601,16 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         embed.description = None
         embed.title = f"{user.display_name}'s Grinder Stats"
         embed.add_field(name="Profile:", value=f"{grinder_profile['profile']}", inline=True)
-        embed.add_field(name="Next Payment:", value=f'<t:{int(grinder_profile["payment"]["next_payment"].timestamp())}:D>', inline=True)
-        embed.add_field(name="Grinder Since:", value=f'<t:{int(grinder_profile["payment"]["grinder_since"].timestamp())}:R>', inline=True)
+        embed.add_field(name="Next Payment:", value=f'<t:{int(grinder_profile["payment"]["next_payment"].replace(tzinfo=utc).timestamp())}:D>', inline=True)
+        embed.add_field(name="Grinder Since:", value=f'<t:{int(grinder_profile["payment"]["grinder_since"].replace(tzinfo=utc).timestamp())}:R>', inline=True)
         
         if grinder_profile['payment']['extra'] > 0:
             embed.add_field(name="Grinder Wallet:", value=f"⏣ {grinder_profile['payment']['extra']:,}", inline=True)
         else:
             embed.add_field(name="Amount per grind", value=f"⏣ {grinder_profile['payment']['amount_per_grind']:,}", inline=True)
         # amount to clear dues
-        if grinder_profile['payment']['next_payment'] < today:
-            pending_days = (today - grinder_profile['payment']['next_payment']).days
+        if grinder_profile['payment']['next_payment'].replace(tzinfo=utc) < today:
+            pending_days = (today - grinder_profile['payment']['next_payment'].replace(tzinfo=utc)).days
             amount = grinder_profile['payment']['amount_per_grind'] * pending_days - grinder_profile['payment']['extra']
             embed.add_field(name="Pending Amount:", value=f"⏣ {amount:,}", inline=True)
         embed.add_field(name="Grinder Bank:", value=f"⏣ {int(grinder_profile['payment']['total']):,}", inline=True)
@@ -722,8 +729,8 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                 embed.add_field(name=f"{member_count}. {user.display_name}", 
                                 value= f"<:nat_replycont:1146496789361479741>**User**: {user.mention}\n"
                                         f"<:nat_replycont:1146496789361479741>**Profile:** {grinder['profile']}\n"
-                                        f"<:nat_replycont:1146496789361479741>**Grinder Since:** {(today-grinder['payment']['grinder_since']).days} days\n"
-                                        f"<:nat_replycont:1146496789361479741>**Next Payment:** <t:{int(grinder['payment']['next_payment'].timestamp())}:R>\n"
+                                        f"<:nat_replycont:1146496789361479741>**Grinder Since:** {(today-grinder['payment']['grinder_since'].replace(tzinfo=utc)).days} days\n"
+                                        f"<:nat_replycont:1146496789361479741>**Next Payment:** <t:{int(grinder['payment']['next_payment'].replace(tzinfo=utc).timestamp())}:R>\n"
                                         f"<:nat_reply:1146498277068517386>**Grinder Bank:** ⏣ {int(grinder['payment']['total']):,}", inline=False)
             try:
                 embed.set_footer(text=f"Page {len(pages)+1}/{len(ping_group)}")
