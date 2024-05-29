@@ -24,9 +24,6 @@ def chunk(it, size):
 	it = iter(it)
 	return iter(lambda: tuple(islice(it, size)), ())
 
-async def set_utc_tz(dt):
-    return dt.replace(tzinfo=utc)
-
 @app_commands.guild_only()
 class grinder(commands.GroupCog, name="grinder", description="Manage server grinders"):
 
@@ -77,8 +74,8 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             return
 
         grinder_profile = await self.bot.grinderUsers.find({"guild": message.guild.id, "user": donor.id})
-        grinder_profile['payment']['first_payment'] = await set_utc_tz(grinder_profile['payment']['first_payment'])
-        grinder_profile['payment']['next_payment'] = await set_utc_tz(grinder_profile['payment']['next_payment'])
+        grinder_profile['payment']['first_payment'] = grinder_profile['payment']['first_payment'].replace(tzinfo=utc)
+        grinder_profile['payment']['next_payment'] = grinder_profile['payment']['next_payment'].replace(tzinfo=utc)
         if not grinder_profile:
             return await message.channel.send(embed = await get_error_embed(f"{donor.mention} is not appointed as grinder"))
         if not grinder_profile['active']:
@@ -219,7 +216,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                 continue
             grinder_users = await self.bot.grinderUsers.get_all({"guild": guild.id, "reminder_time": str(time) })
             for grinder_user in grinder_users:
-                grinder_user['payment']['next_payment'] = await set_utc_tz(grinder_user['payment']['next_payment'])
+                grinder_user['payment']['next_payment'] = grinder_user['payment']['next_payment'].replace(tzinfo=utc)
                 if not grinder_user['active']:
                     continue
                 if today > grinder_user['payment']['next_payment']:
@@ -277,7 +274,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             grinder_role = guild.get_role(guild_config['grinder']['role'])
 
             for grinder_user in grinder_users:
-                grinder_user['payment']['next_payment'] = await set_utc_tz(grinder_user['payment']['next_payment'])
+                grinder_user['payment']['next_payment'] = grinder_user['payment']['next_payment'].replace(tzinfo=utc)
                 profile_role = guild.get_role(grinder_user['profile_role'])
                 user = guild.get_member(grinder_user['user'])
                 if not user:
