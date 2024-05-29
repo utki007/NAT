@@ -100,7 +100,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         if trial_role is not None and trial_role in user.roles:
             date = datetime.date.today()
             today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
-            if grinder_profile['payment']['next_payment'] >= today and (grinder_profile['payment']['next_payment'] - grinder_profile['payment']['first_payment']).days >= int(guild_config['trial']['duration'])/(3600*24):
+            if grinder_profile['payment']['next_payment'].replace(tzinfo=utc) >= today and (grinder_profile['payment']['next_payment'].replace(tzinfo=utc) - grinder_profile['payment']['first_payment'].replace(tzinfo=utc)).days >= int(guild_config['trial']['duration'])/(3600*24):
                 if trial_role in user.roles:
                     try:
                         await user.remove_roles(trial_role, reason=f"Promoted to {grinder_profile['profile']}")
