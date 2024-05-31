@@ -670,7 +670,10 @@ class PayoutV2(commands.GroupCog, name="payout"):
         embed.description += f"**Host:** {host.mention}\n"
         embed.description += f"**Event:** {event}\n"
         embed.description += f"**Winner:** {winner.mention} ({winner.name})\n"
-        embed.description += f"**Prize:** {prize:,}\n"
+        if not item:
+            embed.description += f"**Prize:** {prize:,}\n"
+        else:
+            embed.description += f"**Prize:** {prize}x {item}\n"
         embed.description += f"**Event Message:** [Jump to Message]({win_message.jump_url})\n"
         embed.description += f"**Queue Message:** [Jump to Message]({queue_message.jump_url})\n"
         embed.set_footer(text=f"Queue Message ID: {queue_message.id}")
@@ -757,5 +760,3 @@ async def teardown(bot):
             guild['express'] = False
             await bot.payouts.update_config(guild)
     await bot.remove_cog(PayoutV2(bot))
-
-
