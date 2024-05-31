@@ -79,13 +79,11 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
 
         grinder_profile = await self.bot.grinderUsers.find({"guild": message.guild.id, "user": donor.id})
         if not grinder_profile:
-            return
-        grinder_profile['payment']['first_payment'] = grinder_profile['payment']['first_payment'].replace(tzinfo=utc)
-        grinder_profile['payment']['next_payment'] = grinder_profile['payment']['next_payment'].replace(tzinfo=utc)
-        if not grinder_profile:
             return await message.reply(embed = await get_warning_embed(f"{donor.mention} is not appointed as grinder"))
         if not grinder_profile['active']:
             return await message.reply(embed = await get_warning_embed(f"{donor.mention} is either demoted or on a break. Contact support to join grinders again!"))
+        grinder_profile['payment']['first_payment'] = grinder_profile['payment']['first_payment'].replace(tzinfo=utc)
+        grinder_profile['payment']['next_payment'] = grinder_profile['payment']['next_payment'].replace(tzinfo=utc)
         
         days_paid = int((amount+grinder_profile['payment']['extra']) / grinder_profile['payment']['amount_per_grind'])
         amount_paid = days_paid * grinder_profile['payment']['amount_per_grind']
@@ -1005,29 +1003,28 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         role_changed = False
         user = interaction.guild.get_member(grinder_profile['user'])
         trial_role = interaction.guild.get_role(guild_config['trial']['role'])
-        if trial_role is not None:
-            date = datetime.date.today()
-            today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
-            if grinder_profile['payment']['next_payment'].replace(tzinfo=utc) > today and (grinder_profile['payment']['next_payment'].replace(tzinfo=utc) - grinder_profile['payment']['first_payment'].replace(tzinfo=utc)).days >= int(guild_config['trial']['duration'])/(3600*24):
-                if trial_role in user.roles:
-                    try:
-                        await user.remove_roles(trial_role)
-                    except:
-                        pass
-                grinder_role = interaction.guild.get_role(guild_config['grinder']['role'])
-                if grinder_role is not None and grinder_role not in user.roles:
-                    try:
-                        await user.add_roles(grinder_role)
-                        role_changed = True
-                    except:
-                        pass
-                profile_role = interaction.guild.get_role(grinder_profile['profile_role'])
-                if profile_role is not None and profile_role not in user.roles:
-                    try:
-                        await user.add_roles(profile_role)
-                        role_changed = True
-                    except:
-                        pass
+        date = datetime.date.today()
+        today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
+        if grinder_profile['payment']['next_payment'].replace(tzinfo=utc) > today and (grinder_profile['payment']['next_payment'].replace(tzinfo=utc) - grinder_profile['payment']['first_payment'].replace(tzinfo=utc)).days >= int(guild_config['trial']['duration'])/(3600*24):
+            if trial_role in user.roles:
+                try:
+                    await user.remove_roles(trial_role)
+                except:
+                    pass
+            grinder_role = interaction.guild.get_role(guild_config['grinder']['role'])
+            if grinder_role is not None and grinder_role not in user.roles:
+                try:
+                    await user.add_roles(grinder_role)
+                    role_changed = True
+                except:
+                    pass
+            profile_role = interaction.guild.get_role(grinder_profile['profile_role'])
+            if profile_role is not None and profile_role not in user.roles:
+                try:
+                    await user.add_roles(profile_role)
+                    role_changed = True
+                except:
+                    pass
         if role_changed:
             await interaction.followup.send(embed= await get_invisible_embed(f"{user.mention} has been promoted to {grinder_role.mention}"), ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
 
