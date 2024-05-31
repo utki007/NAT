@@ -64,7 +64,7 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 			await interaction.response.send_message(embed=embed, ephemeral=True)
 			return False
 		if interaction.user == interaction.guild.owner: return True
-		# if interaction.user.id in self.bot.owner_ids: return True
+		if interaction.user.id in self.bot.owner_ids: return True
 		user_roles = [role.id for role in interaction.user.roles]
 		if (set(user_roles) & set(config['roles'])): 
 			return True
@@ -127,6 +127,7 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 
 	@commands.Cog.listener()
 	async def on_afk_return(self, message: discord.Message):
+		if message.is_system(): return
 		try:
 			user_data = self.afk_cache[message.guild.id][message.author.id]
 			if message.channel.id in user_data['ignored_channels']:
@@ -167,19 +168,21 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 				await message.reply(embed=embed)
 
 		try:
-			await message.author.edit(nick=user_data['last_nickname'])
-			user_data['afk'] = False
-			user_data['reason'] = None
-			user_data['afk_at'] = None
-			user_data['last_nickname'] = None
-			user_data['pings'] = []			
-			await self.afk.update(user_data)
+			await message.author.edit(nick=user_data['last_nickname'])			
 		except: pass
-		
+		user_data['afk'] = False
+		user_data['reason'] = None
+		user_data['afk_at'] = None
+		user_data['last_nickname'] = None
+		user_data['pings'] = []		
+		await self.afk.update(user_data)
+
 		embed = await get_invisible_embed(f"Welcome back! Your AFK status has been removed!")
-		# embed.title = "AFK Status Removed"
 		embed.description = "Welcome back! Your AFK status has been removed!"
-		await message.reply(embed = embed, delete_after=10)
+		if message is not None:
+			await message.reply(embed = embed, delete_after=10)
+		else:
+			pass	
 
 	@app_commands.command(name="set", description="Set your AFK status")
 	async def set_afk(self, interaction: Interaction, msg: str = None):
@@ -220,10 +223,11 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 
 		await self.afk.update(user_data)
 
-		try:
-			await interaction.user.edit(nick=f"[AFK] {interaction.user.display_name}")
-		except: 
-			pass
+		if not "[AFK]" in interaction.user.display_name:
+			try:			
+				await interaction.user.edit(nick=f"AFK - {interaction.user.display_name}")
+			except: 
+				pass
 
 		await interaction.response.send_message(f"Set your AFK status to: {msg}", ephemeral=True)
 		if interaction.guild.id not in self.afk_cache:
@@ -252,13 +256,16 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 			return
 		
 		try:
-			await user.edit(nick=user_data['last_nickname'])
 			user_data['afk'] = False
 			user_data['reason'] = None
 			user_data['afk_at'] = None
 			user_data['last_nickname'] = None
 			user_data['pings'] = []			
 			await self.afk.update(user_data)
+			if "AFK - " in user.display_name:
+				try: await user.edit(nick=user.display_name.replace("AFK - ", "")
+				)
+				except: pass
 		except: 
 			pass
 
@@ -330,11 +337,23 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 			await interaction.followup.send(content="You are currently AFK, this change will take effect next time you go AFK", ephemeral=True)
 
 	async def cog_app_command_error(self, interaction: discord.Interaction[discord.Client], error: app_commands.AppCommandError) -> None:
+		if isinstance(error, app_commands.errors.CheckFailure):
+			return
 		error_traceback = "".join(format_exception(type(error), error, error.__traceback__, 4))
 		buffer = BytesIO(error_traceback.encode('utf-8'))
 		file = discord.File(buffer, filename=f"Error-{interaction.command.name}.log")
 		buffer.close()
 		chl = interaction.client.get_channel(1130057933468745849)
+		await chl.send(file=file, content="<@488614633670967307>", silent=True, embed=discord.Embed(description=interaction.data))
+
+	async def cog_command_error(self, ctx: commands.Context, error: commands.CommandError):
+		if isinstance(error, commands.CheckFailure):
+			return
+		error_traceback = "".join(format_exception(type(error), error, error.__traceback__, 4))
+		buffer = BytesIO(error_traceback.encode('utf-8'))
+		file = discord.File(buffer, filename=f"Error-{ctx.command.name}.log")
+		buffer.close()
+		chl = ctx.bot.get_channel(1130057933468745849)
 		await chl.send(file=file, content="<@488614633670967307>", silent=True)
 
 async def setup(bot):
