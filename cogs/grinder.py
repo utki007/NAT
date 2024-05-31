@@ -78,6 +78,8 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             return
 
         grinder_profile = await self.bot.grinderUsers.find({"guild": message.guild.id, "user": donor.id})
+        if not grinder_profile:
+            return
         grinder_profile['payment']['first_payment'] = grinder_profile['payment']['first_payment'].replace(tzinfo=utc)
         grinder_profile['payment']['next_payment'] = grinder_profile['payment']['next_payment'].replace(tzinfo=utc)
         if not grinder_profile:
