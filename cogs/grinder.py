@@ -58,14 +58,18 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
 
         try: 
             message = await message.channel.fetch_message(message.reference.message_id)
-        except discord.NotFound: 
+        except:
             return
-        
+        if message is None:
+            return
         
         donation_info = await get_donation_from_message(message)
 
         if donation_info.items is not None:
-            return await message.channel.send(embed = await get_error_embed(f"Donating items is not allowed in this channel. Please reach out to the manager for further assistance."))
+            embed = await get_warning_embed(f"test")
+            embed.title = "Item Donation Detected"
+            embed.description = f"- **Item Donated:** {donation_info.quantity}x {donation_info.items}\n- Donating items is not allowed in this channel.\n- Please reach out to manager for further assistance."
+            return await message.reply(embed=embed)
         
         amount = donation_info.quantity
         donor = donation_info.donor
@@ -74,12 +78,12 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             return
 
         grinder_profile = await self.bot.grinderUsers.find({"guild": message.guild.id, "user": donor.id})
+        if not grinder_profile:
+            return await message.reply(embed = await get_warning_embed(f"{donor.mention} is not appointed as grinder"))
+        if not grinder_profile['active']:
+            return await message.reply(embed = await get_warning_embed(f"{donor.mention} is either demoted or on a break. Contact support to join grinders again!"))
         grinder_profile['payment']['first_payment'] = grinder_profile['payment']['first_payment'].replace(tzinfo=utc)
         grinder_profile['payment']['next_payment'] = grinder_profile['payment']['next_payment'].replace(tzinfo=utc)
-        if not grinder_profile:
-            return await message.channel.send(embed = await get_error_embed(f"{donor.mention} is not appointed as grinder"))
-        if not grinder_profile['active']:
-            return await message.channel.send(embed = await get_error_embed(f"{donor.mention} is either demoted or on a break. Contact support to join grinders again!"))
         
         days_paid = int((amount+grinder_profile['payment']['extra']) / grinder_profile['payment']['amount_per_grind'])
         amount_paid = days_paid * grinder_profile['payment']['amount_per_grind']
@@ -94,36 +98,50 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         role_changed = False
         user = message.guild.get_member(grinder_profile['user'])
         trial_role = message.guild.get_role(guild_config['trial']['role'])
-        if trial_role is not None and trial_role in user.roles:
-            date = datetime.date.today()
-            today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
-            if grinder_profile['payment']['next_payment'].replace(tzinfo=utc) >= today and (grinder_profile['payment']['next_payment'].replace(tzinfo=utc) - grinder_profile['payment']['first_payment'].replace(tzinfo=utc)).days >= int(guild_config['trial']['duration'])/(3600*24):
-                if trial_role in user.roles:
-                    try:
-                        await user.remove_roles(trial_role, reason=f"Promoted to {grinder_profile['profile']}")
-                    except:
-                        pass
-                    grinder_role = message.guild.get_role(guild_config['grinder']['role'])
-                    profile_role = message.guild.get_role(grinder_profile['profile_role'])
-                    if grinder_role is not None and grinder_role not in user.roles:
-                        try:
-                            await user.add_roles(grinder_role, reason=f"Promoted to {grinder_profile['profile']}")
-                            role_changed = True
-                        except:
-                            pass
-                    if profile_role is not None and profile_role not in user.roles:
-                        try:
-                            await user.add_roles(profile_role, reason=f"Promoted to {grinder_profile['profile']}")
-                            role_changed = True
-                        except:
-                            pass
+        date = datetime.date.today()
+        today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
+        if grinder_profile['payment']['next_payment'].replace(tzinfo=utc) >= today and (grinder_profile['payment']['next_payment'].replace(tzinfo=utc) - grinder_profile['payment']['first_payment'].replace(tzinfo=utc)).days >= int(guild_config['trial']['duration'])/(3600*24):
+            if trial_role in user.roles:
+                try:
+                    await user.remove_roles(trial_role, reason=f"Promoted to {grinder_profile['profile']}")
+                except:
+                    pass
+            grinder_role = message.guild.get_role(guild_config['grinder']['role'])
+            profile_role = message.guild.get_role(grinder_profile['profile_role'])
+            if grinder_role is not None and grinder_role not in user.roles:
+                try:
+                    await user.add_roles(grinder_role, reason=f"Promoted to {grinder_profile['profile']}")
+                    role_changed = True
+                except:
+                    pass
+            if profile_role is not None and profile_role not in user.roles:
+                try:
+                    await user.add_roles(profile_role, reason=f"Promoted to {grinder_profile['profile']}")
+                    role_changed = True
+                except:
+                    pass
+        else:
+            profiles_roles = [guild_config['grinder_profiles'][profile]['role'] for profile in guild_config['grinder_profiles']]
+            profiles_roles.append(guild_config['grinder']['role'])
+            profiles_roles = [int(role) for role in profiles_roles if role]
+            roles_to_remove = [role for role in user.roles if role.id in profiles_roles]
+            if len(roles_to_remove) > 0:
+                try:
+                    await user.remove_roles(*roles_to_remove, reason=f"Syncing roles")
+                except:
+                    pass
+            if trial_role not in user.roles:
+                try:
+                    await user.add_roles(trial_role, reason=f"Syncing roles")
+                except:
+                    pass
 
         embed = await get_invisible_embed(f"⏣ {amount:,} has been added to {donor.mention}")
         embed.title = f"{donor.display_name}'s Grinder Payment"
         embed.description = None
         embed.add_field(name="Profile:", value=f"{grinder_profile['profile']}", inline=True)
-        embed.add_field(name="Paid for:", value=f"{days_paid} {'day' if days_paid==1 else 'days'}", inline=True)
-        embed.add_field(name="Sanctioned By:", value=f"Automatic Detection", inline=True)
+        embed.add_field(name="Donated for:", value=f"{days_paid} {'day' if days_paid==1 else 'days'}", inline=True)
+        embed.add_field(name="Sanctioned By:", value=f"<@270904126974590976>", inline=True)
         embed.add_field(name="Amount Credited:", value=f"⏣ {amount:,}", inline=True)
         if extra_amount > 0:
             embed.add_field(name="Grinder Wallet:", value=f"⏣ {extra_amount:,}", inline=True)
@@ -142,7 +160,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             embeds.append(await get_invisible_embed(f"{donor.mention} has been promoted to {grinder_role.mention}"))
         msg = None
         try:
-            msg = await message.channel.send(embeds=embeds)
+            msg = await message.reply(embeds=embeds)
             await donor.send(embed=embed)
         except:
             pass
@@ -163,7 +181,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             except:
                 log_embed.set_thumbnail(url=donor.default_avatar.url)
             view = discord.ui.View()
-            view.add_item(discord.ui.Button(label="Jump to message", style=discord.ButtonStyle.link, url=msg.jump_url))
+            view.add_item(discord.ui.Button(label="Jump to message", style=discord.ButtonStyle.link, url=message.jump_url))
             try:
                 await log_channel.send(embed=log_embed, view=view)
             except:
@@ -214,7 +232,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                 continue
             if not guild:
                 continue
-            grinder_users = await self.bot.grinderUsers.get_all({"guild": guild.id, "reminder_time": str(time) })
+            grinder_users = await self.bot.grinderUsers.get_all({"guild": guild.id, "reminder_time": str(time)})
             for grinder_user in grinder_users:
                 grinder_user['payment']['next_payment'] = grinder_user['payment']['next_payment'].replace(tzinfo=utc)
                 if not grinder_user['active']:
@@ -252,9 +270,13 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
     @grinder_reminder.error
     async def grinder_reminder_error(self, error):
         channel = self.bot.get_channel(999555462674522202)
-        await channel.send(f"<@488614633670967307> <@301657045248114690> , Error in grinder reminders: {error}")
         full_stack_trace = ''.join(traceback.format_exception(type(error), error, error.__traceback__))
         await channel.send(f"<@488614633670967307> <@301657045248114690> , Error in grinder reminder: {full_stack_trace}")
+        try:
+            self.grinder_reminder.restart()
+        except:
+            error = traceback.format_exc()
+            await channel.send(f"<@488614633670967307> <@301657045248114690> , Error in restarting grinder reminder loop: {error}")
 
     @tasks.loop(time=midnight)
     async def grinder_demotions(self):
@@ -362,41 +384,43 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
     @grinder_demotions.error
     async def grinder_demotions_error(self, error):
         channel = self.bot.get_channel(999555462674522202)
-        await channel.send(f"<@488614633670967307> <@301657045248114690> , Error in grinder demotions: {error}")
         full_Stack_trace = ''.join(traceback.format_exception(type(error), error, error.__traceback__))
         await channel.send(f"<@488614633670967307> <@301657045248114690> , Error in grinder demotions: {full_Stack_trace}")
+        try:
+            self.grinder_reminder.restart()
+        except:
+            error = traceback.format_exc()
+            await channel.send(f"<@488614633670967307> <@301657045248114690> , Error in restarting grinder reminder loop: {error}")
 
     @app_commands.command(name="appoint", description="Add New Grinder")
     @app_commands.autocomplete(profile=GrinderProfileAutoComplete)
     @app_commands.describe(profile="Add grinder to which tier?", user="User to appoint")
     @app_commands.check(GrinderCheck)
     async def appoint(self, interaction: Interaction, profile: str, user: discord.Member):
-        
+
         if user.bot:
             return await interaction.response.send_message(embed= await get_error_embed("Bots can't be appointed as grinder"), ephemeral=True)
-
-        if profile == "None":
-            return await interaction.response.send_message(embed= await get_error_embed("No profile found"), ephemeral=True)
         
         guild_config = await interaction.client.grinderSettings.find(interaction.guild.id)
         if not guild_config:
             return await interaction.response.send_message(embed= await get_error_embed("Grinder system is not setup in this server"), ephemeral=True)
+        
         await interaction.response.defer(ephemeral=False)
-
         try:
             profile = guild_config['grinder_profiles'][profile]
         except KeyError:
             embed = await get_error_embed("Profile not found! Please choose from the provided list")
             return await interaction.edit_original_response(embed=embed)
         
-        grinder_profile = await interaction.client.grinderUsers.find({"guild": interaction.guild.id, "user": user.id})
-
+        # initial values
         date = datetime.date.today()
         today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
         reminder_dm = False
         active_grinder = False
-        if not grinder_profile:
 
+        grinder_profile = await interaction.client.grinderUsers.find({"guild": interaction.guild.id, "user": user.id})
+
+        if not grinder_profile:
             record = await interaction.client.grinderUsers.find({"reminder_time": {"$exists":"true"}, "user": interaction.user.id})
             if record:
                 reminder_time = datetime.time.fromisoformat(record['reminder_time'])
@@ -425,25 +449,131 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             )
             reminder_embed.title = "Custom Grinder Reminder"
             reminder_embed.set_thumbnail(url='https://cdn.discordapp.com/emojis/841624339169935390.gif?size=128&quality=lossless')
-            await interaction.client.grinderUsers.insert(grinder_profile)
-
+            try:
+                await interaction.client.grinderUsers.insert(grinder_profile)
+            except:
+                return await interaction.edit_original_response(embed= await get_warning_embed(f"Unable to appoint {user.mention} as {profile['name'].title()}. Please try again later."))
+            
+            # sync roles
         
-        elif grinder_profile['profile'] == profile['name'] and grinder_profile['profile_role'] == profile['role'] and grinder_profile['payment']['amount_per_grind'] == profile['payment']:
-            if grinder_profile['active']:
-                active_grinder = True
-                await interaction.edit_original_response(embed= await get_error_embed(f"{user.mention} is already appointed as {profile['name'].title()}"))
+            removable_roles = list(guild_config['grinder_profiles'].keys())
+            removable_roles.append(guild_config['grinder']['role'])
+            removable_roles = [int(role) for role in removable_roles]
+            roles_to_remove = [role.id for role in user.roles if role.id in removable_roles]
+            roles_to_remove = [interaction.guild.get_role(role) for role in roles_to_remove if interaction.guild.get_role(role) is not None]
+            try:
+                await user.remove_roles(*roles_to_remove)
+            except:
+                embed = await get_error_embed(f"Unable to remove roles from {user.mention}.")
+                return await interaction.edit_original_response(embed=embed)
+            roles_to_add = [guild_config['trial']['role']]
+            roles_to_add = [role for role in roles_to_add if role not in [role.id for role in user.roles]]
+            roles_to_add = [interaction.guild.get_role(role) for role in roles_to_add if interaction.guild.get_role(role) is not None]
+            try:
+                await user.add_roles(*roles_to_add, reason=f"Appointed as {profile['name']}")
+            except:
+                embed = await get_error_embed(f"Unable to assign roles to {user.mention}.")
+                return await interaction.edit_original_response(embed=embed)
+            
+            roles_added = roles_to_add
+            roles_removed = roles_to_remove
+
+            sync_embed = await get_invisible_embed(f"## Roles synced for {user.mention}")
+            sync_embed.title = f"Roles Synced"
+            sync_embed.description = None
+            if len(roles_added) > 0:
+                sync_embed.add_field(name="Added:", value=f"- "+f"\n- ".join([role.mention for role in roles_added]), inline=True)
+            if len(roles_removed) > 0:
+                sync_embed.add_field(name="Removed:", value=f"- "+f"\n- ".join([role.mention for role in roles_removed]), inline=True)
+        
+        
+        elif grinder_profile['profile'] == profile['name'] and grinder_profile['profile_role'] == profile['role'] and grinder_profile['payment']['amount_per_grind'] == profile['payment'] and grinder_profile['active']:
+
+            # sync roles
+        
+            removable_roles = list(guild_config['grinder_profiles'].keys())
+            removable_roles.append(guild_config['trial']['role'])
+            removable_roles = [int(role) for role in removable_roles]
+            if int(grinder_profile['profile_role']) in removable_roles:
+                removable_roles.remove(int(grinder_profile['profile_role']))
+            roles_to_remove = [role.id for role in user.roles if role.id in removable_roles]
+            roles_to_remove = [interaction.guild.get_role(role) for role in roles_to_remove if interaction.guild.get_role(role) is not None]
+            try:
+                await user.remove_roles(*roles_to_remove)
+            except:
+                embed = await get_error_embed(f"Unable to remove roles from {user.mention}.")
+                return await interaction.edit_original_response(embed=embed)
+            roles_to_add = [guild_config['grinder']['role'], profile['role']]
+            roles_to_add = [interaction.guild.get_role(role) for role in roles_to_add if interaction.guild.get_role(role) is not None]
+            roles_to_add = [role for role in roles_to_add if role not in user.roles]
+            try:
+                await user.add_roles(*roles_to_add, reason=f"Appointed as {profile['name']}")
+            except:
+                embed = await get_error_embed(f"Unable to assign roles to {user.mention}.")
+                return await interaction.edit_original_response(embed=embed)
+            
+            roles_added = roles_to_add
+            roles_removed = roles_to_remove
+
+            sync_embed = await get_invisible_embed(f"## Roles synced for {user.mention}")
+            sync_embed.title = f"Roles Synced"
+            sync_embed.description = None
+            if len(roles_added) > 0:
+                sync_embed.add_field(name="Added:", value=f"- "+f"\n- ".join([role.mention for role in roles_added]), inline=True)
+            if len(roles_removed) > 0:
+                sync_embed.add_field(name="Removed:", value=f"- "+f"\n- ".join([role.mention for role in roles_removed]), inline=True)
+            
+                
+            embed = await get_warning_embed(f"{user.mention} is already appointed as {profile['name'].title()}")
+            if sync_embed.fields == []:
+                embeds = [embed]
             else:
-                grinder_profile['active'] = True
-                grinder_profile['payment']['first_payment'] = datetime.datetime(date.year, date.month, date.day)
-                grinder_profile['payment']['next_payment'] = datetime.datetime(date.year, date.month, date.day)
-                grinder_profile['payment']['amount_per_grind'] = profile['payment']
-                await interaction.client.grinderUsers.upsert(grinder_profile)
-                # user roles in id 
+                embeds = [sync_embed, embed]
+            return await interaction.edit_original_response(embeds=embeds)
+        
+        else:
+            next_payment = grinder_profile['payment']['next_payment'].replace(tzinfo=utc)
+            if next_payment > today:
+                extra_amount = grinder_profile['payment']['amount_per_grind'] * (next_payment - today).days + grinder_profile['payment']['extra']
+                days_paid = int(extra_amount/profile['payment'])
+                grinder_profile['payment']['extra'] = extra_amount % profile['payment']
+                grinder_profile['payment']['next_payment'] = today + datetime.timedelta(days=days_paid)
+
+                # grinder promotion
+                if grinder_profile['payment']['next_payment'].replace(tzinfo=utc) >= today and (grinder_profile['payment']['next_payment'].replace(tzinfo=utc) - grinder_profile['payment']['first_payment'].replace(tzinfo=utc)).days >= int(guild_config['trial']['duration'])/(3600*24):
+                    
+                    roles_to_remove = list(guild_config['grinder_profiles'].keys())
+                    roles_to_remove.append(guild_config['trial']['role'])
+                    roles_to_remove = [int(role) for role in roles_to_remove]
+                    roles_to_remove = [role for role in user.roles if role.id in roles_to_remove]
+                    try:
+                        await user.remove_roles(*roles_to_remove)
+                    except:
+                        embed = await get_error_embed(f"Unable to remove roles from {user.mention}.")
+                        return await interaction.edit_original_response(embed=embed)
+                    roles_to_add = [profile['role'], guild_config['grinder']['role']]
+                    roles_to_add = [interaction.guild.get_role(role) for role in roles_to_add if interaction.guild.get_role(role) is not None]
+                    roles_to_add = [role for role in roles_to_add if role not in user.roles]
+                    try:
+                        await user.add_roles(*roles_to_add, reason=f"Promoted to {profile['name']}")
+                    except:
+                        embed = await get_error_embed(f"Unable to assign roles to {user.mention}.")
+                        return await interaction.edit_original_response(embed=embed)
+                    sync_embed = await get_invisible_embed(f"## Roles synced for {user.mention}")
+                    sync_embed.title = f"Roles Synced"
+                    sync_embed.description = None
+                    if len(roles_to_add) > 0:
+                        sync_embed.add_field(name="Added:", value=f"- "+f"\n- ".join([role.mention for role in roles_to_add]), inline=True)
+                    if len(roles_to_remove) > 0:
+                        sync_embed.add_field(name="Removed:", value=f"- "+f"\n- ".join([role.mention for role in roles_to_remove]), inline=True)
+            else:
+                grinder_profile['payment']['extra'] = 0
+                grinder_profile['payment']['next_payment'] = today
+                            
+                # sync roles
                 removable_roles = list(guild_config['grinder_profiles'].keys())
                 removable_roles.append(guild_config['grinder']['role'])
                 removable_roles = [int(role) for role in removable_roles]
-                if profile['role'] in removable_roles:
-                    removable_roles.remove(int(profile['role']))
                 roles_to_remove = [role.id for role in user.roles if role.id in removable_roles]
                 roles_to_remove = [interaction.guild.get_role(role) for role in roles_to_remove if interaction.guild.get_role(role) is not None]
                 try:
@@ -451,111 +581,83 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                 except:
                     embed = await get_error_embed(f"Unable to remove roles from {user.mention}.")
                     return await interaction.edit_original_response(embed=embed)
-
                 roles_to_add = [guild_config['trial']['role']]
                 roles_to_add = [role for role in roles_to_add if role not in [role.id for role in user.roles]]
                 roles_to_add = [interaction.guild.get_role(role) for role in roles_to_add if interaction.guild.get_role(role) is not None]
                 try:
-                    await user.add_roles(*roles_to_add)
+                    await user.add_roles(*roles_to_add, reason=f"Appointed as {profile['name']}")
                 except:
                     embed = await get_error_embed(f"Unable to assign roles to {user.mention}.")
                     return await interaction.edit_original_response(embed=embed)
                 
-                appoint_dm = await get_invisible_embed(f"You have been reappointed as {profile['name'].title()}")
-                appoint_dm.title = f"Grinder Reappointment as {profile['name'].title()}"
-                appoint_dm.description = guild_config['appoint_embed']['description']
-                appoint_dm.timestamp = datetime.datetime.now()
-                try:
-                    appoint_dm.set_footer(text = interaction.guild.name, icon_url = interaction.guild.icon.url)
-                except:
-                    appoint_dm.set_footer(text = interaction.guild.name)
-                try:
-                    appoint_dm.set_thumbnail(url = guild_config['appoint_embed']['thumbnail'])
-                except:
-                    pass
-                grind_channel = interaction.guild.get_channel(guild_config['payment_channel'])
-                if grind_channel:
-                    view = discord.ui.View()
-                    view.add_item(discord.ui.Button(label="Grinder's Donation Channel", emoji="<:tgk_channel:1073908465405268029>" , style=discord.ButtonStyle.primary, url=f"{grind_channel.jump_url}"))
-                try:
-                    if view:
-                        await user.send(embed=appoint_dm, view=view)
-                    else:
-                        await user.send(embed=appoint_dm)
-                except:
-                    pass
+                roles_added = roles_to_add
+                roles_removed = roles_to_remove
 
-                msg = await interaction.edit_original_response(embed= await get_invisible_embed(f"{user.mention} has been reappointed as {profile['name'].title()}"))
-                log_channel = interaction.guild.get_channel(guild_config['grinder_logs'])
-                if log_channel:
-                    log_embed = await get_invisible_embed(f"{user.mention} has been reappointed as {profile['name'].title()}")
-                    log_embed.title = f"Reappointed as {profile['name'].title()}"
-                    log_embed.description = None
-                    log_embed.add_field(name="User:", value=f"<:nat_reply:1146498277068517386> {user.mention}", inline=True)
-                    log_embed.add_field(name="Appointed At:", value=f"<:nat_reply:1146498277068517386> {msg.jump_url}", inline=True)
-                    try:
-                        log_embed.set_footer(text=f"Reappointed by {interaction.user.name} | ID: {interaction.user.id}", icon_url=interaction.user.avatar.url)
-                    except:
-                        log_embed.set_footer(text=f"Reappointed by {interaction.user.name} | ID: {interaction.user.id}", icon_url=interaction.user.default_avatar.url)
-                    try:
-                        await log_channel.send(embed=log_embed)
-                    except:
-                        pass
-                return
+                sync_embed = await get_invisible_embed(f"## Roles synced for {user.mention}")
+                sync_embed.title = f"Roles Synced"
+                sync_embed.description = None
+                if len(roles_added) > 0:
+                    sync_embed.add_field(name="Added:", value=f"- "+f"\n- ".join([role.mention for role in roles_added]), inline=True)
+                if len(roles_removed) > 0:
+                    sync_embed.add_field(name="Removed:", value=f"- "+f"\n- ".join([role.mention for role in roles_removed]), inline=True)
         
-        if active_grinder == False:
+            
             grinder_profile['profile'] = profile['name']
             grinder_profile['profile_role'] = profile['role']
             grinder_profile['active'] = True
             grinder_profile['payment']['amount_per_grind'] = profile['payment']
-            grinder_profile['payment']['first_payment'] = datetime.datetime(date.year, date.month, date.day)
-            grinder_profile['payment']['next_payment'] = datetime.datetime(date.year, date.month, date.day)
-            await interaction.client.grinderUsers.upsert(grinder_profile)
+            grinder_profile['payment']['first_payment'] = today
 
-        embed = await get_invisible_embed(f"{user.mention} has been appointed as {profile['name'].title()}")
-
-        removable_roles = list(guild_config['grinder_profiles'].keys())
-        removable_roles.append(guild_config['grinder']['role'])
-        removable_roles = [int(role) for role in removable_roles]
-        if profile['role'] in removable_roles:
-            removable_roles.remove(int(profile['role']))
-        roles_to_remove = [role.id for role in user.roles if role.id in removable_roles]
-        roles_to_remove = [interaction.guild.get_role(role) for role in roles_to_remove if interaction.guild.get_role(role) is not None]
-        try:
-            await user.remove_roles(*roles_to_remove)
-        except:
-            embed = await get_error_embed(f"Unable to remove roles from {user.mention}.")
-            return await interaction.edit_original_response(embed=embed)
-        roles_to_add = [guild_config['trial']['role']]
-        roles_to_add = [role for role in roles_to_add if role not in [role.id for role in user.roles]]
-        roles_to_add = [interaction.guild.get_role(role) for role in roles_to_add if interaction.guild.get_role(role) is not None]
-        try:
-            await user.add_roles(*roles_to_add, reason=f"Appointed as {profile['name']}")
-        except:
-            embed = await get_error_embed(f"Unable to assign roles to {user.mention}.")
-            return await interaction.edit_original_response(embed=embed)
+            try:
+                await interaction.client.grinderUsers.upsert(grinder_profile)
+            except:
+                return await interaction.edit_original_response(embed= await get_warning_embed(f"Unable to appoint {user.mention} as {profile['name'].title()}. Please try again later."))
         
-        appoint_dm = await get_invisible_embed(f"You have been reappointed as {profile['name'].title()}")
-        appoint_dm.title = f"Grinder Appointment as {profile['name'].title()}"
-        appoint_dm.description = guild_config['appoint_embed']['description']
-        appoint_dm.timestamp = datetime.datetime.now()
+        grinder_profile = await interaction.client.grinderUsers.find({"guild": interaction.guild.id, "user": user.id})
+        if not grinder_profile:
+            return await interaction.edit_original_response(embed= await get_error_embed(f"Unable to appoint {user.mention} as {profile['name'].title()}. Please try again later."))
+        bank_embed = await get_invisible_embed(f"Fetching {user.display_name}'s Grinder Stats ...")
+        bank_embed.description = None
+        bank_embed.title = f"{user.display_name}'s Grinder Stats"
+        bank_embed.add_field(name="Profile:", value=f"{grinder_profile['profile']}", inline=True)
+        bank_embed.add_field(name="Next Payment:", value=f'<t:{int(grinder_profile["payment"]["next_payment"].replace(tzinfo=utc).timestamp())}:D>', inline=True)
+        bank_embed.add_field(name="Grinder Since:", value=f'<t:{int(grinder_profile["payment"]["grinder_since"].replace(tzinfo=utc).timestamp())}:R>', inline=True)
+        bank_embed.add_field(name="Amount per grind", value=f"⏣ {grinder_profile['payment']['amount_per_grind']:,}", inline=True)
+        if grinder_profile['payment']['extra'] > 0:
+            bank_embed.add_field(name="Grinder Wallet:", value=f"⏣ {grinder_profile['payment']['extra']:,}", inline=True)
+        bank_embed.add_field(name="Grinder Bank:", value=f"⏣ {int(grinder_profile['payment']['total']):,}", inline=True)
         try:
-            appoint_dm.set_footer(text = interaction.guild.name, icon_url = interaction.guild.icon.url)
+            bank_embed.set_thumbnail(url=user.avatar.url)
         except:
-            appoint_dm.set_footer(text = interaction.guild.name)
+            bank_embed.set_thumbnail(url=user.default_avatar.url)
         try:
-            appoint_dm.set_thumbnail(url = guild_config['appoint_embed']['thumbnail'])
+            bank_embed.set_footer(text=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
+        except:
+            bank_embed.set_footer(text=f"{interaction.guild.name}")
+        bank_embed.timestamp = datetime.datetime.now()
+
+        appoint_embed = await get_invisible_embed(f"{user.mention} has been appointed as {profile['name'].title()}")
+        appoint_embed.title = f"Grinder Appointment as {profile['name'].title()}"
+        appoint_embed.description = guild_config['appoint_embed']['description']
+        appoint_embed.timestamp = datetime.datetime.now()
+        try:
+            appoint_embed.set_footer(text = interaction.guild.name, icon_url = interaction.guild.icon.url)
+        except:
+            appoint_embed.set_footer(text = interaction.guild.name)
+        try:
+            appoint_embed.set_thumbnail(url = guild_config['appoint_embed']['thumbnail'])
         except:
             pass
         grind_channel = interaction.guild.get_channel(guild_config['payment_channel'])
         if grind_channel:
             view = discord.ui.View()
-            view.add_item(discord.ui.Button(label="Grinder's Donation Channel", emoji="<:tgk_channel:1073908465405268029>" , style=discord.ButtonStyle.primary, url=f"{grind_channel.jump_url}"))
+            view.add_item(discord.ui.Button(label="Grinder's Donation Channel", emoji="<:tgk_channel:1073908465405268029>" , style=discord.ButtonStyle.primary, url=f"{grind_channel.jump_url}")
+            )
         try:
             if reminder_dm:
-                embeds = [appoint_dm, reminder_embed]
+                embeds = [appoint_embed, reminder_embed]
             else:
-                embeds = [appoint_dm]
+                embeds = [appoint_embed]
             if view:
                 await user.send(embeds=embeds, view=view)
             else:
@@ -563,20 +665,31 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         except:
             pass
 
-        msg = await interaction.edit_original_response(embed= await get_invisible_embed(f"{user.mention} has been appointed as {profile['name'].title()}"))
+        # reply to interaction
+        if sync_embed.fields == []:
+            embeds = [bank_embed]
+        else:
+            embeds = [sync_embed, bank_embed]
+        try:
+            msg = await interaction.edit_original_response(embeds=embeds)
+        except:
+            msg = None
+        
         log_channel = interaction.guild.get_channel(guild_config['grinder_logs'])
         if log_channel:
-            log_embed = await get_invisible_embed(f"{user.mention} has been reappointed as {profile['name'].title()}")
-            log_embed.title = f"Appointed as {profile['name'].title()}"
+            log_embed = await get_invisible_embed(f"{user.mention} has been appointed as {profile['name'].title()}")
+            log_embed.title = f"Grinder Appointed"
             log_embed.description = None
+            log_embed.add_field(name="Profile:", value=f"<:nat_reply:1146498277068517386> {profile['name'].title()}", inline=True)
             log_embed.add_field(name="User:", value=f"<:nat_reply:1146498277068517386> {user.mention}", inline=True)
-            log_embed.add_field(name="Appointed At:", value=f"<:nat_reply:1146498277068517386> {msg.jump_url}", inline=True)
+            log_embed.add_field(name="Appointed By:", value=f"<:nat_reply:1146498277068517386> {interaction.user.mention}", inline=True)
             try:
-                log_embed.set_footer(text=f"Appointed by {interaction.user.name} | ID: {interaction.user.id}", icon_url=interaction.user.avatar.url)
-            except:
-                log_embed.set_footer(text=f"Appointed by {interaction.user.name} | ID: {interaction.user.id}", icon_url=interaction.user.default_avatar.url)
-            try:
-                await log_channel.send(embed=log_embed)
+                if msg is not None:
+                    view = discord.ui.View()
+                    view.add_item(discord.ui.Button(label="Jump to Message", emoji="<:nat_reply:1146498277068517386>", style=discord.ButtonStyle.link, url=msg.jump_url))
+                    await log_channel.send(embed=log_embed, view=view)
+                else:
+                    await log_channel.send(embed=log_embed)
             except:
                 pass
 
@@ -593,9 +706,10 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
 
         grinder_profile = await interaction.client.grinderUsers.find({"guild": interaction.guild.id, "user": user.id})
         if not grinder_profile:
-            return await interaction.edit_original_response(embed= await get_error_embed(f"{user.mention} is not appointed as grinder"))
-        if not grinder_profile['active']:
-            return await interaction.edit_original_response(embed= await get_error_embed(f"{user.mention} is either demoted or on a break."))
+            if user.id == interaction.user.id:
+                return await interaction.edit_original_response(embed= await get_invisible_embed(f"You are not appointed as grinder. Please contact support for more information."))
+            else:
+                return await interaction.edit_original_response(embed= await get_error_embed(f"{user.mention} is not appointed as grinder"))
         embed = await get_invisible_embed(f"Fetching {user.display_name}'s Grinder Stats ...")
         embed.description = None
         embed.title = f"{user.display_name}'s Grinder Stats"
@@ -695,7 +809,6 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             except:
                 pass
 
-    # list all grinders stats based on active / inactive grinder
     @app_commands.command(name="list", description="List all grinders")
     @app_commands.check(GrinderCheck)
     async def list(self, interaction: Interaction):
@@ -890,29 +1003,28 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         role_changed = False
         user = interaction.guild.get_member(grinder_profile['user'])
         trial_role = interaction.guild.get_role(guild_config['trial']['role'])
-        if trial_role is not None and trial_role in user.roles:
-            date = datetime.date.today()
-            today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
-            if grinder_profile['payment']['next_payment'].replace(tzinfo=utc) > today and (grinder_profile['payment']['next_payment'].replace(tzinfo=utc) - grinder_profile['payment']['first_payment'].replace(tzinfo=utc)).days >= int(guild_config['trial']['duration'])/(3600*24):
-                if trial_role in user.roles:
-                    try:
-                        await user.remove_roles(trial_role)
-                    except:
-                        pass
-                    grinder_role = interaction.guild.get_role(guild_config['grinder']['role'])
-                    if grinder_role is not None and grinder_role not in user.roles:
-                        try:
-                            await user.add_roles(grinder_role)
-                            role_changed = True
-                        except:
-                            pass
-                    profile_role = interaction.guild.get_role(grinder_profile['profile_role'])
-                    if profile_role is not None and profile_role not in user.roles:
-                        try:
-                            await user.add_roles(profile_role)
-                            role_changed = True
-                        except:
-                            pass
+        date = datetime.date.today()
+        today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
+        if grinder_profile['payment']['next_payment'].replace(tzinfo=utc) > today and (grinder_profile['payment']['next_payment'].replace(tzinfo=utc) - grinder_profile['payment']['first_payment'].replace(tzinfo=utc)).days >= int(guild_config['trial']['duration'])/(3600*24):
+            if trial_role in user.roles:
+                try:
+                    await user.remove_roles(trial_role)
+                except:
+                    pass
+            grinder_role = interaction.guild.get_role(guild_config['grinder']['role'])
+            if grinder_role is not None and grinder_role not in user.roles:
+                try:
+                    await user.add_roles(grinder_role)
+                    role_changed = True
+                except:
+                    pass
+            profile_role = interaction.guild.get_role(grinder_profile['profile_role'])
+            if profile_role is not None and profile_role not in user.roles:
+                try:
+                    await user.add_roles(profile_role)
+                    role_changed = True
+                except:
+                    pass
         if role_changed:
             await interaction.followup.send(embed= await get_invisible_embed(f"{user.mention} has been promoted to {grinder_role.mention}"), ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
 
@@ -992,60 +1104,8 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             embed.set_thumbnail(url=user.avatar.url)
         except:
             embed.set_thumbnail(url=user.default_avatar.url)
+        embed.set_footer(text=f"Need to sync roles manually." , icon_url="https://cdn.discordapp.com/emojis/1062998119899484190.gif?size=56&quality=lossless")
         await interaction.edit_original_response(embed= embed)
-
-        role_changed = False
-        user = interaction.guild.get_member(grinder_profile['user'])
-        trial_role = interaction.guild.get_role(guild_config['trial']['role'])
-        if trial_role is not None and trial_role in user.roles:
-            date = datetime.date.today()
-            today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
-            if grinder_profile['payment']['next_payment'].replace(tzinfo=utc) > today and (grinder_profile['payment']['next_payment'].replace(tzinfo=utc) - grinder_profile['payment']['first_payment'].replace(tzinfo=utc)).days >= int(guild_config['trial']['duration'])/(3600*24):
-                if trial_role in user.roles:
-                    try:
-                        await user.remove_roles(trial_role)
-                    except:
-                        pass
-                    grinder_role = interaction.guild.get_role(guild_config['grinder']['role'])
-                    if grinder_role is not None and grinder_role not in user.roles:
-                        try:
-                            await user.add_roles(grinder_role)
-                            role_changed = True
-                        except:
-                            pass
-                    profile_role = interaction.guild.get_role(grinder_profile['profile_role'])
-                    if profile_role is not None and profile_role not in user.roles:
-                        try:
-                            await user.add_roles(profile_role)
-                            role_changed = True
-                        except:
-                            pass
-                    if role_changed:
-                        await interaction.followup.send(embed= await get_invisible_embed(f"{user.mention} has been promoted to {grinder_role.mention}"), ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
-            elif grinder_profile['payment']['next_payment'].replace(tzinfo=utc) > today and (grinder_profile['payment']['next_payment'].replace(tzinfo=utc) - grinder_profile['payment']['first_payment'].replace(tzinfo=utc)).days < int(guild_config['trial']['duration'])/(3600*24):
-                grinder_role = interaction.guild.get_role(guild_config['grinder']['role'])
-                profile_role = interaction.guild.get_role(grinder_profile['profile_role'])
-                if grinder_role is not None and grinder_role in user.roles:
-                    try:
-                        await user.remove_roles(grinder_role)
-                        role_changed = True
-                    except:
-                        pass
-                if profile_role is not None and profile_role in user.roles:
-                    try:
-                        await user.remove_roles(profile_role)
-                        role_changed = True
-                    except:
-                        pass
-                if trial_role is not None and trial_role not in user.roles:
-                    try:
-                        await user.add_roles(trial_role)
-                        role_changed = True
-                    except:
-                        pass
-                if role_changed:
-                    await interaction.followup.send(embed= await get_invisible_embed(f"{user.mention} has been demoted to {trial_role.mention}"), ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
-    
 
     @app_commands.command(name="summary", description="Check server based summary")
     @app_commands.check(GrinderCheck)
