@@ -441,8 +441,9 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                 # user roles in id 
                 removable_roles = list(guild_config['grinder_profiles'].keys())
                 removable_roles.append(guild_config['grinder']['role'])
+                removable_roles = [int(role) for role in removable_roles]
                 if profile['role'] in removable_roles:
-                    removable_roles.remove(profile['role'])
+                    removable_roles.remove(int(profile['role']))
                 roles_to_remove = [role.id for role in user.roles if role.id in removable_roles]
                 roles_to_remove = [interaction.guild.get_role(role) for role in roles_to_remove if interaction.guild.get_role(role) is not None]
                 try:
@@ -515,8 +516,9 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
 
         removable_roles = list(guild_config['grinder_profiles'].keys())
         removable_roles.append(guild_config['grinder']['role'])
+        removable_roles = [int(role) for role in removable_roles]
         if profile['role'] in removable_roles:
-            removable_roles.remove(profile['role'])
+            removable_roles.remove(int(profile['role']))
         roles_to_remove = [role.id for role in user.roles if role.id in removable_roles]
         roles_to_remove = [interaction.guild.get_role(role) for role in roles_to_remove if interaction.guild.get_role(role) is not None]
         try:
@@ -904,6 +906,13 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                             role_changed = True
                         except:
                             pass
+                    profile_role = interaction.guild.get_role(grinder_profile['profile_role'])
+                    if profile_role is not None and profile_role not in user.roles:
+                        try:
+                            await user.add_roles(profile_role)
+                            role_changed = True
+                        except:
+                            pass
         if role_changed:
             await interaction.followup.send(embed= await get_invisible_embed(f"{user.mention} has been promoted to {grinder_role.mention}"), ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
 
@@ -984,6 +993,59 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         except:
             embed.set_thumbnail(url=user.default_avatar.url)
         await interaction.edit_original_response(embed= embed)
+
+        role_changed = False
+        user = interaction.guild.get_member(grinder_profile['user'])
+        trial_role = interaction.guild.get_role(guild_config['trial']['role'])
+        if trial_role is not None and trial_role in user.roles:
+            date = datetime.date.today()
+            today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
+            if grinder_profile['payment']['next_payment'].replace(tzinfo=utc) > today and (grinder_profile['payment']['next_payment'].replace(tzinfo=utc) - grinder_profile['payment']['first_payment'].replace(tzinfo=utc)).days >= int(guild_config['trial']['duration'])/(3600*24):
+                if trial_role in user.roles:
+                    try:
+                        await user.remove_roles(trial_role)
+                    except:
+                        pass
+                    grinder_role = interaction.guild.get_role(guild_config['grinder']['role'])
+                    if grinder_role is not None and grinder_role not in user.roles:
+                        try:
+                            await user.add_roles(grinder_role)
+                            role_changed = True
+                        except:
+                            pass
+                    profile_role = interaction.guild.get_role(grinder_profile['profile_role'])
+                    if profile_role is not None and profile_role not in user.roles:
+                        try:
+                            await user.add_roles(profile_role)
+                            role_changed = True
+                        except:
+                            pass
+                    if role_changed:
+                        await interaction.followup.send(embed= await get_invisible_embed(f"{user.mention} has been promoted to {grinder_role.mention}"), ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
+            elif grinder_profile['payment']['next_payment'].replace(tzinfo=utc) > today and (grinder_profile['payment']['next_payment'].replace(tzinfo=utc) - grinder_profile['payment']['first_payment'].replace(tzinfo=utc)).days < int(guild_config['trial']['duration'])/(3600*24):
+                grinder_role = interaction.guild.get_role(guild_config['grinder']['role'])
+                profile_role = interaction.guild.get_role(grinder_profile['profile_role'])
+                if grinder_role is not None and grinder_role in user.roles:
+                    try:
+                        await user.remove_roles(grinder_role)
+                        role_changed = True
+                    except:
+                        pass
+                if profile_role is not None and profile_role in user.roles:
+                    try:
+                        await user.remove_roles(profile_role)
+                        role_changed = True
+                    except:
+                        pass
+                if trial_role is not None and trial_role not in user.roles:
+                    try:
+                        await user.add_roles(trial_role)
+                        role_changed = True
+                    except:
+                        pass
+                if role_changed:
+                    await interaction.followup.send(embed= await get_invisible_embed(f"{user.mention} has been demoted to {trial_role.mention}"), ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
+    
 
     @app_commands.command(name="summary", description="Check server based summary")
     @app_commands.check(GrinderCheck)
