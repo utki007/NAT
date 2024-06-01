@@ -315,7 +315,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                     except:
                         pass
                     continue
-                if today > grinder_user['payment']['next_payment']:
+                elif today > grinder_user['payment']['next_payment']:
                     days = (today - grinder_user['payment']['next_payment']).days
                     if days <= demote_days:
                         continue
@@ -381,8 +381,48 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                             await log_channel.send(embed=log_embed)
                         except:
                             pass
-                    await asyncio.sleep(1)
-
+                    await asyncio.sleep(0.1)
+                
+                else:
+                    if grinder_user['payment']['next_payment'].replace(tzinfo=utc) >= today and (grinder_user['payment']['next_payment'].replace(tzinfo=utc) - grinder_user['payment']['first_payment'].replace(tzinfo=utc)).days >= int(guild_config['trial']['duration'])/(3600*24):
+                        roles_to_add = [profile_role, grinder_role]
+                        roles_to_add = [role for role in roles_to_add if role not in user.roles]
+                        if len(roles_to_add) > 0:
+                            try:
+                                await user.add_roles(*roles_to_add, reason="Promoted to Grinder")
+                                await asyncio.sleep(0.1)
+                            except:
+                                pass
+                        roles_to_remove = list(guild_config['grinder_profiles'].keys())
+                        roles_to_remove.append(guild_config['trial']['role'])
+                        roles_to_remove = [int(role) for role in roles_to_remove]
+                        roles_to_remove.remove(profile_role.id)
+                        roles_to_remove = [role for role in user.roles if role.id in roles_to_remove]
+                        if len(roles_to_remove) > 0:
+                            try:
+                                await user.remove_roles(*roles_to_remove, reason="Syncing roles...")
+                                await asyncio.sleep(0.1)
+                            except:
+                                pass
+                    else:
+                        roles_to_remove = list(guild_config['grinder_profiles'].keys())
+                        roles_to_remove.append(guild_config['grinder']['role'])
+                        roles_to_remove = [int(role) for role in roles_to_remove]
+                        roles_to_remove = [role for role in user.roles if role.id in roles_to_remove]
+                        if len(roles_to_remove) > 0:
+                            try:
+                                await user.remove_roles(*roles_to_remove, reason="Syncing roles...")
+                                await asyncio.sleep(0.1)
+                            except:
+                                pass
+                        if trial_role not in user.roles:
+                            try:
+                                await user.add_roles(trial_role, reason="Syncing roles...")
+                                await asyncio.sleep(0.1)
+                            except:
+                                pass
+                    print(f"Roles synced for {user.display_name}")
+                    
     @grinder_demotions.before_loop
     async def before_grinder_demotions(self):
         await self.bot.wait_until_ready()
