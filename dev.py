@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 
 import os
+import io
 import asyncio
 import datetime
 import logging
@@ -51,15 +52,19 @@ class Botbase(commands.Bot):
         self.dank_db = self.mongo["Dank_Data"]
         self.dankItems = Document(self.dank_db, "Dank_Items")
 
+        self.grinder_db = self.mongo["Grinders_V2"]
+        self.grinderSettings = Document(self.grinder_db, "settings")
+        self.grinderUsers = Document(self.grinder_db, "users")    
+
     async def setup_hook(self):
         for file in os.listdir("./cogs"):
-            if file.endswith(".py") and not file.startswith(("__",)) and file.startswith(("owner", "serverUtils", "mafia")):
+            if file.endswith(".py") and not file.startswith(("__",)) and file.startswith(("owner", "serverUtils", "temp", "event")):
                 await self.load_extension(f"cogs.{file[:-3]}")
 
-        for folder in os.listdir("./modules"):           
-                for file in os.listdir(f"./modules/{folder}"):
-                    if file == "module.py":
-                        await self.load_extension(f"modules.{folder}.{file[:-3]}")
+        # for folder in os.listdir("./modules"):           
+        #         for file in os.listdir(f"./modules/{folder}"):
+        #             if file == "module.py":
+        #                 await self.load_extension(f"modules.{folder}.{file[:-3]}")
 
 
 bot = Botbase(998152864201457754, False)
@@ -81,12 +86,18 @@ async def on_ready():
         activity=discord.Activity(type=discord.ActivityType.watching, name="Over Server Security"),
         status=discord.Status.offline)
 
-    await bot.tree.sync()
+    if os.environ.get('ENV') == 'prod':
+        # open file for read and write
+        with open("discord.log", "r+") as file:
+            content = file.read()
+            file = io.BytesIO(content.encode('utf-8'))
+            chl = bot.get_channel(1246042670418362378)
+            await chl.send(file=discord.File(fp=file, filename=f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.log"), 
+                           content=f"<t:{int(datetime.datetime.now().timestamp())}:R>")
+            # clear file even if file is being used by another process
+            file.write("")
+            file.close()            
 
-
-# @bot.tree.command(
-#     name="ping",
-#     description="Check bots latency")
 
 @bot.event
 async def on_message(message):
