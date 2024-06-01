@@ -105,6 +105,18 @@ class MyBot(commands.Bot):
         if self.maintenance:
             await bot.change_presence(status=discord.Status.dnd, activity=discord.Activity(type=discord.ActivityType.watching, name="Under Maintenance!"))
 
+        if os.environ.get('ENV') == 'PROD':
+            with open("discord.log", "r+") as file:
+                content = file.read()
+                file = io.BytesIO(content.encode('utf-8'))
+                chl = bot.get_channel(1246042670418362378)
+                await chl.send(file=discord.File(fp=file, filename=f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.log"), 
+                            content=f"<t:{int(datetime.datetime.now().timestamp())}:R>")
+                # clear file even if file is being used by another process
+                file.write("")
+                file.close()
+
+
 if os.path.exists(os.getcwd()+"./properties/tokens.json"):
     application_id = 1010883367119638658
 else:

@@ -663,6 +663,8 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 
 
 	async def cog_app_command_error(self, interaction: discord.Interaction[discord.Client], error: app_commands.AppCommandError) -> None:
+		if isinstance(error, app_commands.TransformerError):
+			return
 		error_traceback = "".join(traceback.format_exception(type(error), error, error.__traceback__, 4))
 		buffer = BytesIO(error_traceback.encode('utf-8'))
 		file = discord.File(buffer, filename=f"Error-{interaction.command.name}.log")

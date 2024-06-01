@@ -50,7 +50,7 @@ class Giveaway(View):
             view = GiveawayLeave(data, interaction.user, interaction)
             embed = await get_error_embed("You have already joined this giveaway. Do you want to leave?")
             embed.title = "Already Entered"
-            embed.description = "You already entered this giveaway. Leave and rejoin to update your multipliers."
+            embed.description = "You already entered this giveaway"
             await interaction.followup.send(embed=embed, view=view)
             await view.wait()
             if view.value is True:
@@ -112,13 +112,10 @@ class Giveaway(View):
                 print(e)
                 pass
 
-        bypassed = False    
         if len(result.keys()) > 0:
             if data['bypass_role'] and (set(user_roles) & set(data['bypass_role'])):
-                bypassed = True
                 pass
             elif set(user_roles) & set(config['global_bypass']):
-                bypassed = True
                 pass
             else:
                 embed = discord.Embed(description="", title="You Failed to meet the following requriements")
@@ -556,7 +553,7 @@ class GiveawayMultiplierView(View):
                 del self.config['multipliers'][key]
                 continue
             options.append(SelectOption(label=f"{role.name}", value=str(role.id), description=f"Mutiplier: {value}x"))
-        view.select = Select_General(interaction=interaction, options=options, placeholder="Select the role you want to remove multiplier for",min_values=1, max_values=10)
+        view.select = Select_General(interaction=interaction, options=options, placeholder="Select the role you want to remove multiplier for",min_values=1, max_values=len(options)-1)
         view.add_item(view.select)
         await interaction.response.send_message(view=view, ephemeral=True)
 
