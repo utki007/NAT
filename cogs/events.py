@@ -9,7 +9,8 @@ from discord.ext import commands
 import pytz
 
 from utils.convertor import dict_to_tree
-from utils.embeds import get_warning_embed
+from utils.transformers import BadArgument
+from utils.embeds import get_warning_embed, get_error_embed
 
 
 class events(commands.Cog):
@@ -19,7 +20,13 @@ class events(commands.Cog):
 		self.bot.tree.on_error = self.on_app_command_error
 	
 	async def on_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
-		if isinstance(error, app_commands.CommandOnCooldown):
+		if isinstance(error, BadArgument):
+			embed = await get_error_embed(content=f"An error occurred: {error}")
+			if interaction.response.is_done():
+				return await interaction.followup.send(embed=embed, ephemeral=True)
+			return await interaction.response.send_message(embed=embed, ephemeral=True)
+		
+		elif isinstance(error, app_commands.CommandOnCooldown):
 			m, s = divmod(error.retry_after, 60)
 			h, m = divmod(m, 60)
 			if int(h) == 0 and int(m) == 0:
