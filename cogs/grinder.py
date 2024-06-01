@@ -465,6 +465,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         active_grinder = False
 
         grinder_profile = await interaction.client.grinderUsers.find({"guild": interaction.guild.id, "user": user.id})
+        sync_embed = await get_invisible_embed(f"## Roles synced for {user.mention}")
 
         if not grinder_profile:
             record = await interaction.client.grinderUsers.find({"reminder_time": {"$exists":"true"}, "user": interaction.user.id})
@@ -712,6 +713,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             pass
 
         # reply to interaction
+        
         if sync_embed.fields == []:
             embeds = [bank_embed]
         else:
