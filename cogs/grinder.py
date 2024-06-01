@@ -283,7 +283,13 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         
         guild_configs = await self.bot.grinderSettings.get_all()
         date = datetime.date.today()
-        today = datetime.datetime(date.year, date.month, date.day+1, tzinfo=utc)
+        try:
+            today = datetime.datetime(date.year, date.month, date.day+1, tzinfo=utc)
+        except:
+            try:
+                today = datetime.datetime(date.year, date.month+1, 1, tzinfo=utc)
+            except:
+                today = datetime.datetime(date.year+1, 1, 1, tzinfo=utc)
         for guild_config in guild_configs:
             
             guild = self.bot.get_guild(guild_config['_id'])
