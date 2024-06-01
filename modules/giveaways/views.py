@@ -445,26 +445,26 @@ class Messages(View):
         if self.current_message is None: return await interaction.response.send_message("Please select a message first.", ephemeral=True)
         default = {
             "host": {
-                    "title": "Your giveaway has ended!",
-                    "description": "**Ended:**{timestamp}\n**Winners:**\n{winners}",
+                    "title": "Your giveaway has {prize} ended!",
+                    "description": "**Ended:** {timestamp}\n**Winners:**\n{winners}",
                     "color": 2829617
                 },
-            "gaw": {
+                "gaw": {
                     "title": "{prize}",
                     "description": "**Ends At:** {timestamp}\n**Donated By:** {donor}\n",
                     "color": 2829617
                 },
-            "dm": {
+                "dm": {
                     "title": "You won Giveaway!",
                     "description": "**Congratulations!** You won {prize} in {guild}.",
                     "color": 2829617
                 },
-            "end": {
+                "end": {
                     "title": "Congratulations!",
                     "description": "<a:tgk_blackCrown:1097514279973961770> **Won:** {prize}",
                     "color": 2829617
+                }
             }
-        }
         self.config['messages'][self.current_message] = default[self.current_message]
         await interaction.response.edit_message(embed=await self.refreshEmbed(interaction, self.config), view=self)
         await interaction.client.giveaway.update_config(interaction.guild, self.config)

@@ -91,8 +91,8 @@ class Giveaways_Backend:
             "global_bypass": [],
             "messages":{
                 "host": {
-                    "title": "Your giveaway has ended!",
-                    "description": "**Ended:**{timestamp}\n**Winners:**\n{winners}",
+                    "title": "Your giveaway has {prize} ended!",
+                    "description": "**Ended:** {timestamp}\n**Winners:**\n{winners}",
                     "color": 2829617
                 },
                 "gaw": {
