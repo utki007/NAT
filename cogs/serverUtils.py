@@ -213,7 +213,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 					role = f"**Role:** `None`"
 				else:
 					role = f"**Role:** {role.mention}"
-				embed.add_field(name="Grinder Config:", value=f"<:nat_replycont:1146496789361479741> {role} \n <:nat_replycont:1146496789361479741> {grinder_duration} \n<:nat_reply:1146498277068517386> {kick} ", inline=True)
+				embed.add_field(name="Grinder Config:", value=f"<:nat_replycont:1146496789361479741> {role} \n<:nat_replycont:1146496789361479741> {grinder_duration} \n<:nat_reply:1146498277068517386> {kick} ", inline=True)
 				
 				trial_duration = data['trial']['duration']
 				trial_role = interaction.guild.get_role(data['trial']['role'])
@@ -225,7 +225,7 @@ class Serversettings_Dropdown(discord.ui.Select):
 					trial_role = f"**Role:** `None`"
 				else:
 					trial_role = f"**Role:** {trial_role.mention}"
-				embed.add_field(name="Trial Config:", value=f"<:nat_replycont:1146496789361479741> {trial_role} \n <:nat_reply:1146498277068517386> {trial_duration}", inline=True)
+				embed.add_field(name="Trial Config:", value=f"<:nat_replycont:1146496789361479741> {trial_role} \n<:nat_reply:1146498277068517386> {trial_duration}", inline=True)
 				embed.add_field(name="\u200b", value='\u200b', inline=True)
 
 				roles = data['manager_roles']
