@@ -339,7 +339,7 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 		donor_name = donor.mention if donor else interaction.user.mention
 		raw_timestap = int((datetime.datetime.now() + datetime.timedelta(seconds=time)).timestamp())
 		timestamp = f"<t:{raw_timestap}:R> (<t:{raw_timestap}:t>)"
-		values = {'guild': guild_name, 'prize': prize, 'donor': donor_name, 'timestamp': timestamp}
+		values = {'guild': guild_name, 'prize': prize, 'donor': donor_name, 'timestamp': timestamp, 'host': interaction.user.mention if not donor else donor.mention}
 		title_kewrd = {}
 		description_kewrd = {}
 
