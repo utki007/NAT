@@ -59,7 +59,7 @@ class Giveaway(View):
                     self.children[1].label = None
                     self.children[1].disabled = True
                 await interaction.followup.edit_message(message_id=interaction.message.id, view=self)
-                return
+            return
         
         result = {}
         backend: Giveaways_Backend = interaction.client.giveaway
