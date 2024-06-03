@@ -505,7 +505,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         
             removable_roles = list(guild_config['grinder_profiles'].keys())
             removable_roles.append(guild_config['grinder']['role'])
-            removable_roles = [int(role) for role in removable_roles]
+            removable_roles = [int(role) for role in removable_roles if role is not None]
             roles_to_remove = [role.id for role in user.roles if role.id in removable_roles]
             roles_to_remove = [interaction.guild.get_role(role) for role in roles_to_remove if interaction.guild.get_role(role) is not None]
             try:
@@ -540,7 +540,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         
             removable_roles = list(guild_config['grinder_profiles'].keys())
             removable_roles.append(guild_config['trial']['role'])
-            removable_roles = [int(role) for role in removable_roles]
+            removable_roles = [int(role) for role in removable_roles if role is not None]
             if int(grinder_profile['profile_role']) in removable_roles:
                 removable_roles.remove(int(grinder_profile['profile_role']))
             roles_to_remove = [role.id for role in user.roles if role.id in removable_roles]
@@ -620,7 +620,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                 # sync roles
                 removable_roles = list(guild_config['grinder_profiles'].keys())
                 removable_roles.append(guild_config['grinder']['role'])
-                removable_roles = [int(role) for role in removable_roles]
+                removable_roles = [int(role) for role in removable_roles if role is not None]
                 roles_to_remove = [role.id for role in user.roles if role.id in removable_roles]
                 roles_to_remove = [interaction.guild.get_role(role) for role in roles_to_remove if interaction.guild.get_role(role) is not None]
                 try:
