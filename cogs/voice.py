@@ -81,7 +81,13 @@ class Voice(commands.Cog):
                 member.guild.default_role: discord.PermissionOverwrite(connect=False, speak=False, stream=False, use_voice_activation=False, priority_speaker=False, use_application_commands=True),
                 member.guild.me: discord.PermissionOverwrite(view_channel=True)
             }
-            private_channel = await member.guild.create_voice_channel(name=f"{member.display_name}'s Voice", category=channel.category, overwrites=overrite, reason="Private Voice Channel")
+            try:
+                private_channel = await member.guild.create_voice_channel(name=f"{member.display_name}'s Voice", category=channel.category, overwrites=overrite, reason="Private Voice Channel")
+            except discord.Forbidden:
+                try:
+                    return await member.send("I don't have permission to create a voice channel")
+                except discord.Forbidden:
+                    pass
             await member.move_to(private_channel)
             data = {
                 "_id": private_channel.id,

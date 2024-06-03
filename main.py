@@ -112,10 +112,8 @@ class MyBot(commands.Bot):
                 chl = bot.get_channel(1246042670418362378)
                 await chl.send(file=discord.File(fp=file, filename=f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.log"), 
                             content=f"<t:{int(datetime.datetime.now().timestamp())}:R>")
-                # clear file content
-                file.write(" ")
-                file.close()
-
+                with open("bot.log", "w") as edit_file:
+                    pass
 
 if os.path.exists(os.getcwd()+"./properties/tokens.json"):
     application_id = 1010883367119638658
