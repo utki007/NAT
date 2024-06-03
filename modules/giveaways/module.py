@@ -23,6 +23,7 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 	def __init__(self, bot):
 		self.bot = bot
 		self.backend = Giveaways_Backend(bot)
+		self.release_type = "public"
 		self.bot.giveaway = self.backend #type: ignore
 		self.giveaway_loop.start()
 		self.giveaway_in_prosses = []
@@ -191,7 +192,7 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 			for winner in winners:
 				winners_mention += f"{winners.index(winner)+1}. {winner.mention}\n"
 			
-			values = {'guild': guild_name, 'prize': prize, 'donor': donor_name, 'timestamp': f"<t:{int(giveaway['end_time'].timestamp())}:R> (<t:{int(giveaway['end_time'].timestamp())}:t>)", "winners": winners_mention}
+			values = {'guild': guild_name, 'prize': prize, 'donor': donor_name, 'timestamp': f"<t:{int(giveaway['end_time'].timestamp())}:R> (<t:{int(giveaway['end_time'].timestamp())}:t>)", "winner": winners_mention}
 			end_emd_title = {};end_emd_description = {};host_dm_title = {};host_dm_description = {};dm_emd_title = {};dm_emd_description = {}
 			for key, value in values.items():
 				if key in end_emd.title:
@@ -207,17 +208,27 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 				if key in dm_emd.description:
 					dm_emd_description[key] = value
 
+			try:
+				end_emd.title = end_emd.title.format(**end_emd_title)
+				end_emd.description = end_emd.description.format(**end_emd_description)
 
+				host_dm.title = host_dm.title.format(**host_dm_title)
+				host_dm.description = host_dm.description.format(**host_dm_description)
 
+				dm_emd.title = dm_emd.title.format(**dm_emd_title)
+				dm_emd.description = dm_emd.description.format(**dm_emd_description)
+			except:
+				end_emd = discord.Embed(title="", description="", color=0x2b2d31)
+				host_dm = discord.Embed(title="", description="", color=0x2b2d31)
+				dm_emd = discord.Embed(title="", description="", color=0x2b2d31)
 
-			end_emd.title = end_emd.title.format(**end_emd_title)
-			end_emd.description = end_emd.description.format(**end_emd_description)
+				dm_emd.title = "You won Giveaway!"
+				host_dm.title = f"Your giveaway has {prize} ended!"
+				end_emd.title = "Congratulations!"
 
-			host_dm.title = host_dm.title.format(**host_dm_title)
-			host_dm.description = host_dm.description.format(**host_dm_description)
-
-			dm_emd.title = dm_emd.title.format(**dm_emd_title)
-			dm_emd.description = dm_emd.description.format(**dm_emd_description)
+				dm_emd.description = f"**Congratulations!** You won {prize} in {guild}."
+				host_dm.description = f"**Ended:** {values['timestamp']}\n**Winners:**\n{values['winner']}"
+				end_emd.description = f"<a:tgk_blackCrown:1097514279973961770> **Won:** {prize}"
 
 			payoyt_mesg = await gaw_message.reply(embed=end_emd, view=None, content=",".join([winner.mention for winner in winners]))
 			
@@ -236,7 +247,7 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 				item = None
 			for winner in winners:
 				if isinstance(winner, discord.Member):
-					if giveaway['dank'] is True:
+					if giveaway['dank'] is True and payout_config['enable_payouts'] is True:						
 						await self.bot.payouts.create_payout(config=payout_config, event="Giveaway", winner=winner, host=host, prize=giveaway['prize'], message=payoyt_mesg, item=item)
 					try:
 						await winner.send(embed=dm_emd, view=link_view)
@@ -551,7 +562,16 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 		for giveaways in giveaways_group:
 			desc = ''
 			for giveaway in giveaways:
-				desc += f"**` {gaw_count}. ` {giveaway['prize']}**\n"
+				
+				if giveaway['dank']:
+					if giveaway['item']:
+						prize = f"{giveaway['prize']}x {giveaway['item']}"
+					else:
+						prize = f"⏣ {giveaway['prize']:,}"
+				else:
+					prize = giveaway['prize']
+				desc += f"<:nat_reply:1146498277068517386>**{gaw_count}.** {prize}\n"
+
 				desc += f"<:nat_replycont:1146496789361479741>**Ends at:** <t:{int(giveaway['end_time'].timestamp())}:R>\n"
 				desc += f"<:nat_reply:1146498277068517386>**Link:** [Click Here](https://discord.com/channels/{giveaway['guild']}/{giveaway['channel']}/{giveaway['_id']})\n\n"
 				gaw_count += 1
