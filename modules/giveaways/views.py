@@ -334,7 +334,7 @@ class GiveawayConfigView(View):
         embed.description += "- {prize} - The prize of the giveaway\n"
         embed.description += "- {guild} - Name of the guild\n"
         embed.description += "- {timestamp} - The timestamp of the giveaway\n"
-        embed.description += "- {winner} - The winners of the giveaway\n"
+        embed.description += "- {winners} - The winners of the giveaway\n"
         embed.description += "- {link} - The link to the giveaway message\n"        
         view = Messages(self.data, interaction.user, interaction.message)
         await interaction.response.send_message(embed=embed, view=view, ephemeral=False)
@@ -362,7 +362,7 @@ class Messages(View):
         value += "- {prize} - The prize of the giveaway\n"
         value += "- {guild} - Name of the guild\n"
         value += "- {timestamp} - The timestamp of the giveaway\n"
-        value += "- {winner} - The winners of the giveaway\n"
+        value += "- {winners} - The winners of the giveaway\n"
         value += "- {link} - The link to the giveaway message\n"
         embed.add_field(name="Supported variables List", value=value)
         return embed

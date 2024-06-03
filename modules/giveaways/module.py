@@ -192,7 +192,7 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 			for winner in winners:
 				winners_mention += f"{winners.index(winner)+1}. {winner.mention}\n"
 			
-			values = {'guild': guild_name, 'prize': prize, 'donor': donor_name, 'timestamp': f"<t:{int(giveaway['end_time'].timestamp())}:R> (<t:{int(giveaway['end_time'].timestamp())}:t>)", "winner": winners_mention}
+			values = {'guild': guild_name, 'prize': prize, 'donor': donor_name, 'timestamp': f"<t:{int(datetime.date.now().timestamp())}:R> (<t:{int(datetime.date.now().timestamp())}:t>)", "winners": winners_mention}
 			end_emd_title = {};end_emd_description = {};host_dm_title = {};host_dm_description = {};dm_emd_title = {};dm_emd_description = {}
 			for key, value in values.items():
 				if key in end_emd.title:
@@ -207,6 +207,7 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 					dm_emd_title[key] = value
 				if key in dm_emd.description:
 					dm_emd_description[key] = value
+					
 
 			try:
 				end_emd.title = end_emd.title.format(**end_emd_title)
@@ -217,7 +218,15 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 
 				dm_emd.title = dm_emd.title.format(**dm_emd_title)
 				dm_emd.description = dm_emd.description.format(**dm_emd_description)
-			except:
+			except Exception as e:
+				
+				error_traceback = "".join(traceback.format_exception(type(e), e, e.__traceback__, 4))
+				buffer = BytesIO(error_traceback.encode('utf-8'))
+				file = discord.File(buffer, filename=f"Error-e.log")
+				buffer.close()
+				chl = self.bot.get_channel(1130057933468745849)
+				await chl.send(file=file, content="<@488614633670967307>", silent=True)
+				
 				end_emd = discord.Embed(title="", description="", color=0x2b2d31)
 				host_dm = discord.Embed(title="", description="", color=0x2b2d31)
 				dm_emd = discord.Embed(title="", description="", color=0x2b2d31)
