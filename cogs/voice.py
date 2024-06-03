@@ -75,6 +75,7 @@ class Voice(commands.Cog):
             try:
                 if channel.id != self.bot.vc_config_cache[member.guild.id]['join_create']: return
             except KeyError: return
+            if self.bot.vc_config_cache[member.guild.id]['enabled'] is False: return
             overrite = {
                 member: discord.PermissionOverwrite(view_channel=True,connect=True, speak=True, stream=True, use_voice_activation=True, priority_speaker=True),
                 member.guild.default_role: discord.PermissionOverwrite(connect=False, speak=False, stream=False, use_voice_activation=False, priority_speaker=False, use_application_commands=True),

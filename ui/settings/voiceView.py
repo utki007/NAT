@@ -62,6 +62,7 @@ class Voice_config(View):
 			self.data['enabled'] = False
 			button.emoji = "<:toggle_off:1123932890993020928>"
 			button.style = discord.ButtonStyle.gray
+			button.label = "Module Disabled"
 		else:
 			self.data['enabled'] = True
 			self.children[0].emoji = "<:toggle_on:1123932825956134912>"
@@ -112,7 +113,15 @@ class Voice_UI(View):
 			unit = 'second' if seconds == 1 else 'seconds'
 			return await interaction.response.send_message(f"You're on cooldown for {seconds} {unit}!", ephemeral=True)
 		else:
-			raise error
+			embed = discord.Embed(
+				color=discord.Color.red(),
+				title="An error occured",
+				description=f"```{error}```"
+			)
+			if interaction.response.is_done():
+				await interaction.followup.send(embed=embed, ephemeral=True)
+			else:
+				await interaction.response.send_message(embed=embed, ephemeral=True)
 	
 	@button(label="Lock", style=discord.ButtonStyle.gray, emoji="<:tgk_lock:1072851190213259375>", row=0, custom_id="vc:lock")
 	async def lock(self, interaction: discord.Interaction, button: Button):
@@ -174,7 +183,7 @@ class Voice_UI(View):
 		
 		view = discord.ui.View()
 		view.value = None
-		view.select: discord.ui.UserSelect = User_Select(placeholder="Select friends you want to add/remove", max_values=10, min_values=1)
+		view.select = User_Select(placeholder="Select friends you want to add/remove", max_values=10, min_values=1)
 		view.add_item(view.select)
 		await interaction.response.send_message(view=view, ephemeral=True)
 		await view.wait()
