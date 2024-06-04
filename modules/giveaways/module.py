@@ -164,9 +164,23 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 			embed.insert_field_at(0, name="Winners", value="\n".join([winner.mention for winner in winners]))
 			await gaw_message.edit(embed=embed, view=view, content="Giveaway Ended")
 
-			end_emd = discord.Embed(title=config['messages']['end']['title'], description=config['messages']['end']['description'], color=config['messages']['end']['color'])
-			host_dm = discord.Embed(title=config['messages']['host']['title'], description=config['messages']['host']['description'], color=config['messages']['host']['color'])
-			dm_emd = discord.Embed(title=config['messages']['dm']['title'], description=config['messages']['dm']['description'], color=config['messages']['dm']['color'])
+			try:
+				end_emd = discord.Embed(title=config['messages']['end']['title'], description=config['messages']['end']['description'], color=config['messages']['end']['color'])
+				host_dm = discord.Embed(title=config['messages']['host']['title'], description=config['messages']['host']['description'], color=config['messages']['host']['color'])
+				dm_emd = discord.Embed(title=config['messages']['dm']['title'], description=config['messages']['dm']['description'], color=config['messages']['dm']['color'])
+
+			except Exception as e:
+
+				error_traceback = "".join(traceback.format_exception(type(e), e, e.__traceback__, 4))
+				buffer = BytesIO(error_traceback.encode('utf-8'))
+				file = discord.File(buffer, filename=f"Error-e.log")
+				buffer.close()
+				chl = self.bot.get_channel(1130057933468745849)
+				await chl.send(file=file, content="<@488614633670967307>", silent=True)
+				default_embeds = self.backend.default_embeds
+				end_emd = discord.Embed(title=default_embeds['end']['title'], description=default_embeds['end']['description'], color=default_embeds['end']['color'])
+				host_dm = discord.Embed(title=default_embeds['host']['title'], description=default_embeds['host']['description'], color=default_embeds['host']['color'])
+				dm_emd = discord.Embed(title=default_embeds['dm']['title'], description=default_embeds['dm']['description'], color=default_embeds['dm']['color'])
 
 			if giveaway['dank']:
 				if giveaway['item']:

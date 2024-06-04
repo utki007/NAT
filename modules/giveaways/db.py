@@ -69,6 +69,28 @@ class Giveaways_Backend:
         self.amariNat = AmariClient(os.environ.get("AMARI_NAT"))
         self.amariOCTANE = AmariClient(os.environ.get("AMARI_OCTANE"))            
         self.giveaways_cache = {}
+        self.default_embeds = {
+            "host": {
+                    "title": "Your giveaway has {prize} ended!",
+                    "description": "**Ended:** {timestamp}\n**Winners:**\n{winners}",
+                    "color": 2829617
+                },
+            "gaw": {
+                    "title": "{prize}",
+                    "description": "**Ends At:** {timestamp}\n**Donated By:** {donor}\n",
+                    "color": 2829617
+                },
+            "dm": {
+                    "title": "You won Giveaway!",
+                    "description": "**Congratulations!** You won {prize} in {guild}.",
+                    "color": 2829617
+                },
+            "end": {
+                    "title": "Congratulations!",
+                    "description": "<a:tgk_blackCrown:1097514279973961770> **Won:** {prize}",
+                    "color": 2829617
+                }
+            }
 
     async def get_config(self, guild: discord.Guild | int):
         guild_id = guild.id if isinstance(guild, discord.Guild) else guild
