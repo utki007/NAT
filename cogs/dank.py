@@ -369,7 +369,7 @@ class dank(commands.GroupCog, name="adventure", description="Get Fun Adventure S
 		if len(embed.fields) == 0:return
 
 		item = embed.title
-		item_data = await self.bot.dank.find(item)
+		item_data = await self.bot.dankItems.find(item)
 		if not item_data:
 			item_data = {
 				"_id": item,
@@ -377,9 +377,8 @@ class dank(commands.GroupCog, name="adventure", description="Get Fun Adventure S
 				"last_updated": datetime.datetime.utcnow(),
 				"last_prices": []
 			}
-			await self.bot.dank.insert(item_data)
+			await self.bot.dankItems.insert(item_data)
 		try:
-
 			price_field = embed.fields[1]
 			price = int(price_field.value.split("\n")[0].split(" ")[-1].replace(",", ""))
 
@@ -391,7 +390,7 @@ class dank(commands.GroupCog, name="adventure", description="Get Fun Adventure S
 			item_data['last_updated'] = datetime.datetime.utcnow()
 			if len(item_data['last_prices']) > 10:
 				item_data['last_prices'].pop(0)
-			await self.bot.dank.update(item_data)
+			await self.bot.dankItems.update(item_data)
 			self.bot.dank_items_cache[item_data["_id"]] = item_data
 		except:
 			pass
