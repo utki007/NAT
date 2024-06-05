@@ -356,6 +356,47 @@ class dank(commands.GroupCog, name="adventure", description="Get Fun Adventure S
 			await interaction.edit_original_response( attachments=[file])
 			image_binary.close()
 
+
+	@commands.Cog.listener()
+	async def on_message(self, message: discord.Message):
+		if message.author.id != 270904126974590976:
+			return
+		if message.interaction is None: return
+		if message.interaction.name != "item": return
+		if len(message.embeds) == 0:return
+
+		embed: discord.Embed = message.embeds[0]
+		if len(embed.fields) == 0:return
+
+		item = embed.title
+		item_data = await self.bot.dank.find(item)
+		if not item_data:
+			item_data = {
+				"_id": item,
+				"price": 0,
+				"last_updated": datetime.datetime.utcnow(),
+				"last_prices": []
+			}
+			await self.bot.dank.insert(item_data)
+		try:
+
+			price_field = embed.fields[1]
+			price = int(price_field.value.split("\n")[0].split(" ")[-1].replace(",", ""))
+
+			if price == item_data["price"]: return
+
+			old_price = item_data["price"]
+			item_data['last_prices'].append({"day": item_data['last_updated'].strftime("%d/%m/%Y"), "old_price": old_price, "new_price": price})
+			item_data['price'] = price
+			item_data['last_updated'] = datetime.datetime.utcnow()
+			if len(item_data['last_prices']) > 10:
+				item_data['last_prices'].pop(0)
+			await self.bot.dank.update(item_data)
+			self.bot.dank_items_cache[item_data["_id"]] = item_data
+		except:
+			pass
+
+
 async def setup(bot):
 	await bot.add_cog(dank(bot))
 	print(f"loaded stats cog")
