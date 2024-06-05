@@ -559,9 +559,9 @@ class Payout_Buttton(discord.ui.View):
 			else:
 				emojis = list(set(re.findall(":\w*:\d*", items)))
 				for emoji in emojis :items = items.replace(emoji,"",100); items = items.replace("<>","",100);items = items.replace("<a>","",100);items = items.replace("  "," ",100)
-				mathc = re.search(r"(\d+)x (.+)", items)
+				mathc = re.search(r"^(\d+) (.+)$", items)
 				item_found = mathc.group(2)
-				quantity_found = int(items.split(" ")[0][:-1].replace(",","",100))
+				quantity_found = int(mathc.group(1))
 				if item_found.lower() == data['item'].lower() and quantity_found == data['prize']:
 					await view.interaction.edit_original_response(content="Verified Successfully")
 				else:
