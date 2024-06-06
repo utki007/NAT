@@ -367,6 +367,9 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 				prize = f"{prize}x {item}"
 			else:
 				prize = f"⏣ {prize:,}"
+			
+			if winners > 1:
+				prize += " Each"
 		
 		guild_name = interaction.guild.name
 		donor_name = donor.mention if donor else interaction.user.mention
