@@ -86,7 +86,6 @@ class MutipleChannel(app_commands.Transformer):
         except Exception as e:
             raise BadArgument(f"Failed to tranform {og_arg} to a list of channels make sure to add a space between each channel")
 
-
 class DMCConverter(app_commands.Transformer):
     async def transform(self, interaction: Interaction, value: str):
         try:
@@ -106,3 +105,49 @@ class DMCConverter(app_commands.Transformer):
             return int(price)
         except Exception as e:
             raise BadArgument(f"Failed to convert {og_arg} to a valid number use k, m, b, e3, e6, e9")
+             
+class MessageConverter(app_commands.Transformer, commands.Converter):
+    
+    @classmethod
+    async def do_convert(cls, argument: str, bot: commands.Bot, current_channel: discord.TextChannel) -> str | discord.Message:
+        if argument.startswith("https://"):
+            match = re.search(r"discord\.com\/channels\/(\d+)\/(\d+)\/(\d+)", argument)
+            if match:
+                guild = bot.get_guild(int(match.group(1)))
+                if not guild or current_channel.guild.id != guild.id:
+                    return f"Message link is not from the same guild as the current channel or the guild does not exist"
+                channel = guild.get_channel(int(match.group(2)))
+                if not channel:
+                    return f"Falied to find channel with id `{match.group(2)}` in {guild.name}"
+                try:
+                    message = await channel.fetch_message(int(match.group(3)))
+                    return message
+                except discord.NotFound:
+                    return f"Failed to find message with id `{match.group(3)}` in {channel.mention}"
+            else:
+                return "Failed to pharse message link"
+        else:
+            try:
+                message_id = int(argument)
+                message = await current_channel.fetch_message(message_id)
+                return message
+            except:
+                return f"Failed to find message with id `{message_id}` in {current_channel.mention}"
+            
+    async def transform(self, interaction: discord.Interaction, value: str) -> discord.Message:
+        message = await self.do_convert(value, interaction.client, interaction.channel)
+        if isinstance(message, discord.Message):
+            return message
+        elif isinstance(message, str):
+            raise BadArgument(message)
+        else:
+            raise BadArgument(f"Failed to convert {value} to a valid message")
+        
+    async def convert(self, ctx: commands.Context, argument: str) -> discord.Message:
+        message = await self.do_convert(argument, ctx.bot, ctx.channel)
+        if isinstance(message, discord.Message):
+            return message
+        elif isinstance(message, str):
+            raise BadArgument(message)
+        else:
+            raise BadArgument(f"Failed to convert {argument} to a valid message")
