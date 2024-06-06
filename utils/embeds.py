@@ -135,6 +135,10 @@ async def get_formated_field(guild: discord.Guild, name: str, type: Literal["rol
 		case "str":
 			if isinstance(data, str):
 				return f"{name}{data}"
+			if isinstance(data, list[str]):
+				if len(data) == 0:
+					return f"{name}None"
+				return f"{name}".join(data)
 			else:
 				return f"{name}None"
 		case "bool":
