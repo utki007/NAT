@@ -462,7 +462,7 @@ async def on_message_edit(before, after):
                             elif 'Skin Fragments' in items:
                                 data['rewards'][today]['frags'] += int(item_list[0][:-1])
                             else:
-                                quantity = int(item_list[0][:-1])
+                                quantity = int(item_list[0])
                                 key = (" ".join(items.split(" ")[1:])).strip()
                                 if key in data['rewards'][today]['items']:
                                     data['rewards'][today]['items'][key] += quantity
