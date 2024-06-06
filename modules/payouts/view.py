@@ -145,7 +145,7 @@ class Payouts_Panel(discord.ui.View):
 				await interaction.message.edit(embed=embed)				  
 			except:
 				pass
-    
+	
 			
 	@discord.ui.button(label="Queue Channel", style=discord.ButtonStyle.gray, emoji="<:tgk_channel:1073908465405268029>",row=2)
 	async def modify_queue_channel(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -505,7 +505,7 @@ class Payout_Buttton(discord.ui.View):
 		edit_view = discord.ui.View()
 		edit_view.add_item(discord.ui.Button(label=f'Payout Denied', style=discord.ButtonStyle.gray, disabled=True, emoji="<a:nat_cross:1010969491347357717>"))
 
-		config = await interaction.client.payouts.get_config(interaction.guild.id, new=True)
+		config = await interaction.client.payouts.get_config(interaction.guild.id)
 		claimed_webhook: discord.Webhook = config['claimed_channel']
 
 		await view.interaction.response.edit_message(embed=discord.Embed(description="<:octane_yes:1019957051721535618> | Payout Rejected Successfully!", color=0x2b2d31), view=None, content=None)
@@ -525,7 +525,7 @@ class Payout_Buttton(discord.ui.View):
 		msg_link = view.msg.value
 		await view.interaction.response.send_message("Verifying...", ephemeral=True)
 		data = await interaction.client.payouts.claimed.find(interaction.message.id)
-		config = await interaction.client.payouts.get_config(interaction.guild.id, new=True)
+		config = await interaction.client.payouts.get_config(interaction.guild.id)
 
 		claimed_webhook: discord.Webhook = config['claimed_channel']
 		if isinstance(claimed_webhook, int):
@@ -594,8 +594,10 @@ class Payout_Buttton(discord.ui.View):
 		try:
 			await interaction.response.send_message(f"Error: {error}", ephemeral=True)
 		except Exception as e:
-			print(e)
-			await interaction.edit_original_response(content=f"Error: {error}")
+			if interaction.response.is_done():
+				await interaction.followup.send(f"Error: {error}", ephemeral=True)
+			else:
+				await interaction.response.send_message(f"Error: {error}", ephemeral=True)
 
 	async def interaction_check(self, interaction: Interaction):
 		config = await interaction.client.payouts.get_config(interaction.guild.id)
