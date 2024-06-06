@@ -706,16 +706,5 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 		embed.add_field(name="Ends At", value=data['end_time'].strftime("%d/%m/%Y %H:%M:%S"))
 		await chl.send(embed=embed)
 
-
-	async def cog_app_command_error(self, interaction: discord.Interaction[discord.Client], error: app_commands.AppCommandError) -> None:
-		if isinstance(error, app_commands.TransformerError):
-			return
-		error_traceback = "".join(traceback.format_exception(type(error), error, error.__traceback__, 4))
-		buffer = BytesIO(error_traceback.encode('utf-8'))
-		file = discord.File(buffer, filename=f"Error-{interaction.command.name}.log")
-		buffer.close()
-		chl = interaction.client.get_channel(1130057933468745849)
-		await chl.send(file=file, content="<@488614633670967307>", silent=True)
-
 async def setup(bot):
 	await bot.add_cog(Giveaways(bot))
