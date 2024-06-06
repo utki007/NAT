@@ -356,7 +356,7 @@ class PayoutV2(commands.GroupCog, name="payout"):
                         for emoji in emojis :items = items.replace(emoji,"",100); items = items.replace("<>","",100);items = items.replace("<a>","",100);items = items.replace("  "," ",100)
                         mathc = re.search(r"^([\d,]+) (.+)$", items)
                         item_found = mathc.group(2)
-                        quantity_found = int(mathc.group(1))
+                        quantity_found = int(mathc.group(1).replace(",", ""))
                         if item_found.lower() == payout['item'].lower() and quantity_found == payout['prize']:
                             return True
 
