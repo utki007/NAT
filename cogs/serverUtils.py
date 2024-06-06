@@ -1,29 +1,23 @@
-import asyncio
 import time as t
 import datetime
 import discord
-from discord import app_commands, Interaction
+from discord import app_commands
 from discord.ext import commands
 import humanfriendly
 import pytz
 from modules.afk.View import AFKView, AFKViewUser
 from ui.settings.grinder import GrinderConfigPanel
 from ui.settings.mafia import Mafia_Panel
-from ui.settings.payouts import Payouts_Panel
+from modules.payouts.view import Payouts_Panel
 from ui.settings.userConfig import Changelogs_Panel, Fish_Panel, Grinder_Reminder_Panel, Timestamp_Panel
 from utils.embeds import *
 from utils.convertor import *
-from utils.checks import App_commands_Checks
-from io import BytesIO
-from typing import List, Union
 from ui.settings import *
 from ui.settings.dankPool import *
 from utils.functions import *
 from utils.init import init_dankSecurity
-from utils.views.confirm import Confirm
 from utils.views.ui import *
 from ui.settings.lockdown import *
-from utils.views.paginator import Paginator
 from itertools import islice
 from ui.settings.voiceView import Voice_config
 
