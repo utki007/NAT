@@ -196,10 +196,7 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 	@commands.Cog.listener()
 	async def on_ready(self):
 		print(f"{self.__class__.__name__} Cog has been loaded\n-----")
-		current_timer = await self.bot.timer.get_all()
-		for timer in current_timer:
-			self.bot.add_view(Button(timer))
-	
+		
 	@commands.Cog.listener()
 	async def on_timer_end(self, timer_data, sleep:bool=None):
 		if sleep:
@@ -299,3 +296,6 @@ class Timer(commands.GroupCog, name="timer", description="Timer commands"):
 	
 async def setup(bot):
 	await bot.add_cog(Timer(bot))
+	current_timer = await bot.timer.get_all()
+	for timer in current_timer:
+		bot.add_view(Button(timer))

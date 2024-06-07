@@ -35,16 +35,7 @@ class PayoutV2(commands.GroupCog, name="payout"):
                 for item in self.bot.dank_items_cache.keys()
             ]
         else:
-            return choices[:24]
-
-    @commands.Cog.listener()
-    async def on_ready(self):        
-        for guild in await self.backend.config.find_many_by_custom({'express': True}):
-            if guild['express'] is True:
-                guild['express'] = False
-                await self.backend.update_config(guild)
-        for item in await self.bot.dankItems.get_all(): self.bot.dank_items_cache[item['_id']] = item
-        await self.backend.setup()
+            return choices[:24]    
     
     @tasks.loop(seconds=10)
     async def check_claim(self):
@@ -346,7 +337,7 @@ class PayoutV2(commands.GroupCog, name="payout"):
                         return False
                     items = re.findall(r"\*\*(.*?)\*\*", embed.description)[0]
                     if "⏣" in items:
-                        items = int(items.replace("⏣", "").replace(",", ""))
+                        items = int(items.replace("⏣", "").replace(",", "", 100))
                         if items == payout['prize']:
                             return True
                         else:
@@ -356,7 +347,7 @@ class PayoutV2(commands.GroupCog, name="payout"):
                         for emoji in emojis :items = items.replace(emoji,"",100); items = items.replace("<>","",100);items = items.replace("<a>","",100);items = items.replace("  "," ",100)
                         mathc = re.search(r"^([\d,]+) (.+)$", items)
                         item_found = mathc.group(2)
-                        quantity_found = int(mathc.group(1).replace(",", ""))
+                        quantity_found = int(mathc.group(1).replace(",", "", 100))
                         if item_found.lower() == payout['item'].lower() and quantity_found == payout['prize']:
                             return True
 
@@ -568,6 +559,12 @@ class PayoutV2(commands.GroupCog, name="payout"):
 
 async def setup(bot):
     await bot.add_cog(PayoutV2(bot))
+    for guild in await bot.payouts.config.find_many_by_custom({'express': True}):
+            if guild['express'] is True:
+                guild['express'] = False
+                await bot.payouts.config.update_config(guild)
+    for item in await bot.dankItems.get_all(): bot.dank_items_cache[item['_id']] = item
+    await bot.payouts.setup()
 
 async def teardown(bot):
     for guild in await bot.payouts.config.find_many_by_custom({'express': True}):

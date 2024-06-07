@@ -68,20 +68,10 @@ class owner(commands.Cog):
     async def reload_timer_error(self, error):
         print(f"Error in reload_timer loop: {error}")
         channel = self.bot.get_channel(867314266741407754)
-        # send text file if > 2000 characters
         if len(error) > 2000:
             await channel.send(file=discord.File(io.BytesIO(error.encode()), filename="error.txt"), content= "<@301657045248114690>, <@488614633670967307> Timer loop error")
         else:
             await channel.send(f"Timer loop error: {error}")
-        
-
-    @commands.Cog.listener()
-    async def on_ready(self):
-        alert = await self.bot.alerts.find({"active": True})
-        if alert is not None:
-            self.bot.current_alert = alert
-
-        print(f"{self.__class__.__name__} Cog has been loaded\n-----")
 
     @dev.command(name="get-logs", description="Get the logs of bot")
     @App_commands_Checks.is_owner()
@@ -565,3 +555,6 @@ async def setup(bot):
         owner(bot),
         guilds = [discord.Object(785839283847954433), discord.Object(999551299286732871)]
     )
+    alert = await bot.alerts.find({"active": True})
+    if alert is not None:
+        bot.current_alert = alert

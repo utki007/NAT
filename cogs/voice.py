@@ -18,14 +18,6 @@ class Voice(commands.Cog):
     def cog_unload(self):
         self.voice_expire.cancel()
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        for config in await self.config.get_all():
-            if config['enabled'] is False: continue
-            self.bot.vc_config_cache[config['_id']] = config
-        self.bot.add_view(Voice_UI())
-
-
     @tasks.loop(minutes=5)
     async def voice_expire(self):
         now = datetime.datetime.utcnow()
@@ -101,3 +93,7 @@ class Voice(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Voice(bot))
+    for config in await bot.vc_config.get_all():
+        if config['enabled'] is False: continue
+        bot.vc_config_cache[config['_id']] = config
+    bot.add_view(Voice_UI())

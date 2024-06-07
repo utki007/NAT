@@ -282,10 +282,6 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 			if giveaway['_id'] in self.giveaway_in_prosses:
 				self.giveaway_in_prosses.remove(giveaway['_id'])
 
-	@commands.Cog.listener()
-	async def on_ready(self):
-		self.bot.add_view(Giveaway())
-
 	@app_commands.command(name="start", description="Start a giveaway")
 	@app_commands.describe(winners="Number of winners", prize="Prize/Quantity of the giveaway", time="Duration of the giveaway", item="Item to giveaway",
 		req_roles="Roles required to enter the giveaway", bypass_role="Roles that can bypass the giveaway", blacklist_role="Roles that are blacklisted from this giveaway", req_level="Level required to enter the giveaway",
@@ -708,3 +704,4 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 
 async def setup(bot):
 	await bot.add_cog(Giveaways(bot))
+	bot.add_view(Giveaway())

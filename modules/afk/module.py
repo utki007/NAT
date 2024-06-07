@@ -72,15 +72,7 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 			embed = await get_warning_embed("You don't have permission to use this command")
 			await interaction.response.send_message(embed=embed, ephemeral=True)
 			return False
-
-	@commands.Cog.listener()
-	async def on_ready(self):
-		current_afks = await self.afk.find_many_by_custom({"afk": True})
-		for afk in current_afks:
-			if afk['guild_id'] not in self.afk_cache:
-				self.afk_cache[afk['guild_id']] = {}
-			self.afk_cache[afk['guild_id']][afk['user_id']] = afk
-
+		
 	@commands.Cog.listener()
 	async def on_message(self, message: discord.Message):
 		if message.guild is None: return
@@ -356,4 +348,10 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 		await chl.send(file=file, content="<@488614633670967307>", silent=True)
 
 async def setup(bot):
-	await bot.add_cog(AFK(bot))
+	cog = AFK(bot)
+	current_afks = await cog.afk.find_many_by_custom({"afk": True})
+	for afk in current_afks:
+		if afk['guild_id'] not in cog.afk_cache:
+			cog.afk_cache[afk['guild_id']] = {}
+		cog.afk_cache[afk['guild_id']][afk['user_id']] = afk
+	await bot.add_cog(cog)
