@@ -262,7 +262,7 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 					await host.send(embed=host_dm, view=link_view)
 				except discord.Forbidden:
 					pass
-			payout_config = await self.bot.payouts.get_config(guild_id=guild.id, new=True)
+			payout_config = await self.bot.payouts.get_config(guild_id=guild.id)
 			if giveaway['item']:
 				item = await self.bot.dankItems.find(giveaway['item'])
 			else:
