@@ -27,6 +27,9 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 		self.giveaway_loop.start()
 		self.giveaway_in_prosses = []
 		self.giveaway_task_progress = False
+	
+	def cog_unload(self):
+		self.giveaway_loop.cancel()
 
 	async def item_autocomplete(self, interaction: discord.Interaction, string: str) -> List[app_commands.Choice[str]]:
 		choices = []

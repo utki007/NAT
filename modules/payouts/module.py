@@ -24,6 +24,9 @@ class PayoutV2(commands.GroupCog, name="payout"):
         self.check_claim_task = False
         self.in_expire_task = []
 
+    def cog_unload(self):
+        self.check_claim.cancel()
+
     async def item_autocomplete(self, interaction: discord.Interaction, string: str) -> List[app_commands.Choice[str]]:
         choices = []
         for item in self.bot.dank_items_cache.keys():
