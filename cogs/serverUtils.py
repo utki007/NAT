@@ -766,7 +766,7 @@ class Usersettings_Dropdown(discord.ui.Select):
 						'afk_at': None,
 						'ignored_channels': [],
 						'afk': False,
-						'summary': True
+						'summary': False,
 					}
 					await interaction.client.afk_users.insert(data)
 				embed = discord.Embed(

@@ -196,7 +196,7 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 				"afk_at": datetime.datetime.utcnow(),
 				"ignored_channels": [],
 				"afk": False,
-				"summary": True
+				"summary": False
 			}
 			await self.afk.insert(user_data)
 			first_time = True
@@ -285,7 +285,7 @@ class AFK(commands.GroupCog, name="afk", description="Away from Keyboard command
 				"afk_at": None,
 				"ignored_channels": [],
 				"afk": False,
-				"summary": True
+				"summary": False
 			}
 			await self.afk.insert(user_data)
 			user_data = await self.afk.find({"user_id": interaction.user.id, "guild_id": interaction.guild.id})
