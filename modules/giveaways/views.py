@@ -31,7 +31,7 @@ class Giveaway(View):
         )
 
     @discord.ui.button(
-        emoji="<a:tgk_tadaa:806631994770849843>",
+        emoji="<a:TGK_TADA:1250113598835920936>",
         style=discord.ButtonStyle.gray,
         custom_id="giveaway:Join",
     )
