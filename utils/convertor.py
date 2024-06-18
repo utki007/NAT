@@ -1,10 +1,7 @@
 import re
-import time
-import discord
 import math
-import datetime
-from TagScriptEngine import Interpreter, adapter, block
-from discord.ext import commands,tasks
+from TagScriptEngine import Interpreter, block
+from discord.ext import commands
 
 blocks = [
     block.MathBlock(),
@@ -33,9 +30,7 @@ async def convert_to_numeral(query):
 async def calculate(query):
     query = query.replace(",", "")
     engine_input = "{m:" + query + "}"
-    start = time.time()
     output = engine.process(engine_input)
-    end = time.time()
 
     output_string = output.body.replace("{m:", "").replace("}", "")
     return round((float(output_string)),2)
@@ -131,13 +126,14 @@ class DMCConverter(commands.Converter):
             return int(value)
         value = value.split("e")
 
-        if len(value) > 2: raise Exception(f"Invalid number format try using 1e3 or 1k: {value}")
+        if len(value) > 2: 
+            raise Exception(f"Invalid number format try using 1e3 or 1k: {value}")
 
         price = value[0]
         try:
             multi = int(value[1])
             price = float(price) * (10 ** multi)
-        except:
+        except ValueError:
             return None
 
         return int(price)

@@ -6,7 +6,6 @@ import datetime
 from pytz import timezone
 import pytz
 
-from utils.embeds import get_warning_embed
 
 def clean_code(content):
     if content.startswith("```") and content.endswith("```"):
@@ -55,9 +54,11 @@ async def unquarantineUser(bot, user: discord.Member, quarantineRole: discord.Ro
         pool_data = await bot.dankSecurity.find(user.guild.id)
 
         for role in user_data:
-            if role == pool_data['event_manager']: continue
+            if role == pool_data['event_manager']: 
+                continue
             role = guild.get_role(role)
-            if isinstance(role, discord.Role): roles.append(role)
+            if isinstance(role, discord.Role): 
+                roles.append(role)
         
         roles_to_add: list[discord.Role] = [role for role in roles if role.position < user.guild.me.top_role.position]
         user_roles: list[discord.Role] = [role for role in user.roles if role not in [user.guild.default_role, quarantineRole]]
@@ -115,7 +116,8 @@ async def check_gboost(bot, message):
         return
     
     timestamp = re.findall("\<t:\w*:R\>\d*", boostMsgs[1])
-    if len(timestamp) < 1: return
+    if len(timestamp) < 1: 
+        return
     timestamp = int(timestamp[0].replace("<t:","",1).replace(":R>","",1))
 
     if data['active'] is False:
@@ -144,7 +146,7 @@ async def check_gboost(bot, message):
             if len(extraGboost) == 2:
                 boost_count = (int(extraGboost[0].split(" ")[0][1:]))
                 content = f"## Global Boost (+{boost_count} pending)\n<:nat_replycont:1146496789361479741> "
-        except:
+        except Exception:
             pass
         if content == '':
             content = "## Global Boost\n<:nat_replycont:1146496789361479741> "
@@ -163,12 +165,12 @@ async def check_gboost(bot, message):
                     try:
                         await user.send(content)
                         await asyncio.sleep(0.2)
-                    except:
+                    except Exception:
                         data = await bot.userSettings.find(user.id)
                         data['gboost'] = False
                         await bot.userSettings.upsert(data)
                         pass
-            except:
+            except Exception:
                 pass
     
     elif data['active'] is True:

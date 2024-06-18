@@ -32,13 +32,13 @@ class TimeConverter(app_commands.Transformer, commands.Converter):
     async def transform(self, interaction: discord.Interaction, argument: str) -> int:
         try:
             return self.__do_convert(argument)
-        except BadArgument as e:
+        except BadArgument:
             raise BadArgument(f"{argument} is not a valid time key! Use h, m, s, d") from None
         
     async def convert(self, ctx: commands.Context, argument: str) -> int:
         try:
             return self.__do_convert(argument)
-        except BadArgument as e:
+        except BadArgument:
             raise BadArgument(f"{argument} is not a valid time key! Use h, m, s, d") from None
     
 class MutipleRole(app_commands.Transformer):
@@ -48,7 +48,7 @@ class MutipleRole(app_commands.Transformer):
             value = value.split(" ")
             roles = [await commands.RoleConverter().convert(interaction, role) for role in value]
             return roles
-        except Exception as e:
+        except Exception:
             raise BadArgument(f"Failed to tranform {og_arg} to a list of roles make sure to add a space between each role")
 
 class MultipleMember(app_commands.Transformer):
@@ -66,7 +66,7 @@ class MultipleMember(app_commands.Transformer):
                     if isinstance(member, discord.Member):
                         members.append(member)
             return members
-        except Exception as e:
+        except Exception:
             raise BadArgument(f"Failed to tranform {og_arg} to a list of members make sure to add a space between each member")
 
 class MutipleChannel(app_commands.Transformer):
@@ -83,7 +83,7 @@ class MutipleChannel(app_commands.Transformer):
                         channels.append(channel)
         
             return channels
-        except Exception as e:
+        except Exception:
             raise BadArgument(f"Failed to tranform {og_arg} to a list of channels make sure to add a space between each channel")
 
 class DMCConverter(app_commands.Transformer):
@@ -103,7 +103,7 @@ class DMCConverter(app_commands.Transformer):
             multi = int(value[1])
             price = float(price) * (10 ** multi)
             return int(price)
-        except Exception as e:
+        except Exception:
             raise BadArgument(f"Failed to convert {og_arg} to a valid number use k, m, b, e3, e6, e9")
              
 class MessageConverter(app_commands.Transformer, commands.Converter):
@@ -115,7 +115,7 @@ class MessageConverter(app_commands.Transformer, commands.Converter):
             if match:
                 guild = bot.get_guild(int(match.group(1)))
                 if not guild or current_channel.guild.id != guild.id:
-                    return f"Message link is not from the same guild as the current channel or the guild does not exist"
+                    return "Message link is not from the same guild as the current channel or the guild does not exist"
                 channel = guild.get_channel(int(match.group(2)))
                 if not channel:
                     return f"Falied to find channel with id `{match.group(2)}` in {guild.name}"
@@ -131,7 +131,7 @@ class MessageConverter(app_commands.Transformer, commands.Converter):
                 message_id = int(argument)
                 message = await current_channel.fetch_message(message_id)
                 return message
-            except:
+            except discord.NotFound:
                 return f"Failed to find message with id `{message_id}` in {current_channel.mention}"
             
     async def transform(self, interaction: discord.Interaction, value: str) -> discord.Message:
