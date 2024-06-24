@@ -16,6 +16,8 @@ from utils.views.paginator import Paginator
 from utils.views.selects import Select_General
 from utils.views.ui import Dropdown_Channel
 
+utc = datetime.timezone.utc
+
 def chunk(it, size):
 	it = iter(it)
 	return iter(lambda: tuple(islice(it, size)), ())
