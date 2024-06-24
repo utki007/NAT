@@ -98,7 +98,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         role_changed = False
         user = message.guild.get_member(grinder_profile['user'])
         trial_role = message.guild.get_role(guild_config['trial']['role'])
-        date = datetime.date.today()
+        date = datetime.datetime.now(tz=utc)
         today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
         if grinder_profile['payment']['next_payment'].replace(tzinfo=utc) >= today and (grinder_profile['payment']['next_payment'].replace(tzinfo=utc) - grinder_profile['payment']['first_payment'].replace(tzinfo=utc)).days >= int(guild_config['trial']['duration'])/(3600*24):
             if trial_role in user.roles:
@@ -218,7 +218,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         
         guild_configs = await self.bot.grinderSettings.get_all()
 
-        date = datetime.date.today()
+        date = datetime.datetime.now(tz=utc)
         today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
         time = datetime.datetime.now(utc)
         time = datetime.time(hour=time.hour, tzinfo=utc)
@@ -282,14 +282,8 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
     async def grinder_demotions(self):
         
         guild_configs = await self.bot.grinderSettings.get_all()
-        date = datetime.date.today()
-        try:
-            today = datetime.datetime(date.year, date.month, date.day+1, tzinfo=utc)
-        except:
-            try:
-                today = datetime.datetime(date.year, date.month+1, 1, tzinfo=utc)
-            except:
-                today = datetime.datetime(date.year+1, 1, 1, tzinfo=utc)
+        date = datetime.datetime.now(tz=utc)
+        today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
         for guild_config in guild_configs:
             
             guild = self.bot.get_guild(guild_config['_id'])
@@ -395,7 +389,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                                 pass
                         roles_to_remove = list(guild_config['grinder_profiles'].keys())
                         roles_to_remove.append(guild_config['trial']['role'])
-                        roles_to_remove = [int(role) for role in roles_to_remove]
+                        roles_to_remove = [int(role) for role in roles_to_remove if role is not None]
                         roles_to_remove.remove(profile_role.id)
                         roles_to_remove = [role for role in user.roles if role.id in roles_to_remove]
                         if len(roles_to_remove) > 0:
@@ -407,7 +401,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                     else:
                         roles_to_remove = list(guild_config['grinder_profiles'].keys())
                         roles_to_remove.append(guild_config['grinder']['role'])
-                        roles_to_remove = [int(role) for role in roles_to_remove]
+                        roles_to_remove = [int(role) for role in roles_to_remove if role is not None]
                         roles_to_remove = [role for role in user.roles if role.id in roles_to_remove]
                         if len(roles_to_remove) > 0:
                             try:
@@ -459,7 +453,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             return await interaction.edit_original_response(embed=embed)
         
         # initial values
-        date = datetime.date.today()
+        date = datetime.datetime.now(tz=utc)
         today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
         reminder_dm = False
         active_grinder = False
@@ -591,7 +585,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                     
                     roles_to_remove = list(guild_config['grinder_profiles'].keys())
                     roles_to_remove.append(guild_config['trial']['role'])
-                    roles_to_remove = [int(role) for role in roles_to_remove]
+                    roles_to_remove = [int(role) for role in roles_to_remove if role is not None]
                     roles_to_remove = [role for role in user.roles if role.id in roles_to_remove]
                     try:
                         await user.remove_roles(*roles_to_remove)
@@ -749,7 +743,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         if not user:
             user = interaction.user
 
-        date = datetime.date.today()
+        date = datetime.datetime.now(tz=utc)
         today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
 
         grinder_profile = await interaction.client.grinderUsers.find({"guild": interaction.guild.id, "user": user.id})
@@ -873,7 +867,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
 
         title = f"Grinders List"
 
-        date = datetime.date.today()
+        date = datetime.datetime.now(tz=utc)
         today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
 
         pages = []
@@ -1051,7 +1045,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         role_changed = False
         user = interaction.guild.get_member(grinder_profile['user'])
         trial_role = interaction.guild.get_role(guild_config['trial']['role'])
-        date = datetime.date.today()
+        date = datetime.datetime.now(tz=utc)
         today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
         if grinder_profile['payment']['next_payment'].replace(tzinfo=utc) > today and (grinder_profile['payment']['next_payment'].replace(tzinfo=utc) - grinder_profile['payment']['first_payment'].replace(tzinfo=utc)).days >= int(guild_config['trial']['duration'])/(3600*24):
             if trial_role in user.roles:
@@ -1161,7 +1155,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         guild_config = await interaction.client.grinderSettings.find(interaction.guild.id)
         await interaction.response.defer(ephemeral=False)
 
-        date = datetime.date.today()
+        date = datetime.datetime.now(tz=utc)
         today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
 
         grinder_profiles = await interaction.client.grinderUsers.get_all({"guild": interaction.guild.id, "active": True})

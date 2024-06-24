@@ -737,7 +737,7 @@ class Usersettings_Dropdown(discord.ui.Select):
 					)
 					return await interaction.response.edit_message(embed=embed)
 
-				date = datetime.date.today()
+				date = datetime.datetime.now(tz=utc)
 				time = datetime.time.fromisoformat(datas[0]['reminder_time'])
 				timestamp = f"<t:{int(datetime.datetime.combine(date, time).timestamp())}:t>"
 				embed = discord.Embed(
