@@ -16,6 +16,8 @@ from utils.views.paginator import Paginator
 from utils.views.selects import Select_General
 from utils.views.ui import Dropdown_Channel
 
+utc = datetime.timezone.utc
+
 def chunk(it, size):
 	it = iter(it)
 	return iter(lambda: tuple(islice(it, size)), ())
@@ -74,7 +76,7 @@ async def update_timestamp_embed(interaction: Interaction, data: dict):
 
 async def update_grinder_embed(interaction: Interaction, time: int):
 
-	date = datetime.date.today()
+	date = datetime.datetime.now(tz=utc)
 	timestamp = f"<t:{int(datetime.datetime(date.year, date.month, date.day, time, tzinfo = datetime.timezone.utc).timestamp())}:t>"
 	embed = discord.Embed(
 		color=3092790,
@@ -282,7 +284,7 @@ class Grinder_Reminder_Panel(discord.ui.View):
 		utc = datetime.timezone.utc
 		reminder_time = str(datetime.time(hour=int(time), tzinfo=utc))
 		await interaction.client.grinderUsers.update_many_by_custom({'user': interaction.user.id}, {'reminder_time': reminder_time})
-		date = datetime.date.today()
+		date = datetime.datetime.now(tz=utc)
 		timestamp = f"<t:{int(datetime.datetime(date.year, date.month, date.day, time, tzinfo = datetime.timezone.utc).timestamp())}>"
 	
 		await view.select.interaction.response.edit_message(embed = await get_success_embed(f"Reminder time set to **{time}:00 UTC** ({timestamp})."), view=None)
