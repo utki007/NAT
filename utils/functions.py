@@ -6,6 +6,8 @@ import datetime
 from pytz import timezone
 import pytz
 
+from utils.embeds import get_invisible_embed
+
 
 def clean_code(content):
     if content.startswith("```") and content.endswith("```"):
@@ -178,3 +180,89 @@ async def check_gboost(bot, message):
         if current_timestamp > data['timestamp']:
             data['active'] = False
             await bot.dank.upsert(data)
+
+async def check_cric_drop(bot, message, remind_at: datetime.datetime, user: discord.Member, send_message: bool = True):
+
+    # check if they have false in usersettings
+    data = await bot.userSettings.find(user.id)
+    if data is None:
+        data = {"_id": user.id, "cric_drop_events": True, "cric_daily": False}
+        if send_message:
+            await bot.userSettings.upsert(data)
+        else:
+            return False
+    elif 'cric_drop_events' not in data.keys():
+        data['cric_drop_events'] = True
+        if send_message:
+            await bot.userSettings.upsert(data)
+        else:
+            return False
+    elif data['cric_drop_events'] is False:
+        return False
+
+    data = await bot.cricket.find(user.id)
+    if data is None:
+        data = {
+            "_id": user.id,
+            "drops": {
+                "time": remind_at,
+                "message": f'https://discord.com/channels/{message.guild.id}/{message.channel.id}'
+            }
+        }
+    elif 'drops' not in data.keys():
+        data['drops'] = {
+                "time": remind_at,
+                "message": f'https://discord.com/channels/{message.guild.id}/{message.channel.id}'
+            }
+    elif data['drops']['time'] != remind_at:
+        data['drops'] = {
+                "time": remind_at,
+                "message": f'https://discord.com/channels/{message.guild.id}/{message.channel.id}'
+            }
+    else:
+        return False
+    await bot.cricket.upsert(data)
+    if send_message:
+        embed = await get_invisible_embed("hi")
+        embed.description = None
+        embed.title = "Drop Reminder"
+        embed.description = f"Will remind for drop in <t:{int(remind_at.timestamp())}:R>(<t:{int(remind_at.timestamp())}:t>)."
+        embed.description += f"\n\n-# Run </settings:1196688324207853590> >> User Reminders to manage reminders."
+        await message.reply(embed=embed)
+    return True
+
+async def check_cric_drop_and_daily(bot, message, drop, daily, user: discord.Member):
+
+    # check if they have false in usersettings
+    data = await bot.userSettings.find(user.id)
+    if data is None:
+        return False
+    elif 'cric_drop_events' not in data.keys():
+        data['cric_drop_events'] = False
+        return False
+    elif 'cric_daily' not in data.keys():
+        data['cric_daily'] = False
+        return False
+    elif data['cric_drop_events'] is False and data['cric_daily'] is False:
+        return False
+
+    data = await bot.cricket.find(user.id)
+    if data is None:
+        data = {
+            "_id": user.id,
+            "drops": drop,
+            "daily": daily,
+            "message": f'https://discord.com/channels/{message.guild.id}/{message.channel.id}'
+        }
+    elif 'drops' not in data.keys():
+        data['drops'] = drop
+    elif data['drops'] != drop:
+        data['drops'] = drop
+    elif 'daily' not in data.keys():
+        data['daily'] = daily
+    elif data['daily'] != daily:
+        data['daily'] = daily
+    else:
+        return False
+    await bot.cricket.upsert(data)
+    return True

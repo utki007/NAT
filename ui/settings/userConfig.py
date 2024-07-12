@@ -59,6 +59,27 @@ async def update_fish_embed(interaction: Interaction, data: dict):
 	embed.add_field(name="\u200b", value='\u200b', inline=True)
 	return embed
 
+async def update_cric_embed(interaction: Interaction, data: dict):
+
+	embed = discord.Embed(
+		color=3092790,
+		title="Cricket Reminders",
+		description= f"Want to be dm'ed for cricket-related events?"
+	)
+	if data['cric_drop_events']:
+		label = f'<:tgk_active:1082676793342951475> Enabled'
+	else:
+		label = f'<:tgk_deactivated:1082676877468119110> Disabled'
+	embed.add_field(name="Drop:", value=f"> {label}", inline=True)
+
+	if data['cric_daily']:
+		label = f'<:tgk_active:1082676793342951475> Enabled'
+	else:
+		label = f'<:tgk_deactivated:1082676877468119110> Disabled'
+	embed.add_field(name="Daily:", value=f"> {label}", inline=True)
+	embed.add_field(name="\u200b", value='\u200b', inline=True)
+	return embed
+
 async def update_timestamp_embed(interaction: Interaction, data: dict):
 
 	if data['timezone'] is None:
@@ -127,7 +148,147 @@ class Changelogs_Panel(discord.ui.View):
 		except:
 			pass
 
-class Fish_Panel(discord.ui.View):
+
+class User_Reminders_Panel(discord.ui.View):
+	def __init__(self, interaction: discord.Interaction):
+		super().__init__(timeout=180)
+		self.interaction = interaction
+		self.message = None # req for disabling buttons after timeout
+
+	@discord.ui.button(label="Dank Memer", style=discord.ButtonStyle.gray, emoji="<a:dankmemeravatar:1260877621429010472>",row=1)
+	async def dankReminder(self, interaction: discord.Interaction, button: discord.ui.Button):
+		# disable all buttons
+		for button in self.children:
+			button.disabled = True
+		await interaction.response.edit_message(view=self)
+
+		data = await interaction.client.userSettings.find(interaction.user.id)
+		flag = 0
+		if data is None:
+			data = {"_id": interaction.user.id, "fish_events": False, "gboost": False}
+			flag = 1
+		if 'fish_events' not in data.keys():
+			data['fish_events'] = False
+			flag = 1
+		if 'gboost' not in data.keys():
+			data['gboost'] = False
+			flag = 1
+		
+		if flag == 1:
+			await interaction.client.userSettings.upsert(data)
+
+		embed = discord.Embed(
+			color=3092790,
+			title="Dank Reminders",
+			description= f"Want to be dm'ed for dank-related events?"
+		)
+
+		dank_reminder_view =  Dank_Reminder_Panel(interaction, data)
+
+		# Initialize the button
+		if data['fish_events']:
+			dank_reminder_view.children[0].style = discord.ButtonStyle.red
+			dank_reminder_view.children[0].label = "Disable Fish Events."
+			dank_reminder_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
+			label = f'<:tgk_active:1082676793342951475> Enabled'
+		else:
+			dank_reminder_view.children[0].style = discord.ButtonStyle.green
+			dank_reminder_view.children[0].label = "Enable Fish Events."
+			dank_reminder_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
+			label = f'<:tgk_deactivated:1082676877468119110> Disabled'
+		embed.add_field(name="Fish Event:", value=f"> {label}", inline=True)
+
+		if data['gboost']:
+			dank_reminder_view.children[1].style = discord.ButtonStyle.red
+			dank_reminder_view.children[1].label = "Disable Global Boost."
+			dank_reminder_view.children[1].emoji = "<:tgk_deactivated:1082676877468119110>"
+			label = f'<:tgk_active:1082676793342951475> Enabled'
+		else:
+			dank_reminder_view.children[1].style = discord.ButtonStyle.green
+			dank_reminder_view.children[1].label = "Enable Global Boost."
+			dank_reminder_view.children[1].emoji = "<:tgk_active:1082676793342951475>"
+			label = f'<:tgk_deactivated:1082676877468119110> Disabled'
+		embed.add_field(name="Global Boost:", value=f"> {label}", inline=True)
+		embed.add_field(name="\u200b", value='\u200b', inline=True)
+
+		await interaction.followup.send(embed=embed, view=dank_reminder_view, ephemeral=False)
+		dank_reminder_view.message = await interaction.original_response()
+	
+	@discord.ui.button(label="Cricket Guru", style=discord.ButtonStyle.gray, emoji="<:cricketguruavatar:1260884903139217429>",row=1)
+	async def cricketReminder(self, interaction: discord.Interaction, button: discord.ui.Button):
+		
+		# disable all buttons
+		for button in self.children:
+			button.disabled = True
+		await interaction.response.edit_message(view=self)
+
+		data = await interaction.client.userSettings.find(interaction.user.id)
+		flag = 0
+		if data is None:
+			data = {"_id": interaction.user.id, "cric_drop_events": False, "cric_daily": False}
+			flag = 1
+		if 'cric_drop_events' not in data.keys():
+			data['cric_drop_events'] = False
+			flag = 1
+		if 'cric_daily' not in data.keys():
+			data['cric_daily'] = False
+			flag = 1
+
+		if flag == 1:
+			await interaction.client.userSettings.upsert(data)
+		
+		embed = discord.Embed(
+			color=3092790,
+			title="Cricket Reminders",
+			description= f"Want to be dm'ed for cricket-related events?"
+		)
+
+		cricket_reminder_view =  Cricket_Reminder_Panel(interaction, data)
+
+		# Initialize the button
+		if data['cric_drop_events']:
+			cricket_reminder_view.children[0].style = discord.ButtonStyle.red
+			cricket_reminder_view.children[0].label = "Disable Drop Reminder"
+			cricket_reminder_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
+			label = f'<:tgk_active:1082676793342951475> Enabled'
+		else:
+			cricket_reminder_view.children[0].style = discord.ButtonStyle.green
+			cricket_reminder_view.children[0].label = "Enable Drop Reminder"
+			cricket_reminder_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
+			label = f'<:tgk_deactivated:1082676877468119110> Disabled'
+		embed.add_field(name="Drop:", value=f"> {label}", inline=True)
+
+		if data['cric_daily']:
+			cricket_reminder_view.children[1].style = discord.ButtonStyle.red
+			cricket_reminder_view.children[1].label = "Disable Daily Reminder"
+			cricket_reminder_view.children[1].emoji = "<:tgk_deactivated:1082676877468119110>"
+			label = f'<:tgk_active:1082676793342951475> Enabled'
+		else:
+			cricket_reminder_view.children[1].style = discord.ButtonStyle.green
+			cricket_reminder_view.children[1].label = "Enable Daily Reminder"
+			cricket_reminder_view.children[1].emoji = "<:tgk_active:1082676793342951475>"
+			label = f'<:tgk_deactivated:1082676877468119110> Disabled'
+		embed.add_field(name="Daily:", value=f"> {label}", inline=True)
+		embed.add_field(name="\u200b", value='\u200b', inline=True)
+
+		await interaction.followup.send(embed=embed, view=cricket_reminder_view, ephemeral=False)
+		cricket_reminder_view.message = await interaction.original_response()
+
+	async def interaction_check(self, interaction: discord.Interaction):
+		if interaction.user.id != self.interaction.user.id:
+			warning = await get_invisible_embed(f"This is not for you")
+			return await interaction.response.send_message(embed=warning, ephemeral=True)	
+		return True
+
+	async def on_timeout(self):
+		for button in self.children:
+			button.disabled = True
+		try:
+			await self.message.edit(view=self)
+		except:
+			pass
+
+class Dank_Reminder_Panel(discord.ui.View):
 	def __init__(self, interaction: discord.Interaction, data: dict):
 		super().__init__(timeout=180)
 		self.interaction = interaction
@@ -189,6 +350,70 @@ class Fish_Panel(discord.ui.View):
 			await self.message.edit(view=self)
 		except:
 			pass
+
+class Cricket_Reminder_Panel(discord.ui.View):
+	def __init__(self, interaction: discord.Interaction, data: dict):
+		super().__init__(timeout=180)
+		self.interaction = interaction
+		self.message = None # req for disabling buttons after timeout
+		self.data = data
+
+	@discord.ui.button(label='toggle_button_label' ,row=1)
+	async def dropEvent(self, interaction: discord.Interaction, button: discord.ui.Button):
+		data = await interaction.client.userSettings.find(interaction.user.id)
+		if data['cric_drop_events']:
+			data['cric_drop_events'] = False
+			await interaction.client.userSettings.upsert(data)
+			embed = await update_cric_embed(interaction, data)
+			button.style = discord.ButtonStyle.green
+			button.label = "Enable Drop Reminder"
+			button.emoji = "<:tgk_active:1082676793342951475>"
+			await interaction.response.edit_message(embed=embed,view=self)
+		else:
+			data['cric_drop_events'] = True
+			await interaction.client.userSettings.upsert(data)
+			embed = await update_cric_embed(interaction, data)
+			button.style = discord.ButtonStyle.red
+			button.label = "Disable Drop Reminder"
+			button.emoji = "<:tgk_deactivated:1082676877468119110>"
+			await interaction.response.edit_message(view=self, embed=embed)
+	
+	@discord.ui.button(label='toggle_button_label' ,row=1)
+	async def dailyEvent(self, interaction: discord.Interaction, button: discord.ui.Button):
+		data = await interaction.client.userSettings.find(interaction.user.id)
+		if data['cric_daily']:
+			data['cric_daily'] = False
+			await interaction.client.userSettings.upsert(data)
+			embed = await update_cric_embed(interaction, data)
+			button.style = discord.ButtonStyle.green
+			button.label = "Enable Daily Reminder"
+			button.emoji = "<:tgk_active:1082676793342951475>"
+			await interaction.response.edit_message(embed=embed,view=self)
+		else:
+			data['cric_daily'] = True
+			await interaction.client.userSettings.upsert(data)
+			embed = await update_cric_embed(interaction, data)
+			button.style = discord.ButtonStyle.red
+			button.label = "Disable Daily Reminder"
+			button.emoji = "<:tgk_deactivated:1082676877468119110>"
+			await interaction.response.edit_message(view=self, embed=embed)
+	
+	
+	async def interaction_check(self, interaction: discord.Interaction):
+		if interaction.user.id != self.interaction.user.id:
+			warning = await get_invisible_embed(f"This is not for you")
+			return await interaction.response.send_message(embed=warning, ephemeral=True)	
+		return True
+
+	async def on_timeout(self):
+		for button in self.children:
+			button.disabled = True
+		
+		try:
+			await self.message.edit(view=self)
+		except:
+			pass
+
 
 class Timestamp_Panel(discord.ui.View):
 	def __init__(self, interaction: discord.Interaction, data: dict):

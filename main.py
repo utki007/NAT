@@ -67,6 +67,7 @@ class MyBot(commands.Bot):
         bot.userSettings = Document(bot.db, "userSettings")
         bot.config = Document(bot.db, "config")
         bot.dank = Document(bot.db, "dank")
+        bot.cricket = Document(bot.db, "cricket")
 
         # Grinders DB
         bot.grinder_db = bot.mongo["Grinders_V2"]
@@ -125,10 +126,7 @@ bot = MyBot(application_id)
 @bot.event
 async def on_message(message):
 
-    if bot.user.id == 1010883367119638658:
-        return
-
-    # pool logging for dank memer
+    # transcript for mafia bot
     if message.author.id == 511786918783090688 and len(message.embeds)>0:
             embed = message.embeds[0]
             if embed.description is not None and "Thank you all for playing! Deleting this channel in 10 seconds" in embed.description:
@@ -156,7 +154,8 @@ async def on_message(message):
                     link_view = discord.ui.View()
                     link_view.add_item(discord.ui.Button(emoji="<:nat_mafia:1102305100527042622>",label="Mafia Evidence", style=discord.ButtonStyle.link, url=f"https://mahto.id/chat-exporter?url={link_msg.attachments[0].url}"))
                     await link_msg.edit(view=link_view)
-                    
+    
+    # pool logging for dank memer                    
     if message.author.id == 270904126974590976 and len(message.embeds)>0:
         if message.interaction is not None:
             if 'serverevents' in message.interaction.name:
@@ -335,7 +334,71 @@ async def on_message(message):
 
             if 'multipliers xp' in message.interaction.name:
                 await check_gboost(bot, message)
-                                
+
+    # reminder processing for cricket bot
+    if message.author.id == 814100764787081217 and len(message.embeds)>0:
+
+        embed_dict = message.embeds[0].to_dict()
+        if 'title' in embed_dict.keys():
+
+            if embed_dict['title'] == '⏳ COOLDOWNS':
+
+                try:
+                    user = message.embeds[0].to_dict()['footer']['text']
+                    user = message.guild.get_member_named(user)
+                    if user is None:
+                        return
+                except:
+                    return
+                
+                content = message.embeds[0].to_dict()['description']
+                try:
+                    drop_line = [line for line in content.split("\n") if 'Drop' in line][0]
+                except:
+                    return
+                drop = {}
+                try:
+                    timestamp = int(re.findall(":\w*:", drop_line)[0].replace(":","",2))
+                    remind_at = datetime.datetime.fromtimestamp(timestamp)
+                    drop = {
+                        "time": remind_at,
+                        "message": f'https://discord.com/channels/{message.guild.id}/{message.channel.id}'
+                    }
+                except:
+                    if 'Ready' in drop_line:
+                        pass
+                    else:
+                        return
+                
+                
+
+                try:
+                    daily_line = [line for line in content.split("\n") if 'Daily' in line][0]
+                except:
+                    return
+                daily = {}
+                try:
+                    timestamp = int(re.findall(":\w*:", daily_line)[0].replace(":","",2))
+                    remind_at = datetime.datetime.fromtimestamp(timestamp)
+                    daily = {
+                        "time": remind_at,
+                        "message": f'https://discord.com/channels/{message.guild.id}/{message.channel.id}'
+                    }
+                except:
+                    if 'Ready' in drop_line:
+                        pass
+                    else:
+                        return
+                
+                
+
+                req = await check_cric_drop_and_daily(bot, message, drop, daily, user)
+                if req:
+                    try:
+                        await message.add_reaction('<:tgk_active:1082676793342951475>')
+                    except:
+                        pass
+
     # return if message is from bot
     if message.author.bot:
         return
@@ -343,10 +406,7 @@ async def on_message(message):
 
 @bot.event
 async def on_message_edit(before, after):
-    
-    if bot.user.id == 1010883367119638658:
-        return
-    
+
     message = after
 
     if message.author.id == 270904126974590976 and len(message.embeds)>0:
@@ -484,6 +544,18 @@ async def on_message_edit(before, after):
                                     data['rewards'][today]['coins'][key] = 1
                     
                 return await bot.dankAdventureStats.upsert(data)
+
+    if message.author.id == 814100764787081217 and len(message.embeds)>0:
+
+        # check for drops
+        if message.content != '':
+            matches = ['released', 'retained']
+            if any(x in message.content for x in matches):
+                remind_at = datetime.datetime.now() + datetime.timedelta(hours=1)
+                user = message.guild.get_member(int(re.findall("\<\@(.*?)\>", message.content)[0]))
+                if user is None:
+                    return
+                await check_cric_drop(bot, message, remind_at, user , True)
 
     # return if message is from bot
     if message.author.bot:

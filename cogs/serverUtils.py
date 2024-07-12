@@ -9,7 +9,7 @@ from modules.afk.View import AFKView, AFKViewUser
 from ui.settings.grinder import GrinderConfigPanel
 from ui.settings.mafia import Mafia_Panel
 from modules.payouts.view import Payouts_Panel
-from ui.settings.userConfig import Changelogs_Panel, Fish_Panel, Grinder_Reminder_Panel, Timestamp_Panel
+from ui.settings.userConfig import Changelogs_Panel, Dank_Reminder_Panel, Grinder_Reminder_Panel, Timestamp_Panel, User_Reminders_Panel
 from utils.embeds import *
 from utils.convertor import *
 from ui.settings import *
@@ -23,6 +23,7 @@ from ui.settings.voiceView import Voice_config
 
 from modules.giveaways.views import GiveawayConfigView
 
+utc = datetime.timezone.utc
 def chunk(it, size):
 	it = iter(it)
 	return iter(lambda: tuple(islice(it, size)), ())
@@ -588,7 +589,7 @@ class Usersettings_Dropdown(discord.ui.Select):
 	def __init__(self, default = -1):
 
 		options = [
-			discord.SelectOption(label='Dank Reminders', description='Get DMs for dank-related events!', emoji='<:tgk_announce:1123919566427406437>'),
+			discord.SelectOption(label='User Reminders', description='Get DMs for bot-related events!', emoji='<:tgk_message:1113527047373979668>'),
 			discord.SelectOption(label='Nat Changelogs', description='Get DMs for patch notes', emoji='<:tgk_entries:1124995375548338176>'),
 			discord.SelectOption(label='Timezone', description='Set your timezone', emoji='<:tgk_clock:1198684272446414928>'),
 			discord.SelectOption(label='Grinder Reminder', description='What time will you love to be reminded?', emoji='<:tgk_cc:1150394902585290854>'),
@@ -602,62 +603,16 @@ class Usersettings_Dropdown(discord.ui.Select):
 		
 		match self.values[0]:
 
-			case "Dank Reminders":
-
-				data = await interaction.client.userSettings.find(interaction.user.id)
-				flag = 0
-				if data is None:
-					data = {"_id": interaction.user.id, "fish_events": False, "gboost": False}
-					flag = 1
-				if 'fish_events' not in data.keys():
-					data['fish_events'] = False
-					flag = 1
-				if 'gboost' not in data.keys():
-					data['gboost'] = False
-					flag = 1
-				
-				if flag == 1:
-					await interaction.client.userSettings.upsert(data)
-
+			case "User Reminders":
+				self.view.stop()
 				embed = discord.Embed(
 					color=3092790,
-					title="Dank Reminders",
-					description= f"Want to be dm'ed for dank-related events?"
+					title="User Reminders",
+					description=f"Get DMs for bot-related cooldowns!"
 				)
-
-				self.view.stop()
-				grinder_reminder_view =  Fish_Panel(interaction, data)
-
-				# Initialize the button
-				if data['fish_events']:
-					grinder_reminder_view.children[0].style = discord.ButtonStyle.red
-					grinder_reminder_view.children[0].label = "Disable Fish Events."
-					grinder_reminder_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
-					label = f'<:tgk_active:1082676793342951475> Enabled'
-				else:
-					grinder_reminder_view.children[0].style = discord.ButtonStyle.green
-					grinder_reminder_view.children[0].label = "Enable Fish Events."
-					grinder_reminder_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
-					label = f'<:tgk_deactivated:1082676877468119110> Disabled'
-				embed.add_field(name="Fish Event:", value=f"> {label}", inline=True)
-
-				if data['gboost']:
-					grinder_reminder_view.children[1].style = discord.ButtonStyle.red
-					grinder_reminder_view.children[1].label = "Disable Global Boost."
-					grinder_reminder_view.children[1].emoji = "<:tgk_deactivated:1082676877468119110>"
-					label = f'<:tgk_active:1082676793342951475> Enabled'
-				else:
-					grinder_reminder_view.children[1].style = discord.ButtonStyle.green
-					grinder_reminder_view.children[1].label = "Enable Global Boost."
-					grinder_reminder_view.children[1].emoji = "<:tgk_active:1082676793342951475>"
-					label = f'<:tgk_deactivated:1082676877468119110> Disabled'
-				embed.add_field(name="Global Boost:", value=f"> {label}", inline=True)
-				embed.add_field(name="\u200b", value='\u200b', inline=True)
-
-				grinder_reminder_view.add_item(Usersettings_Dropdown(0))
-
-				await interaction.response.edit_message(embed=embed, view=grinder_reminder_view)
-				grinder_reminder_view.message = await interaction.original_response()
+				view = User_Reminders_Panel(interaction)
+				await interaction.response.edit_message(embed=embed, view=view)
+				view.message = await interaction.original_response()
 
 			case "Nat Changelogs":
 

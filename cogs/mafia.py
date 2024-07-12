@@ -50,9 +50,6 @@ class Mafia(commands.GroupCog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-
-        if self.bot.user.id == 1010883367119638658:
-            return
         
         if message.channel.id in self.mafia_inprosses:
             return
