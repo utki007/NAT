@@ -395,6 +395,37 @@ async def on_message(message):
                         await message.add_reaction('<:tgk_active:1082676793342951475>')
                     except:
                         pass
+        
+        else:
+            if 'image' in embed_dict.keys():
+                if 'fields' in embed_dict.keys():
+                    if len(embed_dict['fields'])==2:
+                        if 'name' in embed_dict['fields'][0].keys() and 'name' in embed_dict['fields'][1].keys():
+                            if embed_dict['fields'][0]['name'] == "Card Value" and embed_dict['fields'][1]['name'] == "Sale Value":
+                                remind_at = datetime.datetime.now() + datetime.timedelta(hours=1)
+                                counter = 0
+                                while message.content == '':
+                                    await asyncio.sleep(5)
+                                    try:
+                                        message = await message.channel.fetch_message(message.id)
+                                    except:
+                                        break
+                                    if counter == 15:
+                                        break
+                                try:
+                                    user = message.guild.get_member(int(re.findall("\<\@(.*?)\>", message.content)[0]))
+                                    if user is None:
+                                        return
+                                    await check_cric_drop(bot, message, remind_at, user , True)
+                                except:
+                                    embed = await get_warning_embed(f"Unable to find user for reminder!")
+                                    embed.title = "Error!"
+                                    embed.description = "Unable to note down reminder for user. Run [p]cd command to check the cooldown."
+                                    try:
+                                        await message.channel.send(embed=embed)
+                                    except:
+                                        pass
+
 
     # return if message is from bot
     if message.author.bot:
@@ -541,18 +572,6 @@ async def on_message_edit(before, after):
                                     data['rewards'][today]['coins'][key] = 1
                     
                 return await bot.dankAdventureStats.upsert(data)
-
-    if message.author.id == 814100764787081217 and len(message.embeds)>0:
-
-        # check for drops
-        if message.content != '':
-            matches = ['released', 'retained', 'replaced']
-            if any(x in message.content for x in matches):
-                remind_at = datetime.datetime.now() + datetime.timedelta(hours=1)
-                user = message.guild.get_member(int(re.findall("\<\@(.*?)\>", message.content)[0]))
-                if user is None:
-                    return
-                await check_cric_drop(bot, message, remind_at, user , True)
 
     # return if message is from bot
     if message.author.bot:
