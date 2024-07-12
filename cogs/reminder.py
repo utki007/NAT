@@ -3,6 +3,7 @@ import io
 import datetime
 from itertools import islice
 from tabnanny import check
+import traceback
 
 import discord
 from discord import app_commands
@@ -99,6 +100,8 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
 
     @tasks.loop(seconds=60)
     async def reminder_loop(self):
+        if self.bot.user.id == 1010883367119638658:
+            return
         current_reminder = await self.bot.cricket.get_all()
         for timer in current_reminder:
             if 'drops' not in timer.keys():
@@ -124,7 +127,15 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
     # print entire error
     @reminder_loop.error
     async def reminder_loop_error(self, error):
-        print(f"Error in reminder loop: {error}")
+        channel = self.bot.get_channel(999555462674522202)
+        full_stack_trace = ''.join(traceback.format_exception(type(error), error, error.__traceback__))
+        await channel.send(f"<@488614633670967307> <@301657045248114690> , Error in reminder: {full_stack_trace}")
+        try:
+            self.grinder_reminder.restart()
+        except:
+            error = traceback.format_exc()
+            await channel.send(f"<@488614633670967307> <@301657045248114690> , Error in restarting reminder loop: {error}")
+
     
     @reminder_loop.before_loop
     async def before_timer_loop(self):
