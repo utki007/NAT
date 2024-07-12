@@ -63,13 +63,14 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
                 view = discord.ui.View()
                 view.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label="Jump to channel", emoji="<:tgk_channel:1073908465405268029>", url=reminder_data['drops']['message']))
             except:
+                view = None
                 pass
-            await self.bot.cricket.unset(user.id, 'drops')
+            
             try:
                 await user.send(embed=embed, view=view)
+                await self.bot.cricket.unset(user.id, 'drops')
             except:
-                await user.send(embed=embed)
-
+                pass
 
     @tasks.loop(seconds=60)
     async def reminder_loop(self):

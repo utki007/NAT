@@ -251,8 +251,7 @@ async def check_cric_drop_and_daily(bot, message, drop, daily, user: discord.Mem
         data = {
             "_id": user.id,
             "drops": drop,
-            "daily": daily,
-            "message": f'https://discord.com/channels/{message.guild.id}/{message.channel.id}'
+            "daily": daily
         }
     elif 'drops' not in data.keys():
         data['drops'] = drop
