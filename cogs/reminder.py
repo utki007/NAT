@@ -71,6 +71,31 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
                 await self.bot.cricket.unset(user.id, 'drops')
             except:
                 pass
+        
+        elif reminder_type == 'daily':
+            if 'cric_daily_events' not in usersettings.keys():
+                return await self.bot.cricket.unset(user.id, 'daily')
+            elif usersettings['cric_daily_events'] == False:
+                return await self.bot.cricket.unset(user.id, 'daily')
+            embed = await get_invisible_embed("Daily Reminder")
+            embed.title = f"Daily Reminder"
+            embed.description = f"You can now claim your daily rewards!"
+            embed.description += f"\n\n-# Run </settings:1196688324207853590> >> User Reminders to manage reminders."
+            try:
+                embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1260884903139217429.webp?size=128&quality=lossless")
+            except:
+                pass
+            try:
+                view = discord.ui.View()
+                view.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label="Jump to channel", emoji="<:tgk_channel:1073908465405268029>", url=reminder_data['daily']['message']))
+            except:
+                view = None
+                pass
+            try:
+                await user.send(embed=embed, view=view)
+                await self.bot.cricket.unset(user.id, 'daily')
+            except:
+                pass
 
     @tasks.loop(seconds=60)
     async def reminder_loop(self):
@@ -83,6 +108,16 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
                 self.bot.dispatch('reminder_end', timer,'drops' , False)
             elif time_diff <= 60:
                 self.bot.dispatch('reminder_end', timer,'drops' , True)
+            else:
+                pass
+        for timer in current_reminder:
+            if 'daily' not in timer.keys():
+                continue
+            time_diff = (timer['daily']['time'] - datetime.datetime.now()).total_seconds()
+            if time_diff <= 0:
+                self.bot.dispatch('reminder_end', timer,'daily' , False)
+            elif time_diff <= 60:
+                self.bot.dispatch('reminder_end', timer,'daily' , True)
             else:
                 pass
     
