@@ -214,6 +214,11 @@ async def check_cric_drop(bot, message, remind_at: datetime.datetime, user: disc
                 "time": remind_at,
                 "message": f'https://discord.com/channels/{message.guild.id}/{message.channel.id}'
             }
+    elif 'time' not in data['drops'].keys():
+        data['drops'] = {
+            "time": remind_at,
+            "message": f'https://discord.com/channels/{message.guild.id}/{message.channel.id}'
+        }
     elif data['drops']['time'] != remind_at:
         data['drops'] = {
                 "time": remind_at,
