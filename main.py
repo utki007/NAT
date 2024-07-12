@@ -369,9 +369,6 @@ async def on_message(message):
                         pass
                     else:
                         return
-                
-                
-
                 try:
                     daily_line = [line for line in content.split("\n") if 'Daily' in line][0]
                 except:
@@ -549,7 +546,7 @@ async def on_message_edit(before, after):
 
         # check for drops
         if message.content != '':
-            matches = ['released', 'retained']
+            matches = ['released', 'retained', 'replaced']
             if any(x in message.content for x in matches):
                 remind_at = datetime.datetime.now() + datetime.timedelta(hours=1)
                 user = message.guild.get_member(int(re.findall("\<\@(.*?)\>", message.content)[0]))
