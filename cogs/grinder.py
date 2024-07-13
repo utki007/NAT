@@ -37,7 +37,12 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         self.grinder_demotions.cancel()
 
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
+    async def on_message_edit(self, before: discord.Message, after: discord.Message):
+
+        message = after
+
+        if message.channel.id != 999557650364760144:
+            return
         
         if not message.guild or message.author.id != 270904126974590976:
             return
@@ -53,14 +58,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             return
         embed = message.embeds[0]
 
-        if embed.description != "Successfully donated!": 
-            return
-
-        try: 
-            message = await message.channel.fetch_message(message.reference.message_id)
-        except:
-            return
-        if message is None:
+        if not embed.description.startswith("Successfully donated "):
             return
         
         donation_info = await get_donation_from_message(message)
