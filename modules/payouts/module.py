@@ -97,7 +97,10 @@ class PayoutV2(commands.GroupCog, name="payout"):
                 )
             )
             await config["claim_channel"].edit_message(
-                message.id, embed=embed, view=view, content=f"<@{payout['winner']}>, your payout has expired!"
+                message.id,
+                embed=embed,
+                view=view,
+                content=f"<@{payout['winner']}>, your payout has expired!",
             )
             host: discord.Member = guild.get_member(payout["set_by"])
             host_view = discord.ui.View()
@@ -341,8 +344,12 @@ class PayoutV2(commands.GroupCog, name="payout"):
             )
             return await interaction.response.send_message(ephemeral=True, embed=embed)
 
-        await self.backend.unclaimed.find_many_by_custom({"winner_message_id": int(message_id)})
-        await self.backend.claimed.find_many_by_custom({"winner_message_id": int(message_id)})
+        await self.backend.unclaimed.find_many_by_custom(
+            {"winner_message_id": int(message_id)}
+        )
+        await self.backend.claimed.find_many_by_custom(
+            {"winner_message_id": int(message_id)}
+        )
         await interaction.response.send_message(
             "if any payout was attached to this message then it has been deleted.",
             ephemeral=True,
@@ -359,12 +366,12 @@ class PayoutV2(commands.GroupCog, name="payout"):
         message_id: str = None,
         user: discord.Member = None,
     ):
-        if message_id is None and user is None:
-            await interaction.response.send_message(
-                "Please provide either message id or user to search for.",
-                ephemeral=True,
+        if not message_id and not user:
+            return await interaction.response.send_message(
+                "Please provide a message id", ephemeral=True
             )
-            return
+        
+
 
         config = await self.backend.get_config(interaction.guild_id)
         if config is None:
@@ -388,9 +395,15 @@ class PayoutV2(commands.GroupCog, name="payout"):
             )
             return await interaction.response.send_message(ephemeral=True, embed=embed)
 
-        unclaim = await self.backend.unclaimed.find_many_by_custom(
-            {"winner_message_id": int(message_id)}
-        )
+        if message_id:
+            unclaim = await self.backend.unclaimed.find_many_by_custom(
+                {"winner_message_id": int(message_id)}
+            )
+        elif user:
+            unclaim = await self.backend.unclaimed.find_many_by_custom(
+                {"winner": user.id}
+            )
+
         embed = discord.Embed(title="Unclaimed payouts", description="", color=0x2B2D31)
         claim_channel = interaction.guild.get_channel(config["claimed_channel"])
         if len(unclaim) == 0:
@@ -401,19 +414,24 @@ class PayoutV2(commands.GroupCog, name="payout"):
                 embed.description += f"\n**{i}.** https://discord.com/channels/{interaction.guild.id}/{claim_channel.id}/{entey['_id']}"
                 i += 1
 
-        await self.backend.claimed.find_many_by_custom(
-            {"winner_message_id": int(message_id)}
-        )
+        if message_id:
+            claimed = await self.backend.claimed.find_many_by_custom(
+                {"winner_message_id": int(message_id)}
+            )
+        elif user:
+            claimed = await self.backend.claimed.find_many_by_custom(
+                {"winner": user.id}
+            )
         pending_embed = discord.Embed(
             title="Pending Payout Search", color=0x2B2D31, description=""
         )
         pendin_channel = interaction.guild.get_channel(config["claim_channel"])
 
-        if len(unclaim) == 0:
+        if len(claimed) == 0:
             pending_embed.description = "All Payouts are Paid/Rejected/Not created yet."
         else:
             i = 1
-            for entey in unclaim:
+            for entey in claimed:
                 pending_embed.description += f"\n**{i}.** https://discord.com/channels/{interaction.guild.id}/{pendin_channel.id}/{entey['_id']}"
                 i += 1
 
@@ -437,7 +455,6 @@ class PayoutV2(commands.GroupCog, name="payout"):
     ):
         if mode is None:
             mode = app_commands.Choice(name="PC/Android", value="pc")
-        premium = await self.bot.premium.find(interaction.guild.id)
 
         guild_config = await self.backend.get_config(interaction.guild_id)
         if guild_config is None:
@@ -474,12 +491,15 @@ class PayoutV2(commands.GroupCog, name="payout"):
             )
             return
 
-        if isinstance(premium, dict):
-            if premium["premium"] is True:
-                payouts = payouts[: premium["payout_limit"]]
-        else:
-            if len(payouts) > 20:
-                payouts = payouts[:20]
+        elif len(payouts) > 50:
+            payouts = payouts[:50]
+
+        # if isinstance(premium, dict):
+        #     if premium["premium"] is True:
+        #         payouts = payouts[: premium["payout_limit"]]
+        # else:
+        #     if len(payouts) > 20:
+        #         payouts = payouts[:20]
 
         if guild_config["express"] is True:
             await interaction.response.send_message(
