@@ -109,7 +109,7 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
             time_diff = (timer['drops']['time'] - datetime.datetime.now()).total_seconds()
             if time_diff <= 0:
                 self.bot.dispatch('reminder_end', timer,'drops' , False)
-            elif time_diff <= 90:
+            elif time_diff <= 60:
                 self.bot.dispatch('reminder_end', timer,'drops' , True)
             else:
                 pass
