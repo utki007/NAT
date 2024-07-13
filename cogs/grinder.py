@@ -40,9 +40,6 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
 
         message = after
-
-        if message.channel.id != 999557650364760144:
-            return
         
         if not message.guild or message.author.id != 270904126974590976:
             return
