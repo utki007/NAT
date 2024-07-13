@@ -252,13 +252,15 @@ async def check_cric_drop_and_daily(bot, message, drop, daily, user: discord.Mem
         return False
 
     data = await bot.cricket.find(user.id)
+    
+    flag = 0
     if data is None:
         data = {
             "_id": user.id,
             "drops": drop,
             "daily": daily
         }
-    flag = 0
+        flag = 1
     if drop == {}:
         pass
     elif 'drops' not in data.keys():

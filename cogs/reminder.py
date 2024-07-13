@@ -33,9 +33,11 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
     @commands.Cog.listener()
     async def on_reminder_end(self, reminder_data, reminder_type, sleep:bool=None):
         if sleep:
-            time_diff = (reminder_data['drops']['time'] - datetime.datetime.now()).total_seconds()
+            if reminder_type == 'drops': 
+                time_diff = (reminder_data['drops']['time'] - datetime.datetime.now()).total_seconds()
+            elif reminder_type == 'daily':
+                time_diff = (reminder_data['daily']['time'] - datetime.datetime.now()).total_seconds()
             await asyncio.sleep(time_diff)
-            reminder_data = await self.bot.timer.find({'_id':reminder_data['_id']})
 
         if reminder_data == None:
             return
@@ -43,7 +45,7 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
         user = reminder_data['_id']
         user = await self.bot.fetch_user(int(user))
         if user == None:
-            return await self.bot.timer.delete_by_id(reminder_data['_id'])
+            return await self.bot.cricket.delete_by_id(reminder_data['_id'])
         
         usersettings = await self.bot.userSettings.find(user.id)
         
@@ -74,9 +76,9 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
                 pass
         
         elif reminder_type == 'daily':
-            if 'cric_daily_events' not in usersettings.keys():
+            if 'cric_daily' not in usersettings.keys():
                 return await self.bot.cricket.unset(user.id, 'daily')
-            elif usersettings['cric_daily_events'] == False:
+            elif usersettings['cric_daily'] == False:
                 return await self.bot.cricket.unset(user.id, 'daily')
             embed = await get_invisible_embed("Daily Reminder")
             embed.title = f"Daily Reminder"
@@ -100,8 +102,6 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
 
     @tasks.loop(seconds=60)
     async def reminder_loop(self):
-        if self.bot.user.id == 1010883367119638658:
-            return
         current_reminder = await self.bot.cricket.get_all()
         for timer in current_reminder:
             if 'drops' not in timer.keys():
@@ -109,7 +109,7 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
             time_diff = (timer['drops']['time'] - datetime.datetime.now()).total_seconds()
             if time_diff <= 0:
                 self.bot.dispatch('reminder_end', timer,'drops' , False)
-            elif time_diff <= 60:
+            elif time_diff <= 90:
                 self.bot.dispatch('reminder_end', timer,'drops' , True)
             else:
                 pass
