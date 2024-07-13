@@ -370,8 +370,6 @@ class PayoutV2(commands.GroupCog, name="payout"):
             return await interaction.response.send_message(
                 "Please provide a message id", ephemeral=True
             )
-        
-
 
         config = await self.backend.get_config(interaction.guild_id)
         if config is None:
@@ -405,7 +403,13 @@ class PayoutV2(commands.GroupCog, name="payout"):
             )
 
         embed = discord.Embed(title="Unclaimed payouts", description="", color=0x2B2D31)
-        claim_channel = interaction.guild.get_channel(config["claimed_channel"])
+
+        if isinstance(config["claim_channel"], int):
+            webhook = await interaction.guild.fetch_webhook(config["claim_channel"])
+            claim_channel = webhook.channel
+        elif isinstance(config["claim_channel"], discord.Webhook):
+            claim_channel = config["claim_channel"].channel
+
         if len(unclaim) == 0:
             embed.description = "All Payouts are claimed/Expired/Not created yet."
         else:
@@ -425,7 +429,12 @@ class PayoutV2(commands.GroupCog, name="payout"):
         pending_embed = discord.Embed(
             title="Pending Payout Search", color=0x2B2D31, description=""
         )
-        pendin_channel = interaction.guild.get_channel(config["claim_channel"])
+
+        if isinstance(config["claimed_channel"], int):
+            webhook = await interaction.guild.fetch_webhook(config["claimed_channel"])
+            pendin_channel = webhook.channel
+        elif isinstance(config["claimed_channel"], discord.Webhook):
+            pendin_channel = config["claimed_channel"].channel
 
         if len(claimed) == 0:
             pending_embed.description = "All Payouts are Paid/Rejected/Not created yet."

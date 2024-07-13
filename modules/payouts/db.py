@@ -67,7 +67,7 @@ class PayoutDB:
             return self.config_cache[guild_id]
         else:
             config = await self.config.find(guild_id)
-            if config is None:
+            if not config:
                 config: PayoutConfig = {
                         '_id': guild_id,
                         'claim_channel': None,
@@ -168,7 +168,7 @@ class PayoutDB:
             embed.title = "Payout Rejected"
 
             edit_view = discord.ui.View()
-            edit_view.add_item(discord.ui.Button(label=f'Payout Denied', style=discord.ButtonStyle.gray, disabled=True, emoji="<a:nat_cross:1010969491347357717>"))
+            edit_view.add_item(discord.ui.Button(label='Payout Denied', style=discord.ButtonStyle.gray, disabled=True, emoji="<a:nat_cross:1010969491347357717>"))
 
             await config['claimed_channel'].edit_message(claimed_message.id, embed=embed, view=edit_view)
             await self.claimed.delete(payout['_id'])
