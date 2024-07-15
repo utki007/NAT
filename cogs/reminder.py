@@ -34,9 +34,15 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
     async def on_reminder_end(self, reminder_data, reminder_type, sleep:bool=None):
         if sleep:
             if reminder_type == 'drops': 
-                time_diff = (reminder_data['drops']['time'] - datetime.datetime.now()).total_seconds()
+                try:
+                    time_diff = (reminder_data['drops']['time'] - datetime.datetime.now()).total_seconds()
+                except:
+                    return
             elif reminder_type == 'daily':
-                time_diff = (reminder_data['daily']['time'] - datetime.datetime.now()).total_seconds()
+                try:
+                    time_diff = (reminder_data['daily']['time'] - datetime.datetime.now()).total_seconds()
+                except:
+                    return
             await asyncio.sleep(time_diff)
 
         if reminder_data == None:
