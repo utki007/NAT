@@ -11,7 +11,6 @@ from utils.embeds import (get_error_embed, get_invisible_embed,
 from utils.views.modal import General_Modal
 from utils.views.selects import Role_select
 from utils.views.ui import Dropdown_Channel
-from utils.views.confirm import Confirm
 
 
 class ButtonCooldown(app_commands.CommandOnCooldown):
@@ -490,16 +489,20 @@ class Payout_Buttton(discord.ui.View):
 	
 	@discord.ui.button(label="Reject", style=discord.ButtonStyle.gray, emoji="<a:nat_cross:1010969491347357717>", custom_id="reject")
 	async def reject(self, interaction: discord.Interaction, button: discord.ui.Button):
-		view = Confirm(interaction.user, 30)
 
-		await interaction.response.send_message(f"{interaction.user.mention}, Are you sure you want to reject this payout?", view=view, ephemeral=False)
-		await view.wait()
-		if view.value is None or view.value is False: 
-			return await interaction.delete_original_response()
+		modal = General_Modal("Reason for cancelling payout?", interaction)
+		modal.reason = discord.ui.TextInput(label="Reason", placeholder="Reason for cancelling payout", min_length=3, max_length=100, required=True)
+		modal.add_item(modal.reason)
+
+		await interaction.response.send_modal(modal)		
+		await modal.wait()
+		if modal.value is None or modal.value is False: 
+			return
 		
 		data = await interaction.client.payouts.claimed.find(interaction.message.id)
 		embed = interaction.message.embeds[0]
 		embed.title = "Payout Rejected"
+		embed.add_field(name="Rejected", value=f"<:nat_replycont:1146496789361479741> **Reason:** {modal.reason.value}\n<:nat_reply:1146498277068517386>  **Rejected By**: {interaction.user.mention}", inline=True)
 
 		edit_view = discord.ui.View()
 		edit_view.add_item(discord.ui.Button(label='Payout Denied', style=discord.ButtonStyle.gray, disabled=True, emoji="<a:nat_cross:1010969491347357717>"))
@@ -507,10 +510,9 @@ class Payout_Buttton(discord.ui.View):
 		config = await interaction.client.payouts.get_config(interaction.guild.id)
 		claimed_webhook: discord.Webhook = config['claimed_channel']
 
-		await view.interaction.response.edit_message(embed=discord.Embed(description="<:octane_yes:1019957051721535618> | Payout Rejected Successfully!", color=0x2b2d31), view=None, content=None)
+		await modal.interaction.response.edit_message(embed=embed, view=edit_view)
 		await claimed_webhook.edit_message(interaction.message.id, embed=embed, view=edit_view)
 		await interaction.client.payouts.claimed.delete(data['_id'])
-		await view.interaction.delete_original_response()
 	
 	@discord.ui.button(label="Manual Verification", style=discord.ButtonStyle.gray, emoji="<:caution:1122473257338151003>", custom_id="manual_verification", disabled=False)
 	async def manual_verification(self, interaction: discord.Interaction, button: discord.ui.Button):

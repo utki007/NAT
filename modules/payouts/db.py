@@ -172,6 +172,16 @@ class PayoutDB:
 
             await config['claimed_channel'].edit_message(claimed_message.id, embed=embed, view=edit_view)
             await self.claimed.delete(payout['_id'])
+            self.bot.dispatch("payout_canceled", {
+                'host': host,
+                'winner': host.guild.get_member(payout['winner']),
+                'prize': payout['prize'],
+                'event': payout['event'],
+                'guild': host.guild.id,
+                'channel': payout['channel'],
+                '_id': payout['_id'],
+                'item': payout['item']
+            }, payout)
             return True
         
         except Exception as e:

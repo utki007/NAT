@@ -796,7 +796,10 @@ class PayoutV2(commands.GroupCog, name="payout"):
         log_channel = queue_message.guild.get_channel(config["log_channel"])
         if log_channel is None:
             return
-        await log_channel.send(embed=embed)
+        try:
+            await log_channel.send(embed=embed)
+        except discord.Forbidden:
+            pass
 
     @commands.Cog.listener()
     async def on_payout_claim(self, message: discord.Message, user: discord.Member):
@@ -818,7 +821,10 @@ class PayoutV2(commands.GroupCog, name="payout"):
         log_channel = message.guild.get_channel(config["log_channel"])
         if log_channel is None:
             return
-        await log_channel.send(embed=embed)
+        try:
+            await log_channel.send(embed=embed)
+        except discord.Forbidden:
+            pass
 
     @commands.Cog.listener()
     async def on_payout_pending(self, message: discord.Message):
@@ -839,7 +845,10 @@ class PayoutV2(commands.GroupCog, name="payout"):
         log_channel = message.guild.get_channel(config["log_channel"])
         if log_channel is None:
             return
-        await log_channel.send(embed=embed)
+        try:
+            await log_channel.send(embed=embed)
+        except discord.Forbidden:
+            pass
 
     @commands.Cog.listener()
     async def on_payout_paid(
@@ -869,7 +878,10 @@ class PayoutV2(commands.GroupCog, name="payout"):
         log_channel = message.guild.get_channel(config["log_channel"])
         if log_channel is None:
             return
-        await log_channel.send(embed=embed)
+        try:
+            await log_channel.send(embed=embed)
+        except discord.Forbidden:
+            pass
 
     @commands.Cog.listener()
     async def on_payout_expired(self, message: discord.Message, user: discord.Member):
@@ -891,7 +903,10 @@ class PayoutV2(commands.GroupCog, name="payout"):
         log_channel = message.guild.get_channel(config["log_channel"])
         if log_channel is None:
             return
-        await log_channel.send(embed=embed)
+        try:
+            await log_channel.send(embed=embed)
+        except discord.Forbidden:
+            pass
 
     @commands.Cog.listener()
     async def on_more_pending(self, info: dict):
@@ -912,6 +927,34 @@ class PayoutV2(commands.GroupCog, name="payout"):
                 pass
         else:
             return
+
+    @commands.Cog.listener()
+    async def on_payout_canceled(self, info: dict, data: PayoutQueue):
+        embed = discord.Embed(
+            title="Payout | Canceled",
+            color=discord.Color.red(),
+            timestamp=datetime.datetime.now(),
+            description="",
+        )
+        embed.description += f"**User:** {info['host'].mention}\n"
+        embed.description += f"**Winner:** {info['winner'].mention} ({info['winner'].name})\n"
+        embed.description += f"**Prize:** {info['prize']}\n"
+        embed.description += (
+            f"**Queue Message:** [Jump to Message](https://discord.com/channels/{info['guild']}/{info['channel']}/{data['_id']})\n"
+        )
+        embed.set_footer(text=f"Queue Message ID: {data['_id']}")
+
+        config = await self.backend.get_config(info["guild"])
+        if config is None:
+            return
+        log_channel = self.bot.get_channel(config["log_channel"])
+        if log_channel is None:
+            return
+        try:
+            await log_channel.send(embed=embed
+        )
+        except discord.Forbidden:
+            pass
 
 
 async def setup(bot):
