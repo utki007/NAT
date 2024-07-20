@@ -465,8 +465,7 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
             )
         user_role = [role.id for role in interaction.user.roles]
         if (
-            not set(user_role) & set(config["manager_roles"])
-            or not interaction.user.guild_permissions.administrator
+            not set(user_role) & set(config["manager_roles"])    
         ):
             return await interaction.followup.send(
                 "You do not have permission to start giveaways!"
