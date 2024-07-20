@@ -917,7 +917,7 @@ class GiveawayMultiplierView(View):
             options=options,
             placeholder="Select the role you want to remove multiplier for",
             min_values=1,
-            max_values=len(options) - 1,
+            max_values=len(options) - 1 if len(options) > 1 else None,
         )
         view.add_item(view.select)
         await interaction.response.send_message(view=view, ephemeral=True)
