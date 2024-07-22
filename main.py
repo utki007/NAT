@@ -67,7 +67,7 @@ class MyBot(commands.Bot):
         bot.userSettings = Document(bot.db, "userSettings")
         bot.config = Document(bot.db, "config")
         bot.dank = Document(bot.db, "dank")
-        bot.cricket = Document(bot.db, "cricket")
+        bot.cricket = Document(bot.db, "cricket_V2")
 
         # Grinders DB
         bot.grinder_db = bot.mongo["Grinders_V2"]
@@ -352,18 +352,20 @@ async def on_message(message):
                     return
                 
                 content = message.embeds[0].to_dict()['description']
+                changed = False
                 try:
                     drop_line = [line for line in content.split("\n") if 'Drop' in line][0]
                 except:
                     return
-                drop = {}
                 try:
                     timestamp = int(re.findall(":\w*:", drop_line)[0].replace(":","",2))
                     remind_at = datetime.datetime.fromtimestamp(timestamp)
-                    drop = {
-                        "time": remind_at,
-                        "message": f'https://discord.com/channels/{message.guild.id}/{message.channel.id}'
-                    }
+                    changed = await set_cric_reminder(bot, message, remind_at, user, 'cric_drop', False)
+                    if changed:
+                        try:
+                            await message.add_reaction('<:tgk_active:1082676793342951475>')
+                        except:
+                            pass
                 except:
                     if 'Ready' in drop_line:
                         pass
@@ -373,29 +375,38 @@ async def on_message(message):
                     daily_line = [line for line in content.split("\n") if 'Daily' in line][0]
                 except:
                     return
-                daily = {}
                 try:
                     timestamp = int(re.findall(":\w*:", daily_line)[0].replace(":","",2))
                     remind_at = datetime.datetime.fromtimestamp(timestamp)
-                    daily = {
-                        "time": remind_at,
-                        "message": f'https://discord.com/channels/{message.guild.id}/{message.channel.id}'
-                    }
+                    changed = await set_cric_reminder(bot, message, remind_at, user, 'cric_daily', False)
+                    if changed:
+                        try:
+                            await message.add_reaction('<:tgk_active:1082676793342951475>')
+                        except:
+                            pass
                 except:
                     if 'Ready' in drop_line:
                         pass
                     else:
                         return
-                
-                
-
-                req = await check_cric_drop_and_daily(bot, message, drop, daily, user)
-                if req:
-                    try:
-                        await message.add_reaction('<:tgk_active:1082676793342951475>')
-                    except:
+                try:
+                    vote_line = [line for line in content.split("\n") if 'Vote' in line][0]
+                except:
+                    return
+                try:
+                    timestamp = int(re.findall(":\w*:", vote_line)[0].replace(":","",2))
+                    remind_at = datetime.datetime.fromtimestamp(timestamp)
+                    changed = await set_cric_reminder(bot, message, remind_at, user, 'cric_vote', False)
+                    if changed:
+                        try:
+                            await message.add_reaction('<:tgk_active:1082676793342951475>')
+                        except:
+                            pass
+                except:
+                    if 'Ready' in vote_line:
                         pass
-        
+                    else:
+                        return        
         else:
             if 'image' in embed_dict.keys():
                 if 'fields' in embed_dict.keys():
@@ -416,7 +427,7 @@ async def on_message(message):
                                     user = message.guild.get_member(int(re.findall("\<\@(.*?)\>", message.content)[0]))
                                     if user is None:
                                         return
-                                    await check_cric_drop(bot, message, remind_at, user , True)
+                                    await set_cric_reminder(bot, message, remind_at, user, 'cric_drop', True)
                                 except:
                                     embed = await get_warning_embed(f"Unable to find user for reminder!")
                                     embed.title = "Error!"
