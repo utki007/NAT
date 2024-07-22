@@ -284,12 +284,14 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
                     prize = giveaway["prize"]
 
             guild_name = guild.name
+            donor_name = ""
             if giveaway["donor"]:
                 donor = guild.get_member(giveaway["donor"])
                 if donor:
                     donor_name = donor.mention
             else:
                 donor_name = host.mention
+                
             winners_mention = ""
 
             for winner in winners:
