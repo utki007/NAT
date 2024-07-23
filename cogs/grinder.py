@@ -289,10 +289,14 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
             grinder_users = await self.bot.grinderUsers.get_all({"guild": guild.id})
             trial_role = guild.get_role(guild_config['trial']['role'])
             grinder_role = guild.get_role(guild_config['grinder']['role'])
+            if trial_role is None or grinder_role is None:
+                continue
 
             for grinder_user in grinder_users:
                 grinder_user['payment']['next_payment'] = grinder_user['payment']['next_payment'].replace(tzinfo=utc)
                 profile_role = guild.get_role(grinder_user['profile_role'])
+                if profile_role is None:
+                    continue
                 user = guild.get_member(grinder_user['user'])
                 if not user:
                     continue
