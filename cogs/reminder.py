@@ -50,6 +50,8 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
             return await self.bot.cricket.delete_by_id(reminder_data['_id'])
         
         usersettings = await self.bot.userSettings.find(user.id)
+        if usersettings == None:
+            return await self.bot.cricket.delete_by_id(reminder_data['_id'])
         
         if reminder_type == 'cric_drop':
             if 'cric_drop_events' not in usersettings.keys():
