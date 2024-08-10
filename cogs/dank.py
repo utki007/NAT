@@ -361,8 +361,8 @@ class dank(commands.GroupCog, name="adventure", description="Get Fun Adventure S
 	async def on_message(self, message: discord.Message):
 		if message.author.id != 270904126974590976:
 			return
-		if message.interaction is None: return
-		if message.interaction.name != "item": return
+		if message._interaction is None: return
+		if message._interaction.name != "item": return
 		if len(message.embeds) == 0:return
 
 		embed: discord.Embed = message.embeds[0]
