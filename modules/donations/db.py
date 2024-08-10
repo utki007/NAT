@@ -10,12 +10,6 @@ class Events(TypedDict):
     donations: int
 
 
-class UserDonations(TypedDict):
-    user_id: int
-    donations: int
-    events: dict[str, Events]
-
-
 class Ranks(TypedDict):
     role_id: int
     donations: int
@@ -37,17 +31,19 @@ class DankProfile(TypedDict):
     emoji: str
 
 
+class UserDonations(TypedDict):
+    user_id: int
+    guild_id: int
+    events: dict[str, Events]
+    profiles: dict[str, int]
+
+
 class GuildConfig(TypedDict):
     _id: int
     manager_roles: list[int]
     profiles: dict[int, UserDonations]
     log_channel: int
 
-class UserDonations(TypedDict):
-    user_id: int
-    guild_id: int
-    events: dict[str, Events]
-    profiles: dict[str, int]
 
 class Backend:
     def __init__(self, bot: commands.Bot):
@@ -84,7 +80,18 @@ class Backend:
         user_info = await self.donations.find(
             {"user_id": user_id, "guild_id": guild_id}
         )
+        if not user_info:
+            user_info: UserDonations = {
+                "user_id": user_id,
+                "guild_id": guild_id,
+                "events": {},
+                "profiles": {},
+            }
+            await self.donations.insert(user_info)
         return user_info
+
+    async def update_user_donations(self, guild_id: int, user_id: int, data: dict):
+        await self.donations.update({"user_id": user_id, "guild_id": guild_id}, data)
 
     async def get_config_embed(self, guild_config: GuildConfig, guild: Guild):
         embed = Embed(
