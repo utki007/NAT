@@ -77,7 +77,12 @@ async def update_cric_embed(interaction: Interaction, data: dict):
 	else:
 		label = f'<:tgk_deactivated:1082676877468119110> Disabled'
 	embed.add_field(name="Daily:", value=f"> {label}", inline=True)
-	embed.add_field(name="\u200b", value='\u200b', inline=True)
+
+	if data['cric_vote']:
+		label = f'<:tgk_active:1082676793342951475> Enabled'
+	else:
+		label = f'<:tgk_deactivated:1082676877468119110> Disabled'
+	embed.add_field(name="Vote:", value=f"> {label}", inline=True)
 	return embed
 
 async def update_timestamp_embed(interaction: Interaction, data: dict):
@@ -233,6 +238,9 @@ class User_Reminders_Panel(discord.ui.View):
 		if 'cric_daily' not in data.keys():
 			data['cric_daily'] = False
 			flag = 1
+		if 'cric_vote' not in data.keys():
+			data['cric_vote'] = False
+			flag = 1
 
 		if flag == 1:
 			await interaction.client.userSettings.upsert(data)
@@ -269,7 +277,18 @@ class User_Reminders_Panel(discord.ui.View):
 			cricket_reminder_view.children[1].emoji = "<:tgk_active:1082676793342951475>"
 			label = f'<:tgk_deactivated:1082676877468119110> Disabled'
 		embed.add_field(name="Daily:", value=f"> {label}", inline=True)
-		embed.add_field(name="\u200b", value='\u200b', inline=True)
+
+		if data['cric_vote']:
+			cricket_reminder_view.children[2].style = discord.ButtonStyle.red
+			cricket_reminder_view.children[2].label = "Disable Vote Reminder"
+			cricket_reminder_view.children[2].emoji = "<:tgk_deactivated:1082676877468119110>"
+			label = f'<:tgk_active:1082676793342951475> Enabled'
+		else:
+			cricket_reminder_view.children[2].style = discord.ButtonStyle.green
+			cricket_reminder_view.children[2].label = "Enable Vote Reminder"
+			cricket_reminder_view.children[2].emoji = "<:tgk_active:1082676793342951475>"
+			label = f'<:tgk_deactivated:1082676877468119110> Disabled'
+		embed.add_field(name="Vote:", value=f"> {label}", inline=True)
 
 		await interaction.followup.send(embed=embed, view=cricket_reminder_view, ephemeral=False)
 		cricket_reminder_view.message = await interaction.original_response()
@@ -398,7 +417,26 @@ class Cricket_Reminder_Panel(discord.ui.View):
 			button.emoji = "<:tgk_deactivated:1082676877468119110>"
 			await interaction.response.edit_message(view=self, embed=embed)
 	
-	
+	@discord.ui.button(label='toggle_button_label' ,row=1)
+	async def voteEvent(self, interaction: discord.Interaction, button: discord.ui.Button):
+		data = await interaction.client.userSettings.find(interaction.user.id)
+		if data['cric_vote']:
+			data['cric_vote'] = False
+			await interaction.client.userSettings.upsert(data)
+			embed = await update_cric_embed(interaction, data)
+			button.style = discord.ButtonStyle.green
+			button.label = "Enable Vote Reminder"
+			button.emoji = "<:tgk_active:1082676793342951475>"
+			await interaction.response.edit_message(embed=embed,view=self)
+		else:
+			data['cric_vote'] = True
+			await interaction.client.userSettings.upsert(data)
+			embed = await update_cric_embed(interaction, data)
+			button.style = discord.ButtonStyle.red
+			button.label = "Disable Vote Reminder"
+			button.emoji = "<:tgk_deactivated:1082676877468119110>"
+			await interaction.response.edit_message(view=self, embed=embed)
+
 	async def interaction_check(self, interaction: discord.Interaction):
 		if interaction.user.id != self.interaction.user.id:
 			warning = await get_invisible_embed(f"This is not for you")
