@@ -47,7 +47,6 @@ async def get_donation_from_message(message: discord.Message) -> DonationsInfo:
     donor: discord.Member = message.interaction.user
 
     embed: discord.Embed = message.embeds[0]    
-    description = embed.description
 
     items = re.findall(r"\*\*(.*?)\*\*", embed.description)[0]
     if "⏣" in items:
@@ -57,7 +56,11 @@ async def get_donation_from_message(message: discord.Message) -> DonationsInfo:
     else:
 
         emojis = list(set(re.findall(":\w*:\d*", items)))
-        for emoji in emojis :items = items.replace(emoji,"",100); items = items.replace("<>","",100);items = items.replace("<a>","",100);items = items.replace("  "," ",100)
+        for emoji in emojis :
+            items = items.replace(emoji,"",100)
+            items = items.replace("<>","",100)
+            items = items.replace("<a>","",100)
+            items = items.replace("  "," ",100)
         mathc = re.search(r"(\d+) (.+)", items)
         if not mathc:
             raise ValueError("Could not parse items from message")

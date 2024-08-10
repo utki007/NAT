@@ -157,7 +157,7 @@ async def get_formated_field(
         case "str":
             if isinstance(data, str):
                 return f"{name}{data}"
-            if isinstance(data, list[str]):
+            if isinstance(data, list):
                 if len(data) == 0:
                     return f"{name}None"
                 return f"{name}".join(data)
