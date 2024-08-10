@@ -157,12 +157,12 @@ async def on_message(message):
     
     # pool logging for dank memer                    
     if message.author.id == 270904126974590976 and len(message.embeds)>0:
-        if message.interaction is not None:
-            if 'serverevents' in message.interaction.name:
+        if message._interaction is not None:
+            if 'serverevents' in message._interaction.name:
                 bl_list = ['serverevents payout', 'serverevents run serverbankrob', 'serverevents run raffle', 'serverevents run splitorsteal']
-                if message.interaction.name in bl_list:
+                if message._interaction.name in bl_list:
                     data = await bot.dankSecurity.find(message.guild.id)
-                    member = message.interaction.user
+                    member = message._interaction.user
                     if data:
                         if data['enabled'] is False: return
                         owner = message.guild.owner
@@ -185,7 +185,7 @@ async def on_message(message):
                             if data['quarantine'] is not None:					
                                 role = message.guild.get_role(data['quarantine'])
                             try:
-                                await quarantineUser(bot, member, role, f"{member.name} (ID: {member.id}) {member.mention} has made an unsucessful attempt to run `/{message.interaction.name}`!")					
+                                await quarantineUser(bot, member, role, f"{member.name} (ID: {member.id}) {member.mention} has made an unsucessful attempt to run `/{message._interaction.name}`!")					
                             except:
                                 pass
                             
@@ -199,7 +199,7 @@ async def on_message(message):
                                 webhook = discord.utils.get(webhooks, name=bot.user.name)
                                 if webhook is None:
                                     webhook = await securityLog.create_webhook(name=bot.user.name, reason="Dank Pool Logs", avatar=await bot.user.avatar.read())
-                                embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to run `/{message.interaction.name}`!")	
+                                embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to run `/{message._interaction.name}`!")	
                                 view = discord.ui.View()
                                 view.add_item(discord.ui.Button(emoji = '<:tgk_link:1105189183523401828>',label=f'Used at', url=f"{message.jump_url}"))
                                 await webhook.send(
@@ -228,7 +228,7 @@ async def on_message(message):
                                 # 		avatar_url=str(member.avatar.url),
                                 # 		view=view
                                 # 	)
-                            embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to run `/{message.interaction.name}`!")
+                            embed = await get_warning_embed(f"{member.mention} has made an unsucessful attempt to run `/{message._interaction.name}`!")
                             try:
                                 view = discord.ui.View()
                                 view.add_item(discord.ui.Button(label=f'Used at', url=f"{message.jump_url}"))
@@ -239,7 +239,7 @@ async def on_message(message):
                                     embed = discord.Embed(
                                         title = f"Security Breach!",
                                         description=
-                                        f"` - `   **Command:** `/{message.interaction.name}`\n"
+                                        f"` - `   **Command:** `/{message._interaction.name}`\n"
                                         f"` - `   **Used by:** {member.mention}\n",
                                         color=discord.Color.random()
                                     )
@@ -256,7 +256,7 @@ async def on_message(message):
                             except:
                                 pass
             
-            if 'fish catch' in message.interaction.name:
+            if 'fish catch' in message._interaction.name:
                 if 'fields' not in message.embeds[0].to_dict().keys():
                     return
                 if len(message.embeds[0].to_dict()['fields']) < 1:
@@ -450,10 +450,10 @@ async def on_message_edit(before, after):
 
     if message.author.id == 270904126974590976 and len(message.embeds)>0:
         
-        if message.interaction is not None:
+        if message._interaction is not None:
             
             # for serversettings in dank
-            if message.interaction.name == 'serversettings':
+            if message._interaction.name == 'serversettings':
                 if message.embeds[0].to_dict()['title'] == 'Events Manager':
                     managerRole = None
                     description = message.embeds[0].to_dict()['fields'][0]['value']
@@ -468,7 +468,7 @@ async def on_message_edit(before, after):
                             await bot.dankSecurity.upsert(data)
         
             # For adventure stats
-            if message.interaction.name == 'adventure':
+            if message._interaction.name == 'adventure':
                             
                 if 'author' not in message.embeds[0].to_dict().keys():
                     return
@@ -479,7 +479,7 @@ async def on_message_edit(before, after):
                 if message.embeds[0].to_dict()['author']['name'] != 'Adventure Summary':
                     return
                         
-                user = message.interaction.user
+                user = message._interaction.user
                 today = str(datetime.date.today())
                 data = await bot.dankAdventureStats.find(user.id)
                 if data is None:
