@@ -235,6 +235,8 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                 if today > grinder_user['payment']['next_payment']:
                     user = guild.get_member(grinder_user['user'])
                     if not user:
+                        grinder_user['active'] = False
+                        await self.bot.grinderUsers.upsert(grinder_user)
                         continue
                     pending_days = (today - grinder_user['payment']['next_payment']).days
                     amount = grinder_user['payment']['amount_per_grind'] * pending_days
@@ -299,6 +301,8 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
                     continue
                 user = guild.get_member(grinder_user['user'])
                 if not user:
+                    grinder_user['active'] = False
+                    await self.bot.grinderUsers.upsert(grinder_user)
                     continue
                 if not grinder_user['active']:
                     roles_to_remove = [trial_role, profile_role, grinder_role]
@@ -1158,6 +1162,7 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
         today = datetime.datetime(date.year, date.month, date.day, tzinfo=utc)
 
         grinder_profiles = await interaction.client.grinderUsers.get_all({"guild": interaction.guild.id, "active": True})
+        grinder_profiles = [grinder for grinder in grinder_profiles if interaction.guild.get_member(grinder['user']) is not None]
         upto_Date_grinders = [grinder for grinder in grinder_profiles if grinder['payment']['next_payment'].replace(tzinfo=utc) > today] # active grinders
         overdue_grinders = [grinder for grinder in grinder_profiles if grinder['payment']['next_payment'].replace(tzinfo=utc) <= today] # unpaid grinders
         total_grinders = len(grinder_profiles)
