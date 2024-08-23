@@ -41,10 +41,10 @@ async def get_donation_from_message(message: discord.Message) -> DonationsInfo:
     if len(message.embeds) == 0:
         raise ValueError("Message does not contain an embed")
 
-    if not message._interaction:
+    if not message.interaction:
         raise ValueError("Message doese not contain an interaction object")
 
-    donor: discord.Member = message._interaction.user
+    donor: discord.Member = message.interaction.user
 
     embed: discord.Embed = message.embeds[0]    
 
