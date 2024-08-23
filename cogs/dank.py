@@ -1,25 +1,25 @@
-from collections import Counter
-import datetime
-import enum
-from io import BytesIO
-import time as t
-from typing import List, Union
+# from collections import Counter
+# import datetime
+# import enum
+# from io import BytesIO
+# import time as t
+# from typing import List, Union
 
-import discord
-import pandas as pd
+# import discord
+# import pandas as pd
 from discord import Interaction, app_commands
 from discord.ext import commands
-from PIL import Image, ImageChops, ImageDraw, ImageFont, ImageOps
-from tabulate import tabulate
-from utils.convertor import millify
+# from PIL import Image, ImageChops, ImageDraw, ImageFont, ImageOps
+# from tabulate import tabulate
+# from utils.convertor import millify
 
-from utils.embeds import get_invisible_embed
+# from utils.embeds import get_invisible_embed
 
 
-class Historical_Data(enum.Enum):
-    Today = 1
-    Yesterday = 2
-    Day_Before_Yesterday = 3
+# class Historical_Data(enum.Enum):
+#     Today = 1
+#     Yesterday = 2
+#     Day_Before_Yesterday = 3
 
 
 @app_commands.guild_only()
@@ -409,4 +409,4 @@ class dank(
 
 async def setup(bot):
     await bot.add_cog(dank(bot))
-    print(f"loaded stats cog")
+    print("loaded stats cog")
