@@ -353,7 +353,7 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
                 end_emd.title = "Congratulations!"
 
                 dm_emd.description = f"**Congratulations!** You won {prize} in {guild}."
-                host_dm.description = f"**Ended:** {values['timestamp']}\n**Winners:**\n{values['winner']}"
+                host_dm.description = f"**Ended:** {values['timestamp']}\n**Winners:**\n{values['winners']}"
                 end_emd.description = (
                     f"<a:tgk_blackCrown:1097514279973961770> **Won:** {prize}"
                 )
