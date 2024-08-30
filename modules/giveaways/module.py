@@ -161,7 +161,7 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 
         giveaway["ended"] = True
         giveaway["delete_at"] = datetime.datetime.utcnow() + datetime.timedelta(days=7)
-        await self.backend.update_giveaway(gaw_message, giveaway)
+        # await self.backend.update_giveaway(gaw_message, giveaway)
 
         if not len(giveaway["entries"].keys()) >= giveaway["winners"]:
             embed = gaw_message.embeds[0]
@@ -417,6 +417,8 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
             await self.backend.giveaways.update(giveaway)
             if giveaway["_id"] in self.giveaway_in_prosses:
                 self.giveaway_in_prosses.remove(giveaway["_id"])
+
+        await self.backend.update_giveaway(gaw_message, giveaway)
 
     @app_commands.command(name="start", description="Start a giveaway")
     @app_commands.describe(
