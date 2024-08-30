@@ -431,10 +431,10 @@ async def on_message(message):
                     if cric_list != data['cric_list']:
                         data['cric_list'] = cric_list
                         data['time'] = datetime.datetime.now() + datetime.timedelta(hours=24)
-                        await bot.cricket.upsert(data)
                         await message.add_reaction('<:tgk_active:1082676793342951475>')
                     else:
                         return
+                await bot.cricket.upsert(data)
 
                 for field in embed_dict['fields']:
                     field['value'] = field['value'].replace("983883003111559209","1264848906383003699",100)
