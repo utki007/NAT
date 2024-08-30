@@ -171,7 +171,10 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
             content = "Giveaway Ended"
             if reroll:
                 content = "Giveaway Rerolled!"
-            await gaw_message.edit(embed=embed, view=view, content=content)
+            try:
+                await gaw_message.edit(embed=embed, view=view, content=content)
+            except:
+                await gaw_message.add_reaction("<:tgk_active:1082676793342951475>")
             end_emd = discord.Embed(
                 title="Giveaway Ended",
                 description="Could not determine a winner!",
@@ -227,7 +230,10 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
                 name="Winners",
                 value="\n".join([winner.mention for winner in winners]),
             )
-            await gaw_message.edit(embed=embed, view=view, content="Giveaway Ended")
+            try:
+                await gaw_message.edit(embed=embed, view=view, content="Giveaway Ended")
+            except:
+                await gaw_message.add_reaction("<:tgk_active:1082676793342951475>")
 
             try:
                 end_emd = discord.Embed(
