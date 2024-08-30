@@ -441,7 +441,7 @@ async def on_message(message):
                 embed = discord.Embed.from_dict(embed_dict)
                 embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1260884903139217429.webp?size=128&quality=lossless")
                 for user in data['user_list']:
-                    user = await bot.fetch_user()
+                    user = await bot.fetch_user(int(user))
                     if user is None:
                         continue
                     await user.send(embed=embed)
