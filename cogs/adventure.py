@@ -19,7 +19,7 @@ class Historical_Data(enum.Enum):
 
 
 @app_commands.guild_only()
-class dank(
+class adventure(
     commands.GroupCog, name="adventure", description="Get Fun Adventure Stats 📈"
 ):
     def __init__(self, bot):
@@ -605,5 +605,5 @@ class dank(
 
 
 async def setup(bot):
-    await bot.add_cog(dank(bot))
+    await bot.add_cog(adventure(bot))
     print("loaded stats cog")

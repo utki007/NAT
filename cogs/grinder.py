@@ -35,6 +35,10 @@ class grinder(commands.GroupCog, name="grinder", description="Manage server grin
     def cog_unload(self):
         self.grinder_reminder.cancel()
         self.grinder_demotions.cancel()
+    
+    @commands.Cog.listener()
+    async def on_ready(self):
+        print(f"{self.__class__.__name__} Cog has been loaded\n-----")
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
@@ -1196,4 +1200,3 @@ async def setup(bot):
     await bot.add_cog(
         grinder(bot)
     )
-    print(f"loaded grinder cog")
