@@ -133,6 +133,8 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
     async def reminder_loop(self):
         reminders = await self.bot.cricket.find_many_by_custom({"user":{"$exists":True}})
         for reminder in reminders:
+            if reminder['type'] == 'cric_market':
+                continue
             time_diff = (reminder['time'] - datetime.datetime.now()).total_seconds()
             if time_diff <= 0:
                 self.bot.dispatch('reminder_end', reminder, reminder['type'], False)
