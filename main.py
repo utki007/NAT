@@ -445,6 +445,7 @@ async def on_message(message):
                     if user is None:
                         continue
                     await user.send(embed=embed)
+                    await asyncio.sleep(0.2)
                 for guild_data in data['guild_data']:
                     guild = bot.get_guild(guild_data['guild_id'])
                     if guild is None:
@@ -457,6 +458,7 @@ async def on_message(message):
                         await channel.send(embed=embed)
                     else:
                         await channel.send(content = f"{role.mention}", embed=embed)
+                    await asyncio.sleep(0.2)
 
         else:
             if 'image' in embed_dict.keys():
