@@ -422,19 +422,21 @@ async def on_message(message):
                         "guild_data" : [
                             {
                                 'guild_id' : 785839283847954433,
-                                'channel_id' : 797512848778723368,
+                                'channel_id' : 1261589472986927165,
                                 'role_id' : 802267669272854589
                             }
                         ]
                     }
+                    await bot.cricket.insert(data)
+                    await message.add_reaction('<:tgk_active:1082676793342951475>')
                 else:
                     if cric_list != data['cric_list']:
                         data['cric_list'] = cric_list
                         data['time'] = datetime.datetime.now() + datetime.timedelta(hours=24)
+                        await bot.cricket.upsert(data)
                         await message.add_reaction('<:tgk_active:1082676793342951475>')
                     else:
                         return
-                await bot.cricket.upsert(data)
 
                 for field in embed_dict['fields']:
                     field['value'] = field['value'].replace("983883003111559209","1264848906383003699",100)
