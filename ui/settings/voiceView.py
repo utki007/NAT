@@ -317,7 +317,7 @@ class Voice_UI(View):
         await interaction.client.vc_channel.update(data)
 
         await view.select.interaction.followup.send(
-            content=f"Added: {added}\nRemoved: {removed}", view=None
+            content=f"Added: {added}\nRemoved: {removed}"
         )
 
     @button(
