@@ -90,6 +90,7 @@ class MyBot(commands.Bot):
                 await bot.load_extension(f'cogs.{file[:-3]}')
 
         for folder in os.listdir("./modules"):
+            # if folder in ["afk", "payouts"]:
             if folder in ["giveaways","afk", "payouts"]:               
                 for file in os.listdir(f"./modules/{folder}"):
                     if file == "module.py":
@@ -406,7 +407,62 @@ async def on_message(message):
                     if 'Ready' in vote_line:
                         pass
                     else:
-                        return        
+                        return
+
+            elif "CG Market" in embed_dict['title'] and len(embed_dict['fields']) in [4,5]:
+                
+                cric_list = ([field['name'].split("(")[0].strip() for field in embed_dict['fields']])
+
+                data = await bot.cricket.find_by_custom({"type": "cric_market"})
+                if data is None:
+                    data = {
+                        "type": 'cric_market',
+                        "time": datetime.datetime.now() + datetime.timedelta(hours=24),
+                        "cric_list" : cric_list,
+                        "user_list" : [301657045248114690, 804794820286611536],
+                        "guild_data" : [
+                            {
+                                'guild_id' : 785839283847954433,
+                                'channel_id' : 1261589472986927165,
+                                'role_id' : 802267669272854589
+                            }
+                        ]
+                    }
+                    await bot.cricket.insert(data)
+                    await message.add_reaction('<:tgk_active:1082676793342951475>')
+                else:
+                    if cric_list != data['cric_list']:
+                        data['cric_list'] = cric_list
+                        data['time'] = datetime.datetime.now() + datetime.timedelta(hours=24)
+                        await bot.cricket.upsert(data)
+                        await message.add_reaction('<:tgk_active:1082676793342951475>')
+                    else:
+                        return
+
+                for field in embed_dict['fields']:
+                    field['value'] = field['value'].replace("983883003111559209","1264848906383003699",100)
+                embed = discord.Embed.from_dict(embed_dict)
+                embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1260884903139217429.webp?size=128&quality=lossless")
+                for user in data['user_list']:
+                    user = await bot.fetch_user(int(user))
+                    if user is None:
+                        continue
+                    await user.send(embed=embed)
+                    await asyncio.sleep(0.2)
+                for guild_data in data['guild_data']:
+                    guild = bot.get_guild(guild_data['guild_id'])
+                    if guild is None:
+                        continue
+                    channel = guild.get_channel(guild_data['channel_id'])
+                    if channel is None:
+                        continue
+                    role = guild.get_role(guild_data['role_id'])
+                    if role is None:
+                        await channel.send(embed=embed)
+                    else:
+                        await channel.send(content = f"{role.mention}", embed=embed)
+                    await asyncio.sleep(0.2)
+
         else:
             if 'image' in embed_dict.keys():
                 if 'fields' in embed_dict.keys():
