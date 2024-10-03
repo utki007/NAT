@@ -18,7 +18,7 @@ def chunk(it, size):
     return iter(lambda: tuple(islice(it, size)), ())
 
 @app_commands.guild_only()
-class Reminder(commands.GroupCog, name="reminder", description="Reminder commands"):
+class Reminder(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.remindertask = self.reminder_loop.start()
