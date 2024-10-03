@@ -409,7 +409,7 @@ class Cricket_Reminder_Panel(discord.ui.View):
 		self.message = None # req for disabling buttons after timeout
 		self.data = data
 
-	@discord.ui.button(label='toggle_button_label' ,row=1)
+	@discord.ui.button(emoji = "<:cg_drop:1291242737215082537>", row=1)
 	async def dropEvent(self, interaction: discord.Interaction, button: discord.ui.Button):
 		data = await interaction.client.userSettings.find(interaction.user.id)
 		if data['cric_drop_events']:
@@ -417,17 +417,15 @@ class Cricket_Reminder_Panel(discord.ui.View):
 			await interaction.client.userSettings.upsert(data)
 			embed = await update_cric_embed(interaction, data)
 			button.style = discord.ButtonStyle.red
-			button.emoji = "<:cg_drop:1291242737215082537>"
 			await interaction.response.edit_message(embed=embed,view=self)
 		else:
 			data['cric_drop_events'] = True
 			await interaction.client.userSettings.upsert(data)
 			embed = await update_cric_embed(interaction, data)
 			button.style = discord.ButtonStyle.green
-			button.emoji = "<:cg_drop:1291242737215082537>"
 			await interaction.response.edit_message(view=self, embed=embed)
 	
-	@discord.ui.button(label='toggle_button_label' ,row=1)
+	@discord.ui.button(emoji = "<:cg_daily:1291240470705602662>", row=1)
 	async def dailyEvent(self, interaction: discord.Interaction, button: discord.ui.Button):
 		data = await interaction.client.userSettings.find(interaction.user.id)
 		if data['cric_daily']:
@@ -435,17 +433,15 @@ class Cricket_Reminder_Panel(discord.ui.View):
 			await interaction.client.userSettings.upsert(data)
 			embed = await update_cric_embed(interaction, data)
 			button.style = discord.ButtonStyle.red
-			button.emoji = "<:cg_daily:1291240470705602662>"
 			await interaction.response.edit_message(embed=embed,view=self)
 		else:
 			data['cric_daily'] = True
 			await interaction.client.userSettings.upsert(data)
 			embed = await update_cric_embed(interaction, data)
 			button.style = discord.ButtonStyle.green
-			button.emoji = "<:cg_daily:1291240470705602662>"
 			await interaction.response.edit_message(view=self, embed=embed)
 	
-	@discord.ui.button(label='toggle_button_label' ,row=1)
+	@discord.ui.button(emoji = "<:cg_vote:1291240797286432889>", row=1)
 	async def voteEvent(self, interaction: discord.Interaction, button: discord.ui.Button):
 		data = await interaction.client.userSettings.find(interaction.user.id)
 		if data['cric_vote']:
@@ -453,17 +449,15 @@ class Cricket_Reminder_Panel(discord.ui.View):
 			await interaction.client.userSettings.upsert(data)
 			embed = await update_cric_embed(interaction, data)
 			button.style = discord.ButtonStyle.red
-			button.emoji = "<:cg_vote:1291240797286432889>"
 			await interaction.response.edit_message(embed=embed,view=self)
 		else:
 			data['cric_vote'] = True
 			await interaction.client.userSettings.upsert(data)
 			embed = await update_cric_embed(interaction, data)
 			button.style = discord.ButtonStyle.green
-			button.emoji = "<:cg_vote:1291240797286432889>"
 			await interaction.response.edit_message(view=self, embed=embed)
 
-	@discord.ui.button(label='toggle_button_label' ,row=1)
+	@discord.ui.button(emoji = "<:cg_weekly:1291240548040179742>", row=1)
 	async def weeklyEvent(self, interaction: discord.Interaction, button: discord.ui.Button):
 		data = await interaction.client.userSettings.find(interaction.user.id)
 		if data['cric_weekly']:
@@ -471,17 +465,15 @@ class Cricket_Reminder_Panel(discord.ui.View):
 			await interaction.client.userSettings.upsert(data)
 			embed = await update_cric_embed(interaction, data)
 			button.style = discord.ButtonStyle.red
-			button.emoji = "<:cg_weekly:1291240548040179742>"
 			await interaction.response.edit_message(embed=embed,view=self)
 		else:
 			data['cric_weekly'] = True
 			await interaction.client.userSettings.upsert(data)
 			embed = await update_cric_embed(interaction, data)
 			button.style = discord.ButtonStyle.green
-			button.emoji = "<:cg_weekly:1291240548040179742>"
 			await interaction.response.edit_message(view=self, embed=embed)
 	
-	@discord.ui.button(label='toggle_button_label' ,row=1)
+	@discord.ui.button(emoji = "<:cg_monthly:1291240620353912864>", row=1)
 	async def monthlyEvent(self, interaction: discord.Interaction, button: discord.ui.Button):
 		data = await interaction.client.userSettings.find(interaction.user.id)
 		if data['cric_monthly']:
@@ -489,14 +481,12 @@ class Cricket_Reminder_Panel(discord.ui.View):
 			await interaction.client.userSettings.upsert(data)
 			embed = await update_cric_embed(interaction, data)
 			button.style = discord.ButtonStyle.red
-			button.emoji = "<:cg_monthly:1291240620353912864>"
 			await interaction.response.edit_message(embed=embed,view=self)
 		else:
 			data['cric_monthly'] = True
 			await interaction.client.userSettings.upsert(data)
 			embed = await update_cric_embed(interaction, data)
 			button.style = discord.ButtonStyle.green
-			button.emoji = "<:cg_monthly:1291240620353912864>"
 			await interaction.response.edit_message(view=self, embed=embed)
 
 	async def interaction_check(self, interaction: discord.Interaction):
