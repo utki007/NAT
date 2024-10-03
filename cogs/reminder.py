@@ -18,7 +18,7 @@ def chunk(it, size):
     return iter(lambda: tuple(islice(it, size)), ())
 
 @app_commands.guild_only()
-class Reminder(commands.GroupCog, name="reminder", description="Reminder commands"):
+class Reminder(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.remindertask = self.reminder_loop.start()
@@ -87,6 +87,56 @@ class Reminder(commands.GroupCog, name="reminder", description="Reminder command
             embed = await get_invisible_embed("Daily Reminder")
             embed.title = f"Daily Reminder"
             embed.description = f"You can now claim your daily rewards!"
+            embed.description += f"\n\n-# Run </settings:1196688324207853590> >> User Reminders to manage reminders."
+            try:
+                embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1260884903139217429.webp?size=128&quality=lossless")
+            except:
+                pass
+            try:
+                view = discord.ui.View()
+                view.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label="Jump to channel", emoji="<:tgk_channel:1073908465405268029>", url=reminder_data['message']))
+            except:
+                view = None
+                pass
+            try:
+                await user.send(embed=embed, view=view)
+                await self.bot.cricket.delete_by_id(reminder_data['_id'])
+            except:
+                pass
+
+        elif reminder_type == 'cric_weekly':
+            if 'cric_weekly' not in usersettings.keys():
+                return await self.bot.cricket.delete_by_id(reminder_data['_id'])
+            elif usersettings['cric_weekly'] == False:
+                return await self.bot.cricket.delete_by_id(reminder_data['_id'])
+            embed = await get_invisible_embed("Weekly Reminder")
+            embed.title = f"Weekly Reminder"
+            embed.description = f"You can now claim your weekly rewards!"
+            embed.description += f"\n\n-# Run </settings:1196688324207853590> >> User Reminders to manage reminders."
+            try:
+                embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1260884903139217429.webp?size=128&quality=lossless")
+            except:
+                pass
+            try:
+                view = discord.ui.View()
+                view.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label="Jump to channel", emoji="<:tgk_channel:1073908465405268029>", url=reminder_data['message']))
+            except:
+                view = None
+                pass
+            try:
+                await user.send(embed=embed, view=view)
+                await self.bot.cricket.delete_by_id(reminder_data['_id'])
+            except:
+                pass
+
+        elif reminder_type == 'cric_monthly':
+            if 'cric_monthly' not in usersettings.keys():
+                return await self.bot.cricket.delete_by_id(reminder_data['_id'])
+            elif usersettings['cric_monthly'] == False:
+                return await self.bot.cricket.delete_by_id(reminder_data['_id'])
+            embed = await get_invisible_embed("Monthly Reminder")
+            embed.title = f"Monthly Reminder"
+            embed.description = f"You can now claim your monthly rewards!"
             embed.description += f"\n\n-# Run </settings:1196688324207853590> >> User Reminders to manage reminders."
             try:
                 embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1260884903139217429.webp?size=128&quality=lossless")

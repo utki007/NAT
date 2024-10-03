@@ -67,22 +67,34 @@ async def update_cric_embed(interaction: Interaction, data: dict):
 		description= f"Want to be dm'ed for cricket-related events?"
 	)
 	if data['cric_drop_events']:
-		label = f'<:tgk_active:1082676793342951475> Enabled'
+		label = f'Status: <:tgk_active:1082676793342951475>'
 	else:
-		label = f'<:tgk_deactivated:1082676877468119110> Disabled'
-	embed.add_field(name="Drop:", value=f"> {label}", inline=True)
+		label = f'Status: <:tgk_deactivated:1082676877468119110>'
+	embed.add_field(name="<:cg_drop:1291242737215082537> Drop:", value=f"> {label}", inline=False)
 
 	if data['cric_daily']:
-		label = f'<:tgk_active:1082676793342951475> Enabled'
+		label = f'Status: <:tgk_active:1082676793342951475>'
 	else:
-		label = f'<:tgk_deactivated:1082676877468119110> Disabled'
-	embed.add_field(name="Daily:", value=f"> {label}", inline=True)
+		label = f'Status: <:tgk_deactivated:1082676877468119110>'
+	embed.add_field(name="<:cg_daily:1291240470705602662> Daily:", value=f"> {label}", inline=False)
 
 	if data['cric_vote']:
-		label = f'<:tgk_active:1082676793342951475> Enabled'
+		label = f'Status: <:tgk_active:1082676793342951475>'
 	else:
-		label = f'<:tgk_deactivated:1082676877468119110> Disabled'
-	embed.add_field(name="Vote:", value=f"> {label}", inline=True)
+		label = f'Status: <:tgk_deactivated:1082676877468119110>'
+	embed.add_field(name="<:cg_vote:1291240797286432889> Vote:", value=f"> {label}", inline=False)
+
+	if data['cric_weekly']:
+		label = f'Status: <:tgk_active:1082676793342951475>'
+	else:
+		label = f'Status: <:tgk_deactivated:1082676877468119110>'
+	embed.add_field(name="<:cg_weekly:1291240548040179742> Weekly:", value=f"> {label}", inline=False)
+
+	if data['cric_monthly']:
+		label = f'Status: <:tgk_active:1082676793342951475>'
+	else:
+		label = f'Status: <:tgk_deactivated:1082676877468119110>'
+	embed.add_field(name="<:cg_monthly:1291240620353912864> Monthly:", value=f"> {label}", inline=False)
 	return embed
 
 async def update_timestamp_embed(interaction: Interaction, data: dict):
@@ -241,6 +253,12 @@ class User_Reminders_Panel(discord.ui.View):
 		if 'cric_vote' not in data.keys():
 			data['cric_vote'] = False
 			flag = 1
+		if 'cric_weekly' not in data.keys():
+			data['cric_weekly'] = False
+			flag = 1
+		if 'cric_monthly' not in data.keys():
+			data['cric_monthly'] = False
+			flag = 1
 
 		if flag == 1:
 			await interaction.client.userSettings.upsert(data)
@@ -255,40 +273,54 @@ class User_Reminders_Panel(discord.ui.View):
 
 		# Initialize the button
 		if data['cric_drop_events']:
-			cricket_reminder_view.children[0].style = discord.ButtonStyle.red
-			cricket_reminder_view.children[0].label = "Disable Drop Reminder"
-			cricket_reminder_view.children[0].emoji = "<:tgk_deactivated:1082676877468119110>"
-			label = f'<:tgk_active:1082676793342951475> Enabled'
-		else:
 			cricket_reminder_view.children[0].style = discord.ButtonStyle.green
-			cricket_reminder_view.children[0].label = "Enable Drop Reminder"
-			cricket_reminder_view.children[0].emoji = "<:tgk_active:1082676793342951475>"
-			label = f'<:tgk_deactivated:1082676877468119110> Disabled'
-		embed.add_field(name="Drop:", value=f"> {label}", inline=True)
+			cricket_reminder_view.children[0].emoji = "<:cg_drop:1291242737215082537>"
+			label = f'Status: <:tgk_active:1082676793342951475>'
+		else:
+			cricket_reminder_view.children[0].style = discord.ButtonStyle.red
+			cricket_reminder_view.children[0].emoji = "<:cg_drop:1291242737215082537>"
+			label = f'Status: <:tgk_deactivated:1082676877468119110>'
+		embed.add_field(name="<:cg_drop:1291242737215082537> Drop:", value=f"> {label}", inline=False)
 
 		if data['cric_daily']:
-			cricket_reminder_view.children[1].style = discord.ButtonStyle.red
-			cricket_reminder_view.children[1].label = "Disable Daily Reminder"
-			cricket_reminder_view.children[1].emoji = "<:tgk_deactivated:1082676877468119110>"
-			label = f'<:tgk_active:1082676793342951475> Enabled'
-		else:
 			cricket_reminder_view.children[1].style = discord.ButtonStyle.green
-			cricket_reminder_view.children[1].label = "Enable Daily Reminder"
-			cricket_reminder_view.children[1].emoji = "<:tgk_active:1082676793342951475>"
-			label = f'<:tgk_deactivated:1082676877468119110> Disabled'
-		embed.add_field(name="Daily:", value=f"> {label}", inline=True)
+			cricket_reminder_view.children[1].emoji = "<:cg_daily:1291240470705602662>"
+			label = f'Status: <:tgk_active:1082676793342951475>'
+		else:
+			cricket_reminder_view.children[1].style = discord.ButtonStyle.red
+			cricket_reminder_view.children[1].emoji = "<:cg_daily:1291240470705602662>"
+			label = f'Status: <:tgk_deactivated:1082676877468119110>'
+		embed.add_field(name="<:cg_daily:1291240470705602662> Daily:", value=f"> {label}", inline=False)
 
 		if data['cric_vote']:
-			cricket_reminder_view.children[2].style = discord.ButtonStyle.red
-			cricket_reminder_view.children[2].label = "Disable Vote Reminder"
-			cricket_reminder_view.children[2].emoji = "<:tgk_deactivated:1082676877468119110>"
-			label = f'<:tgk_active:1082676793342951475> Enabled'
-		else:
 			cricket_reminder_view.children[2].style = discord.ButtonStyle.green
-			cricket_reminder_view.children[2].label = "Enable Vote Reminder"
-			cricket_reminder_view.children[2].emoji = "<:tgk_active:1082676793342951475>"
-			label = f'<:tgk_deactivated:1082676877468119110> Disabled'
-		embed.add_field(name="Vote:", value=f"> {label}", inline=True)
+			cricket_reminder_view.children[2].emoji = "<:cg_vote:1291240797286432889>"
+			label = f'Status: <:tgk_active:1082676793342951475>'
+		else:
+			cricket_reminder_view.children[2].style = discord.ButtonStyle.red
+			cricket_reminder_view.children[2].emoji = "<:cg_vote:1291240797286432889>"
+			label = f'Status: <:tgk_deactivated:1082676877468119110>'
+		embed.add_field(name="<:cg_vote:1291240797286432889> Vote:", value=f"> {label}", inline=False)
+
+		if data['cric_weekly']:
+			cricket_reminder_view.children[3].style = discord.ButtonStyle.green
+			cricket_reminder_view.children[3].emoji = "<:cg_weekly:1291240548040179742>"
+			label = f'Status: <:tgk_active:1082676793342951475>'
+		else:
+			cricket_reminder_view.children[3].style = discord.ButtonStyle.red
+			cricket_reminder_view.children[3].emoji = "<:cg_weekly:1291240548040179742>"
+			label = f'Status: <:tgk_deactivated:1082676877468119110>'
+		embed.add_field(name="<:cg_weekly:1291240548040179742> Weekly:", value=f"> {label}", inline=False)
+
+		if data['cric_monthly']:
+			cricket_reminder_view.children[4].style = discord.ButtonStyle.green
+			cricket_reminder_view.children[4].emoji = "<:cg_monthly:1291240620353912864>"
+			label = f'Status: <:tgk_active:1082676793342951475>'
+		else:
+			cricket_reminder_view.children[4].style = discord.ButtonStyle.red
+			cricket_reminder_view.children[4].emoji = "<:cg_monthly:1291240620353912864>"
+			label = f'Status: <:tgk_deactivated:1082676877468119110>'
+		embed.add_field(name="<:cg_monthly:1291240620353912864> Monthly:", value=f"> {label}", inline=False)
 
 		await interaction.followup.send(embed=embed, view=cricket_reminder_view, ephemeral=False)
 		cricket_reminder_view.message = await interaction.original_response()
@@ -377,64 +409,84 @@ class Cricket_Reminder_Panel(discord.ui.View):
 		self.message = None # req for disabling buttons after timeout
 		self.data = data
 
-	@discord.ui.button(label='toggle_button_label' ,row=1)
+	@discord.ui.button(emoji = "<:cg_drop:1291242737215082537>", row=1)
 	async def dropEvent(self, interaction: discord.Interaction, button: discord.ui.Button):
 		data = await interaction.client.userSettings.find(interaction.user.id)
 		if data['cric_drop_events']:
 			data['cric_drop_events'] = False
 			await interaction.client.userSettings.upsert(data)
 			embed = await update_cric_embed(interaction, data)
-			button.style = discord.ButtonStyle.green
-			button.label = "Enable Drop Reminder"
-			button.emoji = "<:tgk_active:1082676793342951475>"
+			button.style = discord.ButtonStyle.red
 			await interaction.response.edit_message(embed=embed,view=self)
 		else:
 			data['cric_drop_events'] = True
 			await interaction.client.userSettings.upsert(data)
 			embed = await update_cric_embed(interaction, data)
-			button.style = discord.ButtonStyle.red
-			button.label = "Disable Drop Reminder"
-			button.emoji = "<:tgk_deactivated:1082676877468119110>"
+			button.style = discord.ButtonStyle.green
 			await interaction.response.edit_message(view=self, embed=embed)
 	
-	@discord.ui.button(label='toggle_button_label' ,row=1)
+	@discord.ui.button(emoji = "<:cg_daily:1291240470705602662>", row=1)
 	async def dailyEvent(self, interaction: discord.Interaction, button: discord.ui.Button):
 		data = await interaction.client.userSettings.find(interaction.user.id)
 		if data['cric_daily']:
 			data['cric_daily'] = False
 			await interaction.client.userSettings.upsert(data)
 			embed = await update_cric_embed(interaction, data)
-			button.style = discord.ButtonStyle.green
-			button.label = "Enable Daily Reminder"
-			button.emoji = "<:tgk_active:1082676793342951475>"
+			button.style = discord.ButtonStyle.red
 			await interaction.response.edit_message(embed=embed,view=self)
 		else:
 			data['cric_daily'] = True
 			await interaction.client.userSettings.upsert(data)
 			embed = await update_cric_embed(interaction, data)
-			button.style = discord.ButtonStyle.red
-			button.label = "Disable Daily Reminder"
-			button.emoji = "<:tgk_deactivated:1082676877468119110>"
+			button.style = discord.ButtonStyle.green
 			await interaction.response.edit_message(view=self, embed=embed)
 	
-	@discord.ui.button(label='toggle_button_label' ,row=1)
+	@discord.ui.button(emoji = "<:cg_vote:1291240797286432889>", row=1)
 	async def voteEvent(self, interaction: discord.Interaction, button: discord.ui.Button):
 		data = await interaction.client.userSettings.find(interaction.user.id)
 		if data['cric_vote']:
 			data['cric_vote'] = False
 			await interaction.client.userSettings.upsert(data)
 			embed = await update_cric_embed(interaction, data)
-			button.style = discord.ButtonStyle.green
-			button.label = "Enable Vote Reminder"
-			button.emoji = "<:tgk_active:1082676793342951475>"
+			button.style = discord.ButtonStyle.red
 			await interaction.response.edit_message(embed=embed,view=self)
 		else:
 			data['cric_vote'] = True
 			await interaction.client.userSettings.upsert(data)
 			embed = await update_cric_embed(interaction, data)
+			button.style = discord.ButtonStyle.green
+			await interaction.response.edit_message(view=self, embed=embed)
+
+	@discord.ui.button(emoji = "<:cg_weekly:1291240548040179742>", row=1)
+	async def weeklyEvent(self, interaction: discord.Interaction, button: discord.ui.Button):
+		data = await interaction.client.userSettings.find(interaction.user.id)
+		if data['cric_weekly']:
+			data['cric_weekly'] = False
+			await interaction.client.userSettings.upsert(data)
+			embed = await update_cric_embed(interaction, data)
 			button.style = discord.ButtonStyle.red
-			button.label = "Disable Vote Reminder"
-			button.emoji = "<:tgk_deactivated:1082676877468119110>"
+			await interaction.response.edit_message(embed=embed,view=self)
+		else:
+			data['cric_weekly'] = True
+			await interaction.client.userSettings.upsert(data)
+			embed = await update_cric_embed(interaction, data)
+			button.style = discord.ButtonStyle.green
+			await interaction.response.edit_message(view=self, embed=embed)
+	
+	@discord.ui.button(emoji = "<:cg_monthly:1291240620353912864>", row=1)
+	async def monthlyEvent(self, interaction: discord.Interaction, button: discord.ui.Button):
+		data = await interaction.client.userSettings.find(interaction.user.id)
+		if data['cric_monthly']:
+			data['cric_monthly'] = False
+			await interaction.client.userSettings.upsert(data)
+			embed = await update_cric_embed(interaction, data)
+			button.style = discord.ButtonStyle.red
+			await interaction.response.edit_message(embed=embed,view=self)
+		else:
+			data['cric_monthly'] = True
+			await interaction.client.userSettings.upsert(data)
+			embed = await update_cric_embed(interaction, data)
+			button.style = discord.ButtonStyle.green
 			await interaction.response.edit_message(view=self, embed=embed)
 
 	async def interaction_check(self, interaction: discord.Interaction):
