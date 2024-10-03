@@ -70,31 +70,31 @@ async def update_cric_embed(interaction: Interaction, data: dict):
 		label = f'Status: <:tgk_active:1082676793342951475>'
 	else:
 		label = f'Status: <:tgk_deactivated:1082676877468119110>'
-	embed.add_field(name="<:cg_drop:1291242737215082537> Drop:", value=f"> {label}", inline=True)
+	embed.add_field(name="<:cg_drop:1291242737215082537> Drop:", value=f"> {label}", inline=False)
 
 	if data['cric_daily']:
 		label = f'Status: <:tgk_active:1082676793342951475>'
 	else:
 		label = f'Status: <:tgk_deactivated:1082676877468119110>'
-	embed.add_field(name="<:cg_daily:1291240470705602662> Daily:", value=f"> {label}", inline=True)
+	embed.add_field(name="<:cg_daily:1291240470705602662> Daily:", value=f"> {label}", inline=False)
 
 	if data['cric_vote']:
 		label = f'Status: <:tgk_active:1082676793342951475>'
 	else:
 		label = f'Status: <:tgk_deactivated:1082676877468119110>'
-	embed.add_field(name="<:cg_vote:1291240797286432889> Vote:", value=f"> {label}", inline=True)
+	embed.add_field(name="<:cg_vote:1291240797286432889> Vote:", value=f"> {label}", inline=False)
 
 	if data['cric_weekly']:
 		label = f'Status: <:tgk_active:1082676793342951475>'
 	else:
 		label = f'Status: <:tgk_deactivated:1082676877468119110>'
-	embed.add_field(name="<:cg_weekly:1291240548040179742> Weekly:", value=f"> {label}", inline=True)
+	embed.add_field(name="<:cg_weekly:1291240548040179742> Weekly:", value=f"> {label}", inline=False)
 
 	if data['cric_monthly']:
 		label = f'Status: <:tgk_active:1082676793342951475>'
 	else:
 		label = f'Status: <:tgk_deactivated:1082676877468119110>'
-	embed.add_field(name="<:cg_monthly:1291240620353912864> Monthly:", value=f"> {label}", inline=True)
+	embed.add_field(name="<:cg_monthly:1291240620353912864> Monthly:", value=f"> {label}", inline=False)
 	return embed
 
 async def update_timestamp_embed(interaction: Interaction, data: dict):
@@ -280,7 +280,7 @@ class User_Reminders_Panel(discord.ui.View):
 			cricket_reminder_view.children[0].style = discord.ButtonStyle.red
 			cricket_reminder_view.children[0].emoji = "<:cg_drop:1291242737215082537>"
 			label = f'Status: <:tgk_deactivated:1082676877468119110>'
-		embed.add_field(name="Drop:", value=f"> {label}", inline=True)
+		embed.add_field(name="<:cg_drop:1291242737215082537> Drop:", value=f"> {label}", inline=False)
 
 		if data['cric_daily']:
 			cricket_reminder_view.children[1].style = discord.ButtonStyle.green
@@ -290,7 +290,7 @@ class User_Reminders_Panel(discord.ui.View):
 			cricket_reminder_view.children[1].style = discord.ButtonStyle.red
 			cricket_reminder_view.children[1].emoji = "<:cg_daily:1291240470705602662>"
 			label = f'Status: <:tgk_deactivated:1082676877468119110>'
-		embed.add_field(name="Daily:", value=f"> {label}", inline=True)
+		embed.add_field(name="<:cg_daily:1291240470705602662> Daily:", value=f"> {label}", inline=False)
 
 		if data['cric_vote']:
 			cricket_reminder_view.children[2].style = discord.ButtonStyle.green
@@ -300,7 +300,7 @@ class User_Reminders_Panel(discord.ui.View):
 			cricket_reminder_view.children[2].style = discord.ButtonStyle.red
 			cricket_reminder_view.children[2].emoji = "<:cg_vote:1291240797286432889>"
 			label = f'Status: <:tgk_deactivated:1082676877468119110>'
-		embed.add_field(name="Vote:", value=f"> {label}", inline=True)
+		embed.add_field(name="<:cg_vote:1291240797286432889> Vote:", value=f"> {label}", inline=False)
 
 		if data['cric_weekly']:
 			cricket_reminder_view.children[3].style = discord.ButtonStyle.green
@@ -310,7 +310,7 @@ class User_Reminders_Panel(discord.ui.View):
 			cricket_reminder_view.children[3].style = discord.ButtonStyle.red
 			cricket_reminder_view.children[3].emoji = "<:cg_weekly:1291240548040179742>"
 			label = f'Status: <:tgk_deactivated:1082676877468119110>'
-		embed.add_field(name="Weekly:", value=f"> {label}", inline=True)
+		embed.add_field(name="<:cg_weekly:1291240548040179742> Weekly:", value=f"> {label}", inline=False)
 
 		if data['cric_monthly']:
 			cricket_reminder_view.children[4].style = discord.ButtonStyle.green
@@ -320,7 +320,7 @@ class User_Reminders_Panel(discord.ui.View):
 			cricket_reminder_view.children[4].style = discord.ButtonStyle.red
 			cricket_reminder_view.children[4].emoji = "<:cg_monthly:1291240620353912864>"
 			label = f'Status: <:tgk_deactivated:1082676877468119110>'
-		embed.add_field(name="Monthly:", value=f"> {label}", inline=True)
+		embed.add_field(name="<:cg_monthly:1291240620353912864> Monthly:", value=f"> {label}", inline=False)
 
 		await interaction.followup.send(embed=embed, view=cricket_reminder_view, ephemeral=False)
 		cricket_reminder_view.message = await interaction.original_response()
