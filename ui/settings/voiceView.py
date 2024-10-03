@@ -293,7 +293,7 @@ class Voice_UI(View):
         await view.wait()
         if view.value is None:
             return await interaction.delete_original_response()
-        await view.select.interaction.response.defer(thinking=True)
+        await view.select.interaction.response.defer(thinking=True, ephemeral=True)
         added = ""
         removed = ""
         for user in view.select.values:
