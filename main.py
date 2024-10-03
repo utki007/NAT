@@ -391,11 +391,11 @@ async def on_message(message):
                     else:
                         return
                 try:
-                    vote_line = [line for line in content.split("\n") if 'Vote' in line][0]
+                    monthly_line = [line for line in content.split("\n") if 'Vote' in line][0]
                 except:
                     return
                 try:
-                    timestamp = int(re.findall(":\w*:", vote_line)[0].replace(":","",2))
+                    timestamp = int(re.findall(":\w*:", monthly_line)[0].replace(":","",2))
                     remind_at = datetime.datetime.fromtimestamp(timestamp)
                     changed = await set_cric_reminder(bot, message, remind_at, user, 'cric_vote', False)
                     if changed:
@@ -404,7 +404,43 @@ async def on_message(message):
                         except:
                             pass
                 except:
-                    if 'Ready' in vote_line:
+                    if 'Ready' in monthly_line:
+                        pass
+                    else:
+                        return
+                try:
+                    monthly_line = [line for line in content.split("\n") if 'Weekly' in line][0]
+                except:
+                    return
+                try:
+                    timestamp = int(re.findall(":\w*:", monthly_line)[0].replace(":","",2))
+                    remind_at = datetime.datetime.fromtimestamp(timestamp)
+                    changed = await set_cric_reminder(bot, message, remind_at, user, 'cric_weekly', False)
+                    if changed:
+                        try:
+                            await message.add_reaction('<:tgk_active:1082676793342951475>')
+                        except:
+                            pass
+                except:
+                    if 'Ready' in monthly_line:
+                        pass
+                    else:
+                        return
+                try:
+                    monthly_line = [line for line in content.split("\n") if 'Monthly' in line][0]
+                except:
+                    return
+                try:
+                    timestamp = int(re.findall(":\w*:", monthly_line)[0].replace(":","",2))
+                    remind_at = datetime.datetime.fromtimestamp(timestamp)
+                    changed = await set_cric_reminder(bot, message, remind_at, user, 'cric_monthly', False)
+                    if changed:
+                        try:
+                            await message.add_reaction('<:tgk_active:1082676793342951475>')
+                        except:
+                            pass
+                except:
+                    if 'Ready' in monthly_line:
                         pass
                     else:
                         return
