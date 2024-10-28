@@ -10,7 +10,7 @@ import random
 from typing import List, Dict
 import discord.http
 
-from fuctions import wraps
+from functools import wraps
 from .db import Giveaways_Backend, GiveawayConfig, GiveawayData, chunk
 from .views import Giveaway
 from utils.transformers import TimeConverter, MutipleRole
