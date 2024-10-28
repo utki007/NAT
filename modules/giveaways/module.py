@@ -10,6 +10,8 @@ import random
 from typing import List, Dict
 import discord.http
 
+
+from functools import wraps
 from .db import Giveaways_Backend, GiveawayConfig, GiveawayData, chunk
 from .views import Giveaway
 from utils.transformers import TimeConverter, MutipleRole
@@ -45,6 +47,24 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
             ]
         else:
             return choices[:24]
+
+    def handler(self, fucn: callable):
+        @wraps(fucn)
+        async def wrapper(*args, **kwargs):
+            try:
+                return await fucn(*args, **kwargs)
+            except Exception as e:
+                error_traceback = "".join(
+                    traceback.format_exception(type(e), e, e.__traceback__, 4)
+                )
+                buffer = BytesIO(error_traceback.encode("utf-8"))
+                file = discord.File(buffer, filename="Error-e.log")
+                buffer.close()
+                chl = self.bot.get_channel(1130057933468745849)
+                await chl.send(file=file, content="<@488614633670967307>", silent=True)
+
+        return wrapper
+
 
     @tasks.loop(seconds=60)
     async def giveaway_loop(self):
@@ -96,6 +116,7 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
         await self.bot.wait_until_ready()
 
     @commands.Cog.listener()
+    @handler
     async def on_giveaway_end(
         self,
         giveaway: GiveawayData,
