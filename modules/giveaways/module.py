@@ -19,6 +19,23 @@ from utils.embeds import get_error_embed
 from utils.views.paginator import Paginator
 
 
+def handler(fucn: callable):
+    @wraps(fucn)
+    async def wrapper(*args, **kwargs):
+        try:
+            return await fucn(*args, **kwargs)
+        except Exception as e:
+            error_traceback = "".join(
+                traceback.format_exception(type(e), e, e.__traceback__, 4)
+            )
+            buffer = BytesIO(error_traceback.encode("utf-8"))
+            file = discord.File(buffer, filename="Error-e.log")
+            buffer.close()
+            chl = args[0].bot.get_channel(1130057933468745849)
+            await chl.send(file=file, content="<@488614633670967307>", silent=True)
+
+    return wrapper
+
 @app_commands.guild_only()
 class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaways"):
     def __init__(self, bot):
@@ -46,23 +63,6 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
             ]
         else:
             return choices[:24]
-
-    def handler(self, fucn: callable):
-        @wraps(fucn)
-        async def wrapper(*args, **kwargs):
-            try:
-                return await fucn(*args, **kwargs)
-            except Exception as e:
-                error_traceback = "".join(
-                    traceback.format_exception(type(e), e, e.__traceback__, 4)
-                )
-                buffer = BytesIO(error_traceback.encode("utf-8"))
-                file = discord.File(buffer, filename="Error-e.log")
-                buffer.close()
-                chl = self.bot.get_channel(1130057933468745849)
-                await chl.send(file=file, content="<@488614633670967307>", silent=True)
-
-        return wrapper
 
     @tasks.loop(seconds=60)
     async def giveaway_loop(self):
