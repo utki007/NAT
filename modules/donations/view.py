@@ -619,6 +619,10 @@ class DankProfileView(View):
 
         self.config["profiles"][self.profile]["emoji"] = emoji
 
+        await interaction.client.dono.update_guild_config(
+            interaction.guild.id, self.config
+        )
+
         await modalView.interaction.response.send_message(
             content=f"Successfully set {emoji} as the emoji",
             view=None,
