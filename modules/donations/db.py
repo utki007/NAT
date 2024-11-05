@@ -25,8 +25,18 @@ class EventConfig(TypedDict):
 class DankProfile(TypedDict):
     name: str
     events: dict[str, EventConfig]
+    manager_roles: list[int]
     ranks: dict[str, Ranks]
     tracking_channels: list[int]
+    log_channel: int
+    emoji: str
+
+
+class CustomProfile(TypedDict):
+    name: str
+    events: dict[str, EventConfig]
+    manager_roles: list[int]
+    ranks: dict[str, Ranks]
     log_channel: int
     emoji: str
 
@@ -40,7 +50,7 @@ class UserDonations(TypedDict):
 
 class GuildConfig(TypedDict):
     _id: int
-    manager_roles: list[int]
+    admin_roles: list[int]
     profiles: dict[int, UserDonations]
     log_channel: int
 
@@ -54,12 +64,13 @@ class Backend:
     async def get_guild_config(self, guild_id: int) -> GuildConfig:
         guild_config = await self.config.find({"_id": guild_id})
         if not guild_config:
-            guild_config = {
+            guild_config: GuildConfig = {
                 "_id": guild_id,
-                "manager_roles": [],
+                "admin_roles": [],
                 "profiles": {
                     "Dank Donations": {
                         "name": "Dank Donations",
+                        "manager_roles": [],
                         "events": {},
                         "ranks": {},
                         "tracking_channels": [],
@@ -99,14 +110,14 @@ class Backend:
             color=0x2B2D31,
         )
         embed_args = await get_formated_embed(
-            ["Manager Roles", "Log Channel", "Profiles"]
+            ["Admin Roles", "Log Channel", "Profiles"]
         )
 
         embed.description = (
             "<:tgk_money:1199223318662885426> `Server Donations Settings`\n\n"
         )
 
-        embed.description += f"{await get_formated_field(guild=guild, name=embed_args['Manager Roles'], data=guild_config['manager_roles'], type='role')}\n"
+        embed.description += f"{await get_formated_field(guild=guild, name=embed_args['Admin Roles'], data=guild_config['admin_roles'], type='role')}\n"
         embed.description += f"{await get_formated_field(guild=guild, name=embed_args['Log Channel'], data=guild_config['log_channel'], type='channel')}\n"
 
         profiles = "".join([key for key in guild_config["profiles"].keys()])

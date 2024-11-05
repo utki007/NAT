@@ -16,6 +16,7 @@ class Donations(commands.GroupCog, name="donations", description="doantions comm
         self.bot.dono = self.backend
 
     modify = app_commands.Group(name="modify", description="modify donations")
+    donations = app_commands.Group(name="donations", description="donations commands")
 
     async def on_error(self, event, *args, **kwargs):
         raise Exception(f"Error in {event} event", args, kwargs)
@@ -194,7 +195,7 @@ class Donations(commands.GroupCog, name="donations", description="doantions comm
         if not config:
             return
         interaction_user_roles = [role.id for role in interaction.user.roles]
-        if (set(config["manager_roles"]) & set(interaction_user_roles)) == set():
+        if (set(config["admin_roles"]) & set(interaction_user_roles)) == set():
             return await interaction.response.send_message(
                 "You don't have permission to use this command", ephemeral=True
             )

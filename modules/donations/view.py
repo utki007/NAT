@@ -1,5 +1,5 @@
 import discord
-from .db import GuildConfig
+from .db import GuildConfig, DankProfile, CustomProfile
 from discord.ui import Button, button, View
 from discord import interactions
 from utils.views.selects import Role_select, Channel_select, Select_General
@@ -50,11 +50,11 @@ class ConfigEdit(View):
     #         )
 
     @button(
-        label="Manager Roles",
+        label="Admin Roles",
         style=discord.ButtonStyle.gray,
         emoji="<:tgk_role:1073908306713780284>",
     )
-    async def manager_roles(self, interaction: discord.Interaction, button: Button):
+    async def admin_role(self, interaction: discord.Interaction, button: Button):
         view = View()
         view.value = None
         view.select = Role_select(
@@ -75,20 +75,19 @@ class ConfigEdit(View):
         remove_roles = []
 
         for role in view.select.values:
-            if role.id in self.config["manager_roles"]:
+            if role.id in self.config["admin_roles"]:
                 remove_roles.append(role)
-                self.config["manager_roles"].remove(role.id)
+                self.config["admin_roles"].remove(role.id)
             else:
                 add_roles.append(role)
-                self.config["manager_roles"].append(role.id)
+                self.config["admin_roles"].append(role.id)
 
         await interaction.client.dono.update_guild_config(
             interaction.guild.id, self.config
         )
 
-        await view.select.interaction.response.send_message(
+        await view.select.interaction.response.edit_message(
             f"Added roles: {', '.join([role.mention for role in add_roles])}\nRemoved roles: {', '.join([role.mention for role in remove_roles])}",
-            ephemeral=True,
         )
 
         await self.message.edit(
@@ -210,7 +209,9 @@ class ConfigEdit(View):
                 if edit_view.value is None:
                     return await interaction.delete_original_response()
 
-                profile = self.config["profiles"][edit_view.select.values[0]]
+                profile: DankProfile | CustomProfile = self.config["profiles"][
+                    edit_view.select.values[0]
+                ]
                 if profile["name"] == "Dank Donations":
                     profile_edit = DankProfileView(
                         interaction.user,
@@ -224,13 +225,22 @@ class ConfigEdit(View):
                     )
                     embed.description += "<:tgk_bank:1134892342910914602> ``Dank Donations Profiles``\n\n"
                     embed_args = await get_formated_embed(
-                        ["Tracking Channels", "Log Channel", "Events", "Emoji"]
+                        [
+                            "Tracking Channels",
+                            "Log Channel",
+                            "Events",
+                            "Emoji",
+                            "Manager Roles",
+                        ]
                     )
+
+                    embed.description += f"{await get_formated_field(guild=interaction.guild, name=embed_args['Manager Roles'], data=profile['manager_roles'], type='role')}\n"
                     embed.description += f"{await get_formated_field(guild=interaction.guild, name=embed_args['Tracking Channels'], data=profile['tracking_channels'], type='channel')}\n"
                     embed.description += f"{await get_formated_field(guild=interaction.guild, name=embed_args['Log Channel'], data=profile['log_channel'], type='channel')}\n"
                     embed.description += f"{await get_formated_field(guild=interaction.guild, name=embed_args['Events'], data=list(profile['events'].keys()), type='str')}\n"
                     embed.description += f"{await get_formated_field(guild=interaction.guild, name=embed_args['Emoji'], data=profile['emoji'], type='str')}\n"
                     ranks = ""
+
                     for role_id, rank in profile["ranks"].items():
                         role = interaction.guild.get_role(int(role_id))
                         if not role:
@@ -243,6 +253,136 @@ class ConfigEdit(View):
                     await edit_view.select.interaction.response.edit_message(
                         embed=embed, view=profile_edit
                     )
+                else:
+                    profile_edit = DankProfileView(
+                        interaction.user,
+                        profile=profile["name"],
+                        config=self.config,
+                        interaction=interaction,
+                    )
+                    embed = discord.Embed(
+                        description="",
+                        color=0x2B2D31,
+                    )
+                    embed.description += f"<:tgk_custom:1134892342910914602> ``{profile['name']} Profiles``\n\n"
+                    embed_args = await get_formated_embed(
+                        ["Manager Roles", "Log Channel", "Events", "Emoji"]
+                    )
+
+                    embed.description += f"{await get_formated_field(guild=interaction.guild, name=embed_args['Manager Roles'], data=profile['manager_roles'], type='role')}\n"
+                    embed.description += f"{await get_formated_field(guild=interaction.guild, name=embed_args['Tracking Channels'], data=profile['tracking_channels'], type='channel')}\n"
+                    embed.description += f"{await get_formated_field(guild=interaction.guild, name=embed_args['Log Channel'], data=profile['log_channel'], type='channel')}\n"
+                    embed.description += f"{await get_formated_field(guild=interaction.guild, name=embed_args['Emoji'], data=profile['emoji'], type='str')}\n"
+                    embed.description += f"{await get_formated_field(guild=interaction.guild, name=embed_args['Events'], data=list(profile['events'].keys()), type='str')}\n"
+
+                    profile_edit.children[0].disabled = True
+                    await edit_view.select.interaction.response.edit_message(
+                        embed=embed, view=profile_edit
+                    )
+
+            case "create":
+                modalView = General_Modal(title="Profile form", interaction=interaction)
+                modalView.value = None
+                modalView.name = discord.ui.TextInput(
+                    label="Profile Name",
+                    placeholder="Enter the name of the profile",
+                    max_length=50,
+                )
+                modalView.add_item(modalView.name)
+
+                await interaction.response.send_modal(modalView)
+                await modalView.wait()
+
+                if modalView.value is None:
+                    return await interaction.delete_original_response()
+
+                profile_name = modalView.name.value
+                if profile_name in self.config["profiles"].keys():
+                    return await modalView.interaction.response.send_message(
+                        content="Profile already exists", ephemeral=True
+                    )
+
+                profile: CustomProfile = {
+                    "name": profile_name,
+                    "manager_roles": [],
+                    "events": {},
+                    "ranks": {},
+                    "log_channel": None,
+                    "emoji": None,
+                }
+
+                self.config["profiles"][str(profile_name)] = profile
+
+                await interaction.client.dono.update_guild_config(
+                    interaction.guild.id, self.config
+                )
+
+                embed = discord.Embed(
+                    description="",
+                    color=0x2B2D31,
+                )
+
+                Profile_view = DankProfileView(
+                    member=interaction.user,
+                    profile=profile,
+                    config=self.config,
+                    interaction=interaction,
+                )
+
+                embed.description += f"<:tgk_custom:1134892342910914602> ``{profile['name']} Profiles``\n\n"
+                embed_args = await get_formated_embed(
+                    ["Manager Roles", "Log Channel", "Events", "Emoji"]
+                )
+
+                embed.description += f"{await get_formated_field(guild=interaction.guild, name=embed_args['Manager Roles'], data=profile['manager_roles'], type='role')}\n"
+                embed.description += f"{await get_formated_field(guild=interaction.guild, name=embed_args['Log Channel'], data=profile['log_channel'], type='channel')}\n"
+                embed.description += f"{await get_formated_field(guild=interaction.guild, name=embed_args['Emoji'], data=profile['emoji'], type='str')}\n"
+                embed.description += f"{await get_formated_field(guild=interaction.guild, name=embed_args['Events'], data=list(profile['events'].keys()), type='str')}\n"
+
+                Profile_view.children[0].disabled = True
+                await modalView.interaction.response.edit_message(
+                    content=f"Successfully created {profile_name} profile",
+                    view=Profile_view,
+                )
+
+            case "delete":
+                options = []
+                for profile in self.config["profiles"].keys():
+                    options.append(
+                        discord.SelectOption(
+                            label=profile,
+                            value=profile,
+                            emoji=self.config["profiles"][profile]["emoji"],
+                        )
+                    )
+                delete_view = View()
+                delete_view.select = Select_General(
+                    interaction=interaction,
+                    options=options,
+                    placeholder="Select the profile you want to delete",
+                    min_values=1,
+                    max_values=len(options) - 1 if len(options) > 1 else 1,
+                )
+                delete_view.add_item(delete_view.select)
+
+                await view.select.interaction.response.edit_message(view=delete_view)
+
+                await delete_view.wait()
+                if delete_view.value is None:
+                    return await interaction.delete_original_response()
+
+                deleted_profiles = []
+                for profile in delete_view.select.values:
+                    deleted_profiles.append(profile)
+                    del self.config["profiles"][profile]
+
+                await interaction.client.dono.update_guild_config(
+                    interaction.guild.id, self.config
+                )
+
+                await delete_view.select.interaction.response.edit_message(
+                    content=f"Deleted profiles: {', '.join(deleted_profiles)}",
+                )
             case _:
                 await edit_view.select.interaction.response.send_message(
                     content="Not Available Yet", ephemeral=True, delete_after=3
@@ -361,6 +501,53 @@ class DankProfileView(View):
         await view.select.interaction.response.edit_message(
             embed=discord.Embed(
                 description=f"Added channels: {', '.join(add_channels) if len(add_channels) >= 1 else 'None'}\nRemoved channels: {', '.join(remove_channels) if len(remove_channels) >= 1 else 'None'}",
+                color=0x2B2D31,
+            ),
+            delete_after=3,
+        )
+
+        await self.message.edit_original_response(
+            embed=await self.update_embed(interaction)
+        )
+
+    @button(
+        label="Manager Roles",
+        style=discord.ButtonStyle.gray,
+        emoji="<:tgk_role:1073908306713780284>",
+    )
+    async def manager_roles(self, interaction: discord.Interaction, button: Button):
+        view = View()
+        view.select = Role_select(
+            placeholder="Select role you want to add/remove",
+            min_values=1,
+            max_values=10,
+        )
+        view.add_item(view.select)
+
+        await interaction.response.send_message(view=view, ephemeral=True)
+        await view.wait()
+
+        if view.value is None:
+            return await interaction.delete_original_response()
+
+        add_roles = []
+        remove_roles = []
+
+        for role in view.select.values:
+            if role.id in self.config["profiles"][self.profile]["manager_roles"]:
+                remove_roles.append(role.mention)
+                self.config["profiles"][self.profile]["manager_roles"].remove(role.id)
+            else:
+                add_roles.append(role.mention)
+                self.config["profiles"][self.profile]["manager_roles"].append(role.id)
+
+        await interaction.client.dono.update_guild_config(
+            interaction.guild.id, self.config
+        )
+
+        await view.select.interaction.response.edit_message(
+            embed=discord.Embed(
+                description=f"Added roles: {', '.join(add_roles) if len(add_roles) >= 1 else 'None'}\nRemoved roles: {', '.join(remove_roles) if len(remove_roles) >= 1 else 'None'}",
                 color=0x2B2D31,
             ),
             delete_after=3,

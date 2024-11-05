@@ -7,7 +7,6 @@ from typing import List, TypedDict, Dict
 from amari import AmariClient, User
 
 from utils.db import Document
-from utils.embeds import get_formated_embed, get_formated_field
 
 def chunk(it, size):
 	it = iter(it)
