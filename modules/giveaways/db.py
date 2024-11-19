@@ -3,7 +3,7 @@ import os
 import discord
 import datetime
 
-from typing import List, TypedDict, Dict, NotRequired
+from typing import List, TypedDict, Dict
 from amari import AmariClient, User
 
 from utils.db import Document
@@ -62,7 +62,7 @@ class GiveawayData(TypedDict):
     channel_messages: dict[int, int]
     dank: bool
     delete_at: datetime.datetime
-    retry: NotRequired[int]
+    retry: int
 
 
 class Giveaways_Backend:
