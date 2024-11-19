@@ -1,16 +1,13 @@
 import asyncio
-import io
 import datetime
 from itertools import islice
-from tabnanny import check
 import traceback
 
 import discord
 from discord import app_commands
 from discord.ext import commands, tasks
 
-from utils.convertor import convert_to_time, calculate
-from utils.embeds import get_error_embed, get_invisible_embed, get_success_embed, get_warning_embed
+from utils.embeds import get_invisible_embed
 
 
 def chunk(it, size):
@@ -35,148 +32,150 @@ class Reminder(commands.Cog):
         if sleep:
             try:
                 time_diff = (reminder_data['daily']['time'] - datetime.datetime.now()).total_seconds()
-            except:
+            except KeyError:
                 return
             await asyncio.sleep(time_diff)
 
         reminder_data = await self.bot.cricket.find_by_custom({"_id": reminder_data['_id']})
-        if reminder_data == None:
+        if reminder_data is None:
             return
 
         user = reminder_data['user']
-        user = await self.bot.fetch_user(int(user))
+        user = self.bot.get_user(user)
+        if user is None:
+            user = await self.bot.fetch_user(user)
 
-        if user == None:
+        if isinstance(user, discord.User) or isinstance(user, discord.Member):
             return await self.bot.cricket.delete_by_id(reminder_data['_id'])
         
         usersettings = await self.bot.userSettings.find(user.id)
-        if usersettings == None:
+        if usersettings is None:
             return await self.bot.cricket.delete_by_id(reminder_data['_id'])
         
         if reminder_type == 'cric_drop':
             if 'cric_drop_events' not in usersettings.keys():
                 return await self.bot.cricket.delete_by_id(reminder_data['_id'])
-            elif usersettings['cric_drop_events'] == False:
+            elif not usersettings['cric_drop_events']:
                 return await self.bot.cricket.delete_by_id(reminder_data['_id'])
             embed = await get_invisible_embed("Drop Reminder")
-            embed.title = f"Drop Reminder"
-            embed.description = f"You can now drop again!"
-            embed.description += f"\n\n-# Run </settings:1196688324207853590> >> User Reminders to manage reminders."
+            embed.title = "Drop Reminder"
+            embed.description = "You can now drop again!"
+            embed.description += "\n\n-# Run </settings:1196688324207853590> >> User Reminders to manage reminders."
             try:
                 embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1260884903139217429.webp?size=128&quality=lossless")
-            except:
+            except Exception:
                 pass
             try:
                 view = discord.ui.View()
                 view.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label="Jump to channel", emoji="<:tgk_channel:1073908465405268029>", url=reminder_data['message']))
-            except:
+            except Exception:
                 view = None
                 pass
             
             try:
                 await user.send(embed=embed, view=view)
                 await self.bot.cricket.delete_by_id(reminder_data['_id'])
-            except:
+            except Exception:
                 pass
         
         elif reminder_type == 'cric_daily':
             if 'cric_daily' not in usersettings.keys():
                 return await self.bot.cricket.delete_by_id(reminder_data['_id'])
-            elif usersettings['cric_daily'] == False:
+            elif not usersettings['cric_daily']:
                 return await self.bot.cricket.delete_by_id(reminder_data['_id'])
             embed = await get_invisible_embed("Daily Reminder")
-            embed.title = f"Daily Reminder"
-            embed.description = f"You can now claim your daily rewards!"
-            embed.description += f"\n\n-# Run </settings:1196688324207853590> >> User Reminders to manage reminders."
+            embed.title = "Daily Reminder"
+            embed.description = "You can now claim your daily rewards!"
+            embed.description += "\n\n-# Run </settings:1196688324207853590> >> User Reminders to manage reminders."
             try:
                 embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1260884903139217429.webp?size=128&quality=lossless")
-            except:
+            except Exception:
                 pass
             try:
                 view = discord.ui.View()
                 view.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label="Jump to channel", emoji="<:tgk_channel:1073908465405268029>", url=reminder_data['message']))
-            except:
+            except Exception:
                 view = None
                 pass
             try:
                 await user.send(embed=embed, view=view)
                 await self.bot.cricket.delete_by_id(reminder_data['_id'])
-            except:
+            except Exception:
                 pass
 
         elif reminder_type == 'cric_weekly':
             if 'cric_weekly' not in usersettings.keys():
                 return await self.bot.cricket.delete_by_id(reminder_data['_id'])
-            elif usersettings['cric_weekly'] == False:
+            elif not usersettings['cric_weekly']:
                 return await self.bot.cricket.delete_by_id(reminder_data['_id'])
             embed = await get_invisible_embed("Weekly Reminder")
-            embed.title = f"Weekly Reminder"
-            embed.description = f"You can now claim your weekly rewards!"
-            embed.description += f"\n\n-# Run </settings:1196688324207853590> >> User Reminders to manage reminders."
+            embed.title = "Weekly Reminder"
+            embed.description = "You can now claim your weekly rewards!"
+            embed.description += "\n\n-# Run </settings:1196688324207853590> >> User Reminders to manage reminders."
             try:
                 embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1260884903139217429.webp?size=128&quality=lossless")
-            except:
+            except Exception:
                 pass
             try:
                 view = discord.ui.View()
                 view.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label="Jump to channel", emoji="<:tgk_channel:1073908465405268029>", url=reminder_data['message']))
-            except:
+            except Exception:
                 view = None
                 pass
             try:
                 await user.send(embed=embed, view=view)
                 await self.bot.cricket.delete_by_id(reminder_data['_id'])
-            except:
+            except Exception:
                 pass
 
         elif reminder_type == 'cric_monthly':
             if 'cric_monthly' not in usersettings.keys():
                 return await self.bot.cricket.delete_by_id(reminder_data['_id'])
-            elif usersettings['cric_monthly'] == False:
+            elif not usersettings['cric_monthly']:
                 return await self.bot.cricket.delete_by_id(reminder_data['_id'])
             embed = await get_invisible_embed("Monthly Reminder")
-            embed.title = f"Monthly Reminder"
-            embed.description = f"You can now claim your monthly rewards!"
-            embed.description += f"\n\n-# Run </settings:1196688324207853590> >> User Reminders to manage reminders."
+            embed.title = "Monthly Reminder"
+            embed.description = "You can now claim your monthly rewards!"
+            embed.description += "\n\n-# Run </settings:1196688324207853590> >> User Reminders to manage reminders."
             try:
                 embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1260884903139217429.webp?size=128&quality=lossless")
-            except:
+            except Exception:
                 pass
             try:
                 view = discord.ui.View()
                 view.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label="Jump to channel", emoji="<:tgk_channel:1073908465405268029>", url=reminder_data['message']))
-            except:
+            except Exception:
                 view = None
                 pass
             try:
                 await user.send(embed=embed, view=view)
                 await self.bot.cricket.delete_by_id(reminder_data['_id'])
-            except:
+            except Exception:
                 pass
 
         elif reminder_type == 'cric_vote':
             if 'cric_vote' not in usersettings.keys():
                 return await self.bot.cricket.delete_by_id(reminder_data['_id'])
-            elif usersettings['cric_vote'] == False:
+            elif not usersettings['cric_vote']:
                 return await self.bot.cricket.delete_by_id(reminder_data['_id'])
             embed = await get_invisible_embed("Vote Reminder")
-            embed.title = f"Vote Reminder"
-            embed.description = f"Vote now to get **2 cards & 2000** <:cg:1264848906383003699>"
-            embed.description += f"\n\n-# Run </settings:1196688324207853590> >> User Reminders to manage reminders."
+            embed.title = "Vote Reminder"
+            embed.description = "Vote now to get **2 cards & 2000** <:cg:1264848906383003699>"
+            embed.description += "\n\n-# Run </settings:1196688324207853590> >> User Reminders to manage reminders."
             try:
                 embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1260884903139217429.webp?size=128&quality=lossless")
-            except:
+            except Exception:
                 pass
             try:
                 view = discord.ui.View()
                 view.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label="Cricket Guru - Vote", emoji="<:vote:1264867718079713291>", url="https://top.gg/bot/814100764787081217/vote"))
-            except:
+            except Exception:
                 view = None
                 pass
             try:
                 await user.send(embed=embed, view=view)
                 await self.bot.cricket.delete_by_id(reminder_data['_id'])
-            except:
+            except Exception:
                 pass
 
     @tasks.loop(seconds=60)
@@ -199,7 +198,7 @@ class Reminder(commands.Cog):
         await channel.send(f"<@488614633670967307> <@301657045248114690> , Error in reminder: {full_stack_trace}")
         try:
             self.grinder_reminder.restart()
-        except:
+        except Exception:
             error = traceback.format_exc()
             await channel.send(f"<@488614633670967307> <@301657045248114690> , Error in restarting reminder loop: {error}")
 
