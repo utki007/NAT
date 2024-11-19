@@ -167,6 +167,68 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
                     self.giveaway_in_prosses.remove(giveaway["_id"])
                 return
 
+            if not all(
+                [
+                    channel.permissions_for(guild.me).send_messages,
+                    channel.permissions_for(guild.me).embed_links,
+                    channel.permissions_for(guild.me).use_external_emojis,
+                ]
+            ):
+                if "retry" not in giveaway.keys():
+                    giveaway["retry"] = 1
+                else:
+                    giveaway["retry"] += 1
+
+                view = discord.ui.View()
+                view.add_item(
+                    discord.ui.Button(
+                        style=discord.ButtonStyle.link,
+                        label="Jump to Giveaway",
+                        emoji="<:tgk_link:1105189183523401828>",
+                        url=gaw_message.jump_url,
+                    )
+                )
+                embed = discord.Embed(
+                    title="Error - Missing Permissions",
+                    description=f"Due to missing permissions, [giveaway]({gaw_message.jump_url}) could not be ended!\n",
+                    color=discord.Color.red(),
+                )
+                embed.description += f"Retry Count: {giveaway['retry']}/3\n\n"
+                embed.description += (
+                    "**Send Messages:** "
+                    + f"{'<:tgk_active:1082676793342951475>' if not channel.permissions_for(guild.me).send_messages else '<:tgk_deactivated:1082676877468119110>'}"
+                    + "\n"
+                )
+                embed.description += (
+                    "**Embed Links:** "
+                    + f"{'<:tgk_active:1082676793342951475>' if not channel.permissions_for(guild.me).embed_links else '<:tgk_deactivated:1082676877468119110>'}"
+                    + "\n"
+                )
+                embed.description += (
+                    "**Use External Emojis:** "
+                    + f"{'<:tgk_active:1082676793342951475>' if not channel.permissions_for(guild.me).use_external_emojis else '<:tgk_deactivated:1082676877468119110>'}"
+                )
+                embed.description += "\n\n"
+                embed.description += "Due to missing permissions, giveaway could not be ended therefore extra time of 30 minutes has been added to the giveaway!"
+                giveaway["end_time"] = datetime.datetime.utcnow() + datetime.timedelta(
+                    minutes=30
+                )
+                await self.backend.update_giveaway(gaw_message, giveaway)
+
+                if giveaway["retry"] >= 3:
+                    embed = discord.Embed(
+                        title="Giveaway Ended",
+                        description="Dus to missing permissions didn't got resolved in 3 tries therefore giveaway has been cancelled!\n",
+                        color=discord.Color.red(),
+                    )
+                    await gaw_message.edit(
+                        view=None,
+                        content="Giveaway Cancelled due to missing permissions!",
+                    )
+                    await self.backend.giveaways.delete(giveaway)
+                await host.send(embed=embed, view=view)
+                return
+
             if giveaway["ended"]:
                 if (
                     giveaway["delete_at"] is not None
@@ -196,7 +258,7 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
                     content = "Giveaway Rerolled!"
                 try:
                     await gaw_message.edit(embed=embed, view=view, content=content)
-                except:
+                except discord.HTTPException:
                     await gaw_message.add_reaction("<:tgk_active:1082676793342951475>")
                 end_emd = discord.Embed(
                     title="Giveaway Ended",
@@ -257,7 +319,7 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
                     await gaw_message.edit(
                         embed=embed, view=view, content="Giveaway Ended"
                     )
-                except:
+                except discord.HTTPException:
                     await gaw_message.add_reaction("<:tgk_active:1082676793342951475>")
 
                 try:
@@ -534,6 +596,20 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
                 return await interaction.followup.send(
                     "Item you entered is not a valid item!"
                 )
+        # add a if statement that checks if bot have send_message, embed_links, use external emoji perm in interaction.channel
+
+        if not all(
+            [
+                interaction.channel.permissions_for(interaction.guild.me).send_messages,
+                interaction.channel.permissions_for(interaction.guild.me).embed_links,
+                interaction.channel.permissions_for(
+                    interaction.guild.me
+                ).use_external_emojis,
+            ]
+        ):
+            return await interaction.followup.send(
+                "I need `Send Messages`, `Embed Links`, `Use External Emojis` permissions in this channel to start a giveaway!"
+            )
 
         data: GiveawayData = {
             "channel": interaction.channel.id,
@@ -558,6 +634,7 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
             "channel_messages": {},
             "dank": dank,
             "delete_at": None,
+            "retry": 0,
         }
         if channel_message:
             channel_message = channel_message.split(" ")
