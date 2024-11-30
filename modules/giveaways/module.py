@@ -38,6 +38,8 @@ def handler(fucn: callable):
 
 
 @app_commands.guild_only()
+@app_commands.guild_install()
+@app_commands.allowed_installs(guilds=True, users=False)
 class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaways"):
     def __init__(self, bot):
         self.bot = bot
@@ -49,6 +51,7 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
 
     def cog_unload(self):
         self.giveaway_loop.cancel()
+        self.bot.giveaway = None  # type: ignore
 
     async def item_autocomplete(
         self, interaction: discord.Interaction, string: str
@@ -237,7 +240,7 @@ class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaway
                     await self.backend.giveaways.delete(giveaway)
                 return
 
-            if "Giveaway Ended" in gaw_message.content:
+            if "Giveaway Ended" in gaw_message.content and reroll is False:
                 giveaway["ended"] = True
                 await self.backend.update_giveaway(gaw_message, giveaway)
                 return
