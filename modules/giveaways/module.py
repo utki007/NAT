@@ -38,7 +38,6 @@ def handler(fucn: callable):
 
 
 @app_commands.guild_only()
-@app_commands.allowed_installs(guilds=True, users=False)
 class Giveaways(commands.GroupCog, name="g", description="Create Custom Giveaways"):
     def __init__(self, bot):
         self.bot = bot
