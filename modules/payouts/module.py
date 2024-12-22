@@ -245,10 +245,20 @@ class PayoutV2(commands.GroupCog, name="payout"):
         for winner in winners:
             winner: discord.Member
             queue_data = await self.backend.unclaimed.find(
-                {"winner_message_id": event_message.id, "winner": winner.id}
+                {
+                    "winner_message_id": event_message.id,
+                    "winner": winner.id,
+                    "prize": quantity,
+                    "item": item,
+                }
             )
             pending_data = await self.backend.claimed.find(
-                {"winner_message_id": event_message.id, "winner": winner.id}
+                {
+                    "winner_message_id": event_message.id,
+                    "winner": winner.id,
+                    "prize": quantity,
+                    "item": item,
+                }
             )
 
             if queue_data or pending_data:
@@ -937,11 +947,11 @@ class PayoutV2(commands.GroupCog, name="payout"):
             description="",
         )
         embed.description += f"**User:** {info['host'].mention}\n"
-        embed.description += f"**Winner:** {info['winner'].mention} ({info['winner'].name})\n"
-        embed.description += f"**Prize:** {info['prize']}\n"
         embed.description += (
-            f"**Queue Message:** [Jump to Message](https://discord.com/channels/{info['guild']}/{info['channel']}/{data['_id']})\n"
+            f"**Winner:** {info['winner'].mention} ({info['winner'].name})\n"
         )
+        embed.description += f"**Prize:** {info['prize']}\n"
+        embed.description += f"**Queue Message:** [Jump to Message](https://discord.com/channels/{info['guild']}/{info['channel']}/{data['_id']})\n"
         embed.set_footer(text=f"Queue Message ID: {data['_id']}")
 
         config = await self.backend.get_config(info["guild"])
@@ -951,8 +961,7 @@ class PayoutV2(commands.GroupCog, name="payout"):
         if log_channel is None:
             return
         try:
-            await log_channel.send(embed=embed
-        )
+            await log_channel.send(embed=embed)
         except discord.Forbidden:
             pass
 

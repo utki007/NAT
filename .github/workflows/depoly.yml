@@ -7,11 +7,26 @@ on:
       - completed
 
 jobs:
-  sync:
+  deploy:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
-      - uses: hwalker928/ptero-gitsync@v1.0
-        with:
-          panel-url: ${{ secrets.PANEL_URL }}
-          api-key: ${{ secrets.API_KEY }}
-          server-id: ${{ secrets.SERVER_ID }}
+      - name: Create SSH key
+        run: |
+          mkdir -p ~/.ssh/
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Connect, Pull and Cleanup
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+            cd ${{ secrets.PATH }} && \
+            git checkout ${{ secrets.BRANCH }} && \
+            git pull origin ${{ secrets.BRANCH }} && \
+            git remote prune origin && \
+            git gc --prune=now"
+
+      - name: Cleanup Local SSH Key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
